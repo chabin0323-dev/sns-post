@@ -1,0 +1,5 @@
+{
+  "name": "SNS Post Generator",
+  "description": "A React application that generates engaging 500-character SNS posts based on a user-provided theme using Gemini API.",
+  "requestFramePermissions": []
+}
