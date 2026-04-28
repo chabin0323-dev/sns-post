@@ -10,6 +10,8 @@ import {
   LightBulbIcon
 } from '@heroicons/react/24/solid';
 
+export type GenerateMode = 'script' | 'video' | 'post_data' | 'full_auto';
+
 interface InputFormProps {
   onGenerate: (
     theme: string,
@@ -23,7 +25,8 @@ interface InputFormProps {
     tiktokInsertPosition: 'start' | 'end' | 'both',
     autoCtaEnabled: boolean,
     scheduleTimes: string[],
-    hashtagMode: 'あり' | 'なし'
+    hashtagMode: 'あり' | 'なし',
+    mode: GenerateMode
   ) => void;
   onCancel: () => void;
   loadingState: LoadingState;
@@ -319,23 +322,14 @@ export const InputForm: React.FC<InputFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!theme.trim()) return;
-
     saveAllHistories();
+    onGenerate(theme, length, gender, age, templateText, templateUrl, tiktokTemplateText, insertPosition, tiktokInsertPosition, autoCtaEnabled, scheduleTimes, hashtagMode, 'script');
+  };
 
-    onGenerate(
-      theme,
-      length,
-      gender,
-      age,
-      templateText,
-      templateUrl,
-      tiktokTemplateText,
-      insertPosition,
-      tiktokInsertPosition,
-      autoCtaEnabled,
-      scheduleTimes,
-      hashtagMode
-    );
+  const handleSubmitWithMode = (mode: GenerateMode) => {
+    if (!theme.trim()) return;
+    saveAllHistories();
+    onGenerate(theme, length, gender, age, templateText, templateUrl, tiktokTemplateText, insertPosition, tiktokInsertPosition, autoCtaEnabled, scheduleTimes, hashtagMode, mode);
   };
 
   return (
@@ -464,17 +458,33 @@ export const InputForm: React.FC<InputFormProps> = ({
             </label>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <button type="submit" className="rounded-2xl bg-fuchsia-500 text-white font-black py-3">
-                台本生成
+              <button
+                type="button"
+                onClick={() => handleSubmitWithMode('script')}
+                className="rounded-2xl bg-fuchsia-500 text-white font-black py-3 hover:bg-fuchsia-600 active:scale-95 transition-all"
+              >
+                📝 台本生成
               </button>
-              <button type="submit" className="rounded-2xl bg-cyan-500 text-white font-black py-3">
-                動画生成
+              <button
+                type="button"
+                onClick={() => handleSubmitWithMode('video')}
+                className="rounded-2xl bg-cyan-500 text-white font-black py-3 hover:bg-cyan-600 active:scale-95 transition-all"
+              >
+                🎬 動画生成
               </button>
-              <button type="submit" className="rounded-2xl bg-emerald-500 text-white font-black py-3">
-                投稿データ作成
+              <button
+                type="button"
+                onClick={() => handleSubmitWithMode('post_data')}
+                className="rounded-2xl bg-emerald-500 text-white font-black py-3 hover:bg-emerald-600 active:scale-95 transition-all"
+              >
+                📊 投稿データ作成
               </button>
-              <button type="submit" className="rounded-2xl bg-black text-white font-black py-3">
-                全部自動生成
+              <button
+                type="button"
+                onClick={() => handleSubmitWithMode('full_auto')}
+                className="rounded-2xl bg-black text-white font-black py-3 hover:bg-gray-800 active:scale-95 transition-all"
+              >
+                ⚡ 全部自動生成
               </button>
             </div>
           </div>

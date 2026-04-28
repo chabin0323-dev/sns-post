@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Header } from './components/Header';
-import { InputForm } from './components/InputForm';
+import { InputForm, GenerateMode } from './components/InputForm';
 import { ResultCard } from './components/ResultCard';
 import { UserGuide } from './components/UserGuide';
 import { LoadingState, GeneratedPost } from './types';
@@ -173,7 +173,8 @@ const App: React.FC = () => {
     tiktokInsertPosition: 'start' | 'end' | 'both',
     autoCtaEnabled: boolean,
     scheduleTimes: string[],
-    hashtagMode: 'あり' | 'なし'
+    hashtagMode: 'あり' | 'なし',
+    mode: GenerateMode = 'script'
   ) => {
     setLoadingState(LoadingState.LOADING);
     setShowGuide(false);
@@ -181,30 +182,36 @@ const App: React.FC = () => {
 
     try {
       const base = generateSNSPostContent(
-        theme,
-        length,
-        gender,
-        age,
-        templateText,
-        templateUrl,
-        tiktokTemplateText,
-        insertPosition,
-        tiktokInsertPosition,
-        hashtagMode
+        theme, length, gender, age,
+        templateText, templateUrl, tiktokTemplateText,
+        insertPosition, tiktokInsertPosition, hashtagMode
       );
 
       const historyForAnalysis = generatedHistory.map(stripHeavyVideoData);
 
-      const buzzScript = generateBuzzScriptPack(theme, autoCtaEnabled);
-      const trendPack = generateTrendPack(theme);
-      const ideaPack = generateInfiniteIdeaPack(theme);
-      const schedulePack = generateSchedulePack(scheduleTimes, theme);
-      const postPackage = buildPostPackage(theme, base.hashtags, autoCtaEnabled);
-      const buzzAnalysis = analyzeBuzzFromHistory(theme, historyForAnalysis);
-      const autoVideo = null;
+      // モード別にデータ生成を制御
+      const buzzScript   = (mode === 'video' || mode === 'full_auto')
+        ? generateBuzzScriptPack(theme, autoCtaEnabled) : undefined;
+      const trendPack    = (mode === 'full_auto')
+        ? generateTrendPack(theme) : undefined;
+      const ideaPack     = (mode === 'full_auto')
+        ? generateInfiniteIdeaPack(theme) : undefined;
+      const schedulePack = (mode === 'full_auto')
+        ? generateSchedulePack(scheduleTimes, theme) : undefined;
+      const postPackage  = (mode === 'post_data' || mode === 'full_auto')
+        ? buildPostPackage(theme, base.hashtags, autoCtaEnabled) : undefined;
+      const buzzAnalysis = (mode === 'full_auto')
+        ? analyzeBuzzFromHistory(theme, historyForAnalysis) : undefined;
+
+      // 台本モードはTikTok台本のみ（他プラットフォームを空にしない）
+      const modeBase = mode === 'script'
+        ? { ...base, xPost: '', instagramPost: '', youtubePost: '', content: '' }
+        : mode === 'video'
+        ? { ...base, xPost: '', instagramPost: '', youtubePost: '', content: '' }
+        : base;
 
       const result: GeneratedPost = {
-        ...base,
+        ...modeBase,
         theme,
         timestamp: new Date().toISOString(),
         autoCtaEnabled,
@@ -216,7 +223,7 @@ const App: React.FC = () => {
         schedulePack,
         postPackage,
         buzzAnalysis,
-        autoVideo,
+        autoVideo: null,
       };
 
       setCurrentPost(result);
