@@ -165,6 +165,53 @@ export const ResultCard: React.FC<ResultCardProps> = ({
     }
   };
 
+  const getPostConfig = (labels: string[]): { label: string; url: string; prefill: boolean } | null => {
+    const l = labels[0];
+    if (l === 'X') return {
+      label: 'X に投稿',
+      url: 'https://x.com/intent/post?text=',
+      prefill: true,
+    };
+    if (l === 'note') return {
+      label: 'note に投稿',
+      url: 'https://note.com/notes/new',
+      prefill: false,
+    };
+    if (l === 'TikTok') return {
+      label: 'TikTok へ',
+      url: 'https://www.tiktok.com/upload',
+      prefill: false,
+    };
+    if (l === 'Instagram') return {
+      label: 'Instagram へ',
+      url: 'https://www.instagram.com/',
+      prefill: false,
+    };
+    if (l === 'YouTube') return {
+      label: 'YouTube Studio へ',
+      url: 'https://studio.youtube.com/',
+      prefill: false,
+    };
+    return null;
+  };
+
+  const [postedKey, setPostedKey] = useState('');
+
+  const handlePost = async (text: string, labels: string[], key: string) => {
+    const config = getPostConfig(labels);
+    if (!config) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (_) {}
+    if (config.prefill) {
+      window.open(config.url + encodeURIComponent(text.slice(0, 270)), '_blank');
+    } else {
+      window.open(config.url, '_blank');
+    }
+    setPostedKey(key);
+    setTimeout(() => setPostedKey(''), 3000);
+  };
+
   const handleGenerateVideo = async () => {
     if (!post.buzzScript?.scenes?.length) return;
 
@@ -213,22 +260,38 @@ export const ResultCard: React.FC<ResultCardProps> = ({
                 {block.text}
               </div>
 
-              <button
-                onClick={() => handleCopy(block.text, copyKey)}
-                className={`w-full py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all transform active:scale-[0.98] shadow-lg ${themeClasses.button}`}
-              >
-                {copiedKey === copyKey ? (
-                  <>
-                    <CheckIcon className="w-6 h-6" />
-                    コピー完了！
-                  </>
-                ) : (
-                  <>
-                    <ClipboardDocumentIcon className="w-6 h-6" />
-                    {block.labels.join('・')}としてコピー
-                  </>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => handleCopy(block.text, copyKey)}
+                  className={`w-full py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all transform active:scale-[0.98] shadow-lg ${themeClasses.button}`}
+                >
+                  {copiedKey === copyKey ? (
+                    <>
+                      <CheckIcon className="w-6 h-6" />
+                      コピー完了！
+                    </>
+                  ) : (
+                    <>
+                      <ClipboardDocumentIcon className="w-6 h-6" />
+                      {block.labels.join('・')}としてコピー
+                    </>
+                  )}
+                </button>
+
+                {getPostConfig(block.labels) && (
+                  <button
+                    onClick={() => handlePost(block.text, block.labels, copyKey + '_post')}
+                    className="w-full py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 transition-all transform active:scale-[0.98] bg-white border-2 border-current hover:opacity-80"
+                    style={{ color: block.labels[0] === 'X' ? '#000' : block.labels[0] === 'TikTok' ? '#fe2c55' : block.labels[0] === 'Instagram' ? '#e1306c' : block.labels[0] === 'YouTube' ? '#ff0000' : '#41c9b4' }}
+                  >
+                    {postedKey === copyKey + '_post' ? (
+                      <>✅ コピー済み・投稿画面を開きました</>
+                    ) : (
+                      <>🚀 {getPostConfig(block.labels)!.label}{getPostConfig(block.labels)!.prefill ? '' : '（自動コピー）'}</>
+                    )}
+                  </button>
                 )}
-              </button>
+              </div>
             </div>
           </div>
         );
