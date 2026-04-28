@@ -146,38 +146,47 @@ const HistoryChips: React.FC<{
   onSelect: (value: string) => void;
   onDelete: (value: string) => void;
 }> = ({ title, items, onSelect, onDelete }) => {
+  const [open, setOpen] = React.useState(false);
   if (items.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-3">
-      <div className="flex items-center gap-2 text-[11px] font-black text-slate-500 uppercase tracking-wider">
-        <ClockIcon className="w-3 h-3" />
-        {title}
+    <div className="relative">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-indigo-600 border border-slate-200 rounded-xl px-3 py-1.5 bg-white"
+        >
+          <ClockIcon className="w-3 h-3" />
+          {title}（{items.length}件）
+          <span className="ml-1">{open ? '▲' : '▼'}</span>
+        </button>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {items.map((item, index) => (
-          <div
-            key={`${item}-${index}`}
-            className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-2 max-w-full"
-          >
-            <button
-              type="button"
-              onClick={() => onSelect(item)}
-              className="text-sm font-bold text-slate-700 hover:text-indigo-600 break-all text-left"
+      {open && (
+        <div className="absolute z-10 top-8 left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden">
+          {items.map((item, index) => (
+            <div
+              key={`${item}-${index}`}
+              className="flex items-center justify-between px-4 py-2.5 hover:bg-indigo-50 border-b border-slate-100 last:border-0"
             >
-              {item}
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(item)}
-              className="shrink-0 text-slate-400 hover:text-red-500"
-              aria-label={`${title}を削除`}
-            >
-              <XMarkIcon className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
-      </div>
+              <button
+                type="button"
+                onClick={() => { onSelect(item); setOpen(false); }}
+                className="flex-1 text-sm text-slate-700 text-left truncate hover:text-indigo-600"
+              >
+                {item}
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(item)}
+                className="shrink-0 text-slate-300 hover:text-red-500 ml-2"
+              >
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -578,22 +587,6 @@ export const InputForm: React.FC<InputFormProps> = ({
                 placeholder="URL"
                 className="w-full p-3 rounded-xl border"
               />
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => setTemplateUrl('https://nexa-lovelab.com/')}
-                  className="text-xs px-3 py-1.5 rounded-full bg-indigo-500 text-white font-bold hover:bg-indigo-600"
-                >
-                  🔗 nexa-lovelab.com
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTemplateUrl('https://aisou-fortune-host.vercel.app/')}
-                  className="text-xs px-3 py-1.5 rounded-full bg-purple-500 text-white font-bold hover:bg-purple-600"
-                >
-                  🔮 有料版アプリ
-                </button>
-              </div>
               <HistoryChips
                 title="URL履歴"
                 items={templateUrlHistory}
@@ -634,22 +627,6 @@ export const InputForm: React.FC<InputFormProps> = ({
                 className="w-full p-3 rounded-xl border"
                 placeholder="続きはプロフィールから👇"
               />
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => setTiktokTemplateText('続きはプロフィールから👇\nhttps://nexa-lovelab.com/')}
-                  className="text-xs px-3 py-1.5 rounded-full bg-cyan-500 text-white font-bold hover:bg-cyan-600"
-                >
-                  🔗 nexa-lovelab.com を挿入
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTiktokTemplateText('無料占いはこちら👇\nhttps://nexa-lovelab.com/')}
-                  className="text-xs px-3 py-1.5 rounded-full bg-teal-500 text-white font-bold hover:bg-teal-600"
-                >
-                  🔮 無料占いリンク
-                </button>
-              </div>
               <HistoryChips
                 title="TikTok決まり文履歴"
                 items={tiktokTemplateTextHistory}
