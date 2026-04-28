@@ -248,6 +248,13 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleClearHistory = () => {
+    setGeneratedHistory([]);
+    setCurrentPost(null);
+    setLoadingState(LoadingState.IDLE);
+    localStorage.removeItem(GENERATED_HISTORY_KEY);
+  };
+
   const handleDeleteHistory = (post: GeneratedPost, index: number) => {
     const targetKey = getHistoryItemKey(post, index);
 
@@ -315,6 +322,7 @@ const App: React.FC = () => {
               history={generatedHistory.map(stripHeavyVideoData)}
               onSelectHistory={handleSelectHistory}
               onDeleteHistory={handleDeleteHistory}
+              onClearHistory={handleClearHistory}
             />
           </div>
         )}

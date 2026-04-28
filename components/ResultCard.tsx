@@ -139,6 +139,7 @@ interface ResultCardProps {
   history?: GeneratedPost[];
   onSelectHistory?: (post: GeneratedPost) => void;
   onDeleteHistory?: (post: GeneratedPost, index: number) => void;
+  onClearHistory?: () => void;
 }
 
 export const ResultCard: React.FC<ResultCardProps> = ({
@@ -146,6 +147,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
   history = [],
   onSelectHistory,
   onDeleteHistory,
+  onClearHistory,
 }) => {
   const [copiedKey, setCopiedKey] = useState('');
   const [videoLoading, setVideoLoading] = useState(false);
@@ -353,7 +355,18 @@ export const ResultCard: React.FC<ResultCardProps> = ({
           <div className="p-8 md:p-10 space-y-6">
             <div>
               <div className="text-[11px] font-black tracking-[0.2em] text-slate-400 uppercase">History</div>
-              <h3 className="text-2xl font-black text-slate-800 mt-2">生成履歴</h3>
+              <div className="flex items-center justify-between mt-2">
+                <h3 className="text-2xl font-black text-slate-800">生成履歴</h3>
+                {onClearHistory && (
+                  <button
+                    type="button"
+                    onClick={() => { if (window.confirm('履歴を全て削除しますか？')) onClearHistory(); }}
+                    className="px-4 py-2 rounded-2xl bg-red-50 text-red-500 border border-red-200 font-black text-sm hover:bg-red-100 transition-colors"
+                  >
+                    🗑 全て削除
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-4">
