@@ -578,6 +578,22 @@ export const InputForm: React.FC<InputFormProps> = ({
                 placeholder="URL"
                 className="w-full p-3 rounded-xl border"
               />
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setTemplateUrl('https://nexa-lovelab.com/')}
+                  className="text-xs px-3 py-1.5 rounded-full bg-indigo-500 text-white font-bold hover:bg-indigo-600"
+                >
+                  🔗 nexa-lovelab.com
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTemplateUrl('https://aisou-fortune-host.vercel.app/')}
+                  className="text-xs px-3 py-1.5 rounded-full bg-purple-500 text-white font-bold hover:bg-purple-600"
+                >
+                  🔮 有料版アプリ
+                </button>
+              </div>
               <HistoryChips
                 title="URL履歴"
                 items={templateUrlHistory}
@@ -618,6 +634,22 @@ export const InputForm: React.FC<InputFormProps> = ({
                 className="w-full p-3 rounded-xl border"
                 placeholder="続きはプロフィールから👇"
               />
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setTiktokTemplateText('続きはプロフィールから👇\nhttps://nexa-lovelab.com/')}
+                  className="text-xs px-3 py-1.5 rounded-full bg-cyan-500 text-white font-bold hover:bg-cyan-600"
+                >
+                  🔗 nexa-lovelab.com を挿入
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTiktokTemplateText('無料占いはこちら👇\nhttps://nexa-lovelab.com/')}
+                  className="text-xs px-3 py-1.5 rounded-full bg-teal-500 text-white font-bold hover:bg-teal-600"
+                >
+                  🔮 無料占いリンク
+                </button>
+              </div>
               <HistoryChips
                 title="TikTok決まり文履歴"
                 items={tiktokTemplateTextHistory}
