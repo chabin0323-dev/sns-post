@@ -55,7 +55,7 @@ const FORTUNE_PRESET = {
   templateUrl: 'https://nexa-lovelab.com',
   tiktokTemplateText: 'プロフィールから無料で占えます👇',
   insertPosition: 'end' as const,
-  tiktokInsertPosition: 'start' as const,
+  tiktokInsertPosition: 'end' as const,
   autoCtaEnabled: true,
   hashtagMode: 'あり' as const,
   scheduleMorning: '07:00',
