@@ -37,6 +37,7 @@ const MAX_HISTORY = 10;
 const ITEMS_PER_PAGE = 5;
 
 const LOCAL_KEYWORD_MAP: Record<string, string[]> = {
+  占い: ['片思い', '復縁', '運命の人', '相性', '好き避け', '連絡待ち', '不倫', '縁切り', '恋愛運', '告白タイミング', '彼の本音', '忘れられない人', '遠距離恋愛', '元カレ', '運命鑑定'],
   恋愛: ['片想い', '復縁', '告白', '脈あり', '本音', '恋愛心理', '忘れられない人', '距離感', '好き避け', '連絡頻度'],
   美容: ['スキンケア', '毛穴', '乾燥対策', 'エイジングケア', '垢抜け', 'メイク時短', '美容習慣', '小顔', 'UV対策', '美肌'],
   ダイエット: ['食事改善', '痩せ習慣', 'リバウンド', '代謝アップ', 'ながら運動', '脂肪燃焼', '腸活', 'むくみ改善', '間食対策', '朝活'],
@@ -45,6 +46,28 @@ const LOCAL_KEYWORD_MAP: Record<string, string[]> = {
   仕事: ['人間関係', '評価される人', '習慣改善', '時間管理', 'モチベーション', '会話術', '信頼構築', 'キャリア', '転職不安', '成長戦略'],
   健康: ['睡眠改善', '疲労回復', '自律神経', '腸内環境', '肩こり対策', 'ストレス解消', '朝習慣', '温活', '姿勢改善', '生活改善'],
 };
+
+const FORTUNE_PRESET = {
+  gender: '女性',
+  age: '30代',
+  length: '300文字',
+  templateText: '詳しくはこちら👇',
+  templateUrl: 'https://nexa-lovelab.com',
+  tiktokTemplateText: 'プロフィールから無料で占えます👇',
+  insertPosition: 'end' as const,
+  tiktokInsertPosition: 'start' as const,
+  autoCtaEnabled: true,
+  hashtagMode: 'あり' as const,
+  scheduleMorning: '07:00',
+  scheduleNoon: '12:00',
+  scheduleNight: '21:00',
+};
+
+const FORTUNE_THEMES = [
+  '片思い', '復縁', '運命の人', '相性', '好き避け',
+  '連絡待ち', '彼の本音', '不倫', '縁切り', '恋愛運',
+  '告白タイミング', '遠距離恋愛', '元カレ', '運命鑑定',
+];
 
 const COMMON_KEYWORDS = [
   '初心者向け',
@@ -225,6 +248,26 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [openTiktok, setOpenTiktok] = useState(false);
   const [openAutomation, setOpenAutomation] = useState(true);
   const [showThemeHistory, setShowThemeHistory] = useState(false);
+  const [presetApplied, setPresetApplied] = useState(false);
+
+  const applyFortunePreset = () => {
+    setGender(FORTUNE_PRESET.gender);
+    setAge(FORTUNE_PRESET.age);
+    setLength(FORTUNE_PRESET.length);
+    setTemplateText(FORTUNE_PRESET.templateText);
+    setTemplateUrl(FORTUNE_PRESET.templateUrl);
+    setTiktokTemplateText(FORTUNE_PRESET.tiktokTemplateText);
+    setInsertPosition(FORTUNE_PRESET.insertPosition);
+    setTiktokInsertPosition(FORTUNE_PRESET.tiktokInsertPosition);
+    setAutoCtaEnabled(FORTUNE_PRESET.autoCtaEnabled);
+    setHashtagMode(FORTUNE_PRESET.hashtagMode);
+    setScheduleMorning(FORTUNE_PRESET.scheduleMorning);
+    setScheduleNoon(FORTUNE_PRESET.scheduleNoon);
+    setScheduleNight(FORTUNE_PRESET.scheduleNight);
+    setOpenTiktok(true);
+    setPresetApplied(true);
+    setTimeout(() => setPresetApplied(false), 2000);
+  };
 
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [suggestionPage, setSuggestionPage] = useState(0);
@@ -338,6 +381,64 @@ export const InputForm: React.FC<InputFormProps> = ({
         <div className="text-center space-y-2">
           <h2 className="text-3xl font-black">SNS投稿を一瞬で作成</h2>
           <p className="text-sm text-gray-500">テーマを入れるだけで投稿完成</p>
+        </div>
+
+        {/* 占いTikTok専用プリセット */}
+        <div className="rounded-3xl overflow-hidden border border-purple-200 bg-gradient-to-br from-[#1a0035] to-[#3d0068]">
+          <div className="p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-2xl">🔮</span>
+              <div>
+                <div className="font-black text-white text-base tracking-wide">占いTikTok 専用プリセット</div>
+                <div className="text-xs text-purple-300 mt-0.5">NEXA LoveLAB 用の最適設定をワンタップで適用</div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={applyFortunePreset}
+              className={`w-full py-3 rounded-2xl font-black text-sm tracking-wider transition-all active:scale-95 ${
+                presetApplied
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white hover:opacity-90 shadow-lg shadow-purple-500/30'
+              }`}
+            >
+              {presetApplied ? '✅ 設定を適用しました！' : '✨ 占いTikTok設定を一括適用'}
+            </button>
+            {presetApplied && (
+              <div className="mt-3 grid grid-cols-2 gap-1.5 text-xs">
+                {[
+                  ['👤', '対象：女性 30代'],
+                  ['🔗', 'URL：nexa-lovelab.com'],
+                  ['📍', 'CTA：プロフィールから無料で占えます👇'],
+                  ['⏰', '投稿：07:00 / 12:00 / 21:00'],
+                ].map(([icon, text]) => (
+                  <div key={text as string} className="flex items-center gap-1.5 bg-white/10 rounded-xl px-2.5 py-1.5 text-purple-100">
+                    <span>{icon}</span><span>{text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* 占いテーマ候補 */}
+          <div className="border-t border-white/10 px-5 py-4">
+            <div className="text-xs font-black text-purple-300 uppercase tracking-widest mb-3">✦ 占いテーマ候補 ✦</div>
+            <div className="flex flex-wrap gap-2">
+              {FORTUNE_THEMES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTheme(t)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all active:scale-95 ${
+                    theme === t
+                      ? 'bg-pink-500 text-white border-pink-400'
+                      : 'bg-white/10 text-purple-100 border-white/20 hover:bg-white/20'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="bg-gradient-to-br from-indigo-50 via-pink-50 to-cyan-50 p-6 rounded-3xl space-y-4 border border-indigo-100">
