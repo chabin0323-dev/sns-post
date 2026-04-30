@@ -592,82 +592,62 @@ export const InputForm: React.FC<InputFormProps> = ({
         )}
 
         <div className="space-y-4">
-          <SectionButton
-            title="投稿設定"
-            subtitle="性別・年代・文字数・ハッシュタグ"
-            isOpen={openBasic}
-            onClick={() => setOpenBasic(!openBasic)}
-            className="bg-gray-100 border-gray-200"
-          />
+          {/* 投稿設定：常時表示のピル型セレクター */}
+          <div className="p-5 bg-gray-50 rounded-3xl border border-gray-200 space-y-4">
+            <div className="font-black text-slate-700 text-sm tracking-wide">📋 投稿設定</div>
 
-          {openBasic && (
-            <div className="p-4 space-y-4 bg-gray-50 rounded-2xl border border-gray-200">
-              <select
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
-                className="w-full p-3 rounded-xl border"
-              >
-                <option>男性</option>
-                <option>女性</option>
-                <option>指定なし</option>
-              </select>
-              <HistoryChips
-                title="性別履歴"
-                items={genderHistory}
-                onSelect={setGender}
-                onDelete={(value) => setGenderHistory(removeHistory(HISTORY_KEYS.gender, value))}
-              />
-
-              <select
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                className="w-full p-3 rounded-xl border"
-              >
-                <option>20代</option>
-                <option>30代</option>
-                <option>40代</option>
-                <option>50代以上</option>
-                <option>指定なし</option>
-              </select>
-              <HistoryChips
-                title="年代履歴"
-                items={ageHistory}
-                onSelect={setAge}
-                onDelete={(value) => setAgeHistory(removeHistory(HISTORY_KEYS.age, value))}
-              />
-
-              <select
-                value={length}
-                onChange={(e) => setLength(e.target.value)}
-                className="w-full p-3 rounded-xl border"
-              >
-                <option>200文字</option>
-                <option>300文字</option>
-                <option>500文字</option>
-              </select>
-              <HistoryChips
-                title="文字数履歴"
-                items={lengthHistory}
-                onSelect={setLength}
-                onDelete={(value) => setLengthHistory(removeHistory(HISTORY_KEYS.length, value))}
-              />
-
-              <select
-                value={hashtagMode}
-                onChange={(e) => setHashtagMode(e.target.value as 'あり' | 'なし')}
-                className="w-full p-3 rounded-xl border"
-              >
-                <option value="あり">ハッシュタグあり</option>
-                <option value="なし">ハッシュタグなし</option>
-              </select>
-              <HistoryChips
-                title="ハッシュタグ履歴"
-                items={hashtagModeHistory}
-                onSelect={(value) => setHashtagMode(value as 'あり' | 'なし')}
-                onDelete={(value) => setHashtagModeHistory(removeHistory(HISTORY_KEYS.hashtagMode, value))}
-              />
+            {/* 性別 */}
+            <div className="space-y-1.5">
+              <div className="text-xs font-bold text-slate-500">性別</div>
+              <div className="flex flex-wrap gap-2">
+                {['女性', '男性', '指定なし'].map((v) => (
+                  <button key={v} type="button" onClick={() => setGender(v)}
+                    className={`px-4 py-2 rounded-full text-sm font-bold border transition-all active:scale-95 ${gender === v ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'}`}>
+                    {v}
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
+
+            {/* 年代 */}
+            <div className="space-y-1.5">
+              <div className="text-xs font-bold text-slate-500">年代</div>
+              <div className="flex flex-wrap gap-2">
+                {['20代', '30代', '40代', '50代以上', '指定なし'].map((v) => (
+                  <button key={v} type="button" onClick={() => setAge(v)}
+                    className={`px-4 py-2 rounded-full text-sm font-bold border transition-all active:scale-95 ${age === v ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'}`}>
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 文字数 */}
+            <div className="space-y-1.5">
+              <div className="text-xs font-bold text-slate-500">文字数</div>
+              <div className="flex flex-wrap gap-2">
+                {['200文字', '300文字', '500文字'].map((v) => (
+                  <button key={v} type="button" onClick={() => setLength(v)}
+                    className={`px-4 py-2 rounded-full text-sm font-bold border transition-all active:scale-95 ${length === v ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'}`}>
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* ハッシュタグ */}
+            <div className="space-y-1.5">
+              <div className="text-xs font-bold text-slate-500">ハッシュタグ</div>
+              <div className="flex flex-wrap gap-2">
+                {[['あり', 'ハッシュタグあり'], ['なし', 'ハッシュタグなし']].map(([v, label]) => (
+                  <button key={v} type="button" onClick={() => setHashtagMode(v as 'あり' | 'なし')}
+                    className={`px-4 py-2 rounded-full text-sm font-bold border transition-all active:scale-95 ${hashtagMode === v ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
           <SectionButton
             title="note・X設定"
