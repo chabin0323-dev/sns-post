@@ -10,7 +10,7 @@ import { buildAutoVideoFromScenes } from '../services/localVideoBuilder';
 type ChannelBlock = {
   labels: string[];
   text: string;
-  theme: 'light' | 'dark' | 'sky' | 'pink' | 'red' | 'amber' | 'violet' | 'emerald';
+  theme: 'light' | 'dark' | 'sky' | 'pink' | 'red' | 'amber' | 'violet' | 'emerald' | 'purple' | 'orange' | 'rose';
 };
 
 const normalizeText = (text: string) => text.trim();
@@ -19,9 +19,12 @@ const groupChannels = (post: GeneratedPost): ChannelBlock[] => {
   const source = [
     { label: 'note', text: post.content, theme: 'light' as const },
     { label: 'TikTok', text: post.capcutScript, theme: 'dark' as const },
+    { label: 'Instagram', text: post.instagramPost || post.capcutScript, theme: 'dark' as const },
+    { label: 'YouTube', text: post.youtubePost || post.capcutScript, theme: 'dark' as const },
     { label: 'X', text: post.xPost, theme: 'sky' as const },
-    { label: 'Instagram', text: post.instagramPost, theme: 'pink' as const },
-    { label: 'YouTube', text: post.youtubePost, theme: 'red' as const },
+    { label: 'Threads', text: post.threadsPost || '', theme: 'purple' as const },
+    { label: 'Twitch', text: post.twitchPost || '', theme: 'violet' as const },
+    { label: 'SHOWROOM', text: post.showroomPost || '', theme: 'rose' as const },
     { label: 'AIバズ台本', text: post.buzzScript?.fullScript || '', theme: 'amber' as const },
     {
       label: 'トレンド取得',
@@ -132,6 +135,24 @@ const themeClassMap = {
     text: 'text-slate-700 bg-white/70 border-emerald-100',
     button: 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200',
   },
+  purple: {
+    wrap: 'bg-purple-50 border-purple-100',
+    badge: 'bg-white text-purple-700 border-purple-100',
+    text: 'text-slate-700 bg-white/70 border-purple-100',
+    button: 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-200',
+  },
+  orange: {
+    wrap: 'bg-orange-50 border-orange-100',
+    badge: 'bg-white text-orange-700 border-orange-100',
+    text: 'text-slate-700 bg-white/70 border-orange-100',
+    button: 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-200',
+  },
+  rose: {
+    wrap: 'bg-rose-50 border-rose-100',
+    badge: 'bg-white text-rose-700 border-rose-100',
+    text: 'text-slate-700 bg-white/70 border-rose-100',
+    button: 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-200',
+  },
 };
 
 interface ResultCardProps {
@@ -167,31 +188,12 @@ export const ResultCard: React.FC<ResultCardProps> = ({
 
   const getPostConfig = (labels: string[]): { label: string; url: string; prefill: boolean } | null => {
     const l = labels[0];
-    if (l === 'X') return {
-      label: 'X に投稿',
-      url: 'https://x.com/intent/post?text=',
-      prefill: true,
-    };
-    if (l === 'note') return {
-      label: 'note に投稿',
-      url: 'https://note.com/notes/new',
-      prefill: false,
-    };
-    if (l === 'TikTok') return {
-      label: 'TikTok へ',
-      url: 'https://www.tiktok.com/upload',
-      prefill: false,
-    };
-    if (l === 'Instagram') return {
-      label: 'Instagram へ',
-      url: 'https://www.instagram.com/',
-      prefill: false,
-    };
-    if (l === 'YouTube') return {
-      label: 'YouTube Studio へ',
-      url: 'https://studio.youtube.com/',
-      prefill: false,
-    };
+    if (l === 'X') return { label: 'X に投稿', url: 'https://x.com/intent/post?text=', prefill: true };
+    if (l === 'note') return { label: 'note に投稿', url: 'https://note.com/notes/new', prefill: false };
+    if (l === 'TikTok') return { label: 'TikTok / Instagram / YouTube へ', url: 'https://www.tiktok.com/upload', prefill: false };
+    if (l === 'Threads') return { label: 'Threads に投稿', url: 'https://www.threads.net/intent/post?text=', prefill: true };
+    if (l === 'Twitch') return { label: 'Twitch Studio へ', url: 'https://dashboard.twitch.tv/', prefill: false };
+    if (l === 'SHOWROOM') return { label: 'SHOWROOM へ', url: 'https://www.showroom-live.com/', prefill: false };
     return null;
   };
 
@@ -282,7 +284,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
                   <button
                     onClick={() => handlePost(block.text, block.labels, copyKey + '_post')}
                     className="w-full py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 transition-all transform active:scale-[0.98] bg-white border-2 border-current hover:opacity-80"
-                    style={{ color: block.labels[0] === 'X' ? '#000' : block.labels[0] === 'TikTok' ? '#fe2c55' : block.labels[0] === 'Instagram' ? '#e1306c' : block.labels[0] === 'YouTube' ? '#ff0000' : '#41c9b4' }}
+                    style={{ color: block.labels[0] === 'X' ? '#000' : block.labels[0] === 'TikTok' ? '#fe2c55' : block.labels[0] === 'Threads' ? '#7c3aed' : block.labels[0] === 'Twitch' ? '#9146ff' : block.labels[0] === 'SHOWROOM' ? '#f43f5e' : '#41c9b4' }}
                   >
                     {postedKey === copyKey + '_post' ? (
                       <>✅ コピー済み・投稿画面を開きました</>

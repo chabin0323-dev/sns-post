@@ -487,10 +487,29 @@ ${sc.bridge}`;
     ? `${hook}\n\n${profile}の方に知ってほしいことがあります。\n\n${truth}\n\n今回のポイントはこの3つです。\n\n1. ${p1}\n   多くの方が逆のことをやっています。\n\n2. ${p2}\n   これを意識するだけで相手の反応が変わります。\n\n3. ${p3}\n   順番を変えるだけで結果は全然変わります。\n\n${cta}\n\nまずは今日、1つだけ試してみてください。\n\n${bridge}`
     : `${hook}\n\n${profile}の方に知ってほしいことがあります。\n\n${truth}\n\n今回のポイントはこの3つです。\n\n1. ${p1}\n2. ${p2}\n3. ${p3}\n\n${cta}\n\nまずは今日、1つだけ試してみてください。`;
 
+  // Threads: Xと同フォーマット、少し長め（500文字）
+  const threadsBase = length === '200文字'
+    ? `${sc.title}\n\n・${p1}\n・${p2}\n・${p3}\n\n${bridge}`
+    : length === '500文字'
+    ? `${sc.title}\n\n${truth}\n\n${profile}の方ほど、この3つを意識するだけで状況が変わります。\n\n・${p1}\n・${p2}\n・${p3}\n\n${cta}\n\nまずは今日1つだけ試してみてください。\n\n${bridge}`
+    : `${sc.title}\n\n${truth}\n\n・${p1}\n・${p2}\n・${p3}\n\n${cta}\n\n${bridge}`;
+
+  // Twitch: 配信告知スタイル
+  const twitchBase = length === '200文字'
+    ? `【本日の配信】${sc.title}\n\n${p1} / ${p2} / ${p3}\n\n一緒に考えましょう！\n\n${bridge}`
+    : length === '500文字'
+    ? `【本日の配信テーマ】${sc.title}\n\n${truth}\n\n今日はこの3つについて深掘りします。\n\n✅ ${p1}\n✅ ${p2}\n✅ ${p3}\n\n${profile}の方、ぜひ一緒に考えましょう！コメントも大歓迎です。\n\n${cta}\n\n${bridge}`
+    : `【本日の配信】${sc.title}\n\n${truth}\n\n✅ ${p1}\n✅ ${p2}\n✅ ${p3}\n\nコメントでご質問お待ちしています！\n\n${bridge}`;
+
+  // SHOWROOM: ライブ配信告知スタイル
+  const showroomBase = length === '200文字'
+    ? `【ルーム説明】${sc.title}\n\n${p1} / ${p2} / ${p3}\n\n遊びに来てください！\n\n${bridge}`
+    : length === '500文字'
+    ? `【本日のライブ】${sc.title}\n\n${truth}\n\n${profile}の方に知ってほしいことをお話しします。\n\n▶ ${p1}\n▶ ${p2}\n▶ ${p3}\n\n${cta}\n\nお気軽に遊びに来てください！コメントお待ちしています♪\n\n${bridge}`
+    : `【ライブ配信】${sc.title}\n\n${truth}\n\n▶ ${p1}\n▶ ${p2}\n▶ ${p3}\n\nぜひ遊びに来てください！\n\n${bridge}`;
+
   const noteBlock = buildTemplateBlock(templateText, templateUrl);
   const xBlock = buildTemplateBlock(templateText, templateUrl);
-  const instagramBlock = buildTemplateBlock(templateText, templateUrl);
-  const youtubeBlock = buildTemplateBlock(templateText, templateUrl);
   const tiktokBlock = buildTextOnlyTemplateBlock(tiktokTemplateText);
 
   const noteText = appendHashtags(
@@ -511,25 +530,26 @@ ${sc.bridge}`;
     hashtagMode
   );
 
-  const instagramText = appendHashtags(
-    insertBlock(instagramBase, instagramBlock, insertPosition),
-    instagramHashtags,
+  const threadsText = appendHashtags(
+    insertBlock(threadsBase, buildTemplateBlock(templateText, templateUrl), insertPosition),
+    xHashtags,
     hashtagMode
   );
 
-  const youtubeText = appendHashtags(
-    insertBlock(youtubeBase, youtubeBlock, insertPosition),
-    youtubeHashtags,
-    hashtagMode
-  );
+  const twitchText = insertBlock(twitchBase, buildTemplateBlock(templateText, templateUrl), insertPosition);
+
+  const showroomText = insertBlock(showroomBase, buildTemplateBlock(templateText, templateUrl), insertPosition);
 
   return {
     title: hook,
     content: noteText,
     capcutScript: tiktokText,
     xPost: xText,
-    instagramPost: instagramText,
-    youtubePost: youtubeText,
+    instagramPost: tiktokText,
+    youtubePost: tiktokText,
+    threadsPost: threadsText,
+    twitchPost: twitchText,
+    showroomPost: showroomText,
     hashtags:
       hashtagMode === 'あり'
         ? Array.from(
@@ -537,8 +557,6 @@ ${sc.bridge}`;
               ...noteHashtags,
               ...tikTokHashtags,
               ...xHashtags,
-              ...instagramHashtags,
-              ...youtubeHashtags,
             ])
           )
         : [],

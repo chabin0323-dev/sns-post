@@ -26,8 +26,6 @@ const isValidSavedPost = (data: any): data is GeneratedPost => {
     typeof data.content === 'string' &&
     typeof data.capcutScript === 'string' &&
     typeof data.xPost === 'string' &&
-    typeof data.instagramPost === 'string' &&
-    typeof data.youtubePost === 'string' &&
     Array.isArray(data.hashtags)
   );
 };

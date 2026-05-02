@@ -547,47 +547,6 @@ export const InputForm: React.FC<InputFormProps> = ({
               />
             </div>
 
-            <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
-              <input
-                type="checkbox"
-                checked={autoCtaEnabled}
-                onChange={(e) => setAutoCtaEnabled(e.target.checked)}
-              />
-              <span className="font-bold text-slate-700">
-                動画の最後に「続きはプロフィール / 無料占いはこちら」を自動挿入
-              </span>
-            </label>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <button
-                type="button"
-                onClick={() => handleSubmitWithMode('script')}
-                className="rounded-2xl bg-fuchsia-500 text-white font-black py-3 hover:bg-fuchsia-600 active:scale-95 transition-all"
-              >
-                📝 台本生成
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSubmitWithMode('video')}
-                className="rounded-2xl bg-cyan-500 text-white font-black py-3 hover:bg-cyan-600 active:scale-95 transition-all"
-              >
-                🎬 動画生成
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSubmitWithMode('post_data')}
-                className="rounded-2xl bg-emerald-500 text-white font-black py-3 hover:bg-emerald-600 active:scale-95 transition-all"
-              >
-                📊 投稿データ作成
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSubmitWithMode('full_auto')}
-                className="rounded-2xl bg-black text-white font-black py-3 hover:bg-gray-800 active:scale-95 transition-all"
-              >
-                ⚡ 全部自動生成
-              </button>
-            </div>
           </div>
         )}
 

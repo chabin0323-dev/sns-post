@@ -76,6 +76,9 @@ export interface GeneratedPost {
   xPost: string;
   instagramPost: string;
   youtubePost: string;
+  threadsPost: string;
+  twitchPost: string;
+  showroomPost: string;
 
   theme?: string;
   timestamp?: Date | string;
