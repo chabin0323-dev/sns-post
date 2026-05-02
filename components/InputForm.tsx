@@ -247,8 +247,50 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [openCommon, setOpenCommon] = useState(false);
   const [openTiktok, setOpenTiktok] = useState(false);
   const [openAutomation, setOpenAutomation] = useState(true);
+  const [openAccounts, setOpenAccounts] = useState(false);
   const [showThemeHistory, setShowThemeHistory] = useState(false);
   const [presetApplied, setPresetApplied] = useState(false);
+
+  const SNS_PLATFORMS = [
+    { key: 'note',      label: 'note',      url: 'https://note.com/login',                          color: '#41c9b4' },
+    { key: 'x',         label: 'X (Twitter)', url: 'https://twitter.com/login',                    color: '#000000' },
+    { key: 'tiktok',    label: 'TikTok',    url: 'https://www.tiktok.com/login',                    color: '#fe2c55' },
+    { key: 'instagram', label: 'Instagram', url: 'https://www.instagram.com/accounts/login/',        color: '#e1306c' },
+    { key: 'youtube',   label: 'YouTube',   url: 'https://accounts.google.com/',                    color: '#ff0000' },
+    { key: 'threads',   label: 'Threads',   url: 'https://www.threads.net/login',                   color: '#7c3aed' },
+    { key: 'twitch',    label: 'Twitch',    url: 'https://www.twitch.tv/login',                     color: '#9146ff' },
+    { key: 'showroom',  label: 'SHOWROOM',  url: 'https://www.showroom-live.com/login',              color: '#f43f5e' },
+  ] as const;
+
+  type SnsKey = typeof SNS_PLATFORMS[number]['key'];
+  type SnsAccounts = Record<SnsKey, { id: string; password: string }>;
+
+  const ACCOUNTS_STORAGE_KEY = 'sns_accounts_v1';
+
+  const loadAccounts = (): SnsAccounts => {
+    try {
+      const raw = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
+      if (raw) return JSON.parse(raw) as SnsAccounts;
+    } catch {}
+    return SNS_PLATFORMS.reduce((acc, p) => ({ ...acc, [p.key]: { id: '', password: '' } }), {} as SnsAccounts);
+  };
+
+  const [accounts, setAccounts] = useState<SnsAccounts>(loadAccounts);
+  const [showPasswords, setShowPasswords] = useState<Record<SnsKey, boolean>>(
+    SNS_PLATFORMS.reduce((acc, p) => ({ ...acc, [p.key]: false }), {} as Record<SnsKey, boolean>)
+  );
+
+  const updateAccount = (key: SnsKey, field: 'id' | 'password', value: string) => {
+    setAccounts(prev => {
+      const next = { ...prev, [key]: { ...prev[key], [field]: value } };
+      localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const toggleShowPassword = (key: SnsKey) => {
+    setShowPasswords(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const applyFortunePreset = () => {
     setGender(FORTUNE_PRESET.gender);
@@ -706,6 +748,64 @@ export const InputForm: React.FC<InputFormProps> = ({
             </div>
           )}
         </div>
+
+        {/* SNSアカウント管理 */}
+        <SectionButton
+          title="SNSアカウント管理"
+          subtitle="ID・PW保存／ログインページを開く"
+          isOpen={openAccounts}
+          onClick={() => setOpenAccounts(!openAccounts)}
+          className="bg-gradient-to-r from-slate-100 to-slate-200 border-slate-300"
+        />
+        {openAccounts && (
+          <div className="space-y-3">
+            {SNS_PLATFORMS.map((platform) => {
+              const acc = accounts[platform.key] ?? { id: '', password: '' };
+              const isVisible = showPasswords[platform.key];
+              return (
+                <div key={platform.key} className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-black text-sm" style={{ color: platform.color }}>{platform.label}</span>
+                    <button
+                      type="button"
+                      onClick={() => window.open(platform.url, '_blank')}
+                      className="text-xs font-bold px-3 py-1.5 rounded-full text-white active:scale-95 transition-all"
+                      style={{ background: platform.color }}
+                    >
+                      ログインページを開く →
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={acc.id}
+                    onChange={(e) => updateAccount(platform.key, 'id', e.target.value)}
+                    placeholder="メールアドレス / ID"
+                    className="w-full p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-400"
+                  />
+                  <div className="relative">
+                    <input
+                      type={isVisible ? 'text' : 'password'}
+                      value={acc.password}
+                      onChange={(e) => updateAccount(platform.key, 'password', e.target.value)}
+                      placeholder="パスワード"
+                      className="w-full p-3 pr-14 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => toggleShowPassword(platform.key)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 px-2 py-1 rounded-lg hover:bg-slate-100"
+                    >
+                      {isVisible ? '隠す' : '表示'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            <p className="text-xs text-slate-400 text-center px-2">
+              ※ ID・PWはこのブラウザのみに保存されます。入力後は自動保存されます。
+            </p>
+          </div>
+        )}
 
         <div className="space-y-6">
           {!isLoading ? (
