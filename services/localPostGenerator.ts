@@ -108,11 +108,7 @@ const insertBlockAdvanced = (
   return `${block}\n\n${baseText}\n\n${block}`;
 };
 
-const trimByLength = (text: string, length: string) => {
-  const max = length === '200文字' ? 220 : length === '500文字' ? 560 : 360;
-  if (text.length <= max) return text;
-  return `${text.slice(0, max)}...`;
-};
+const trimByLength = (text: string, _length: string) => text;
 
 const appendHashtags = (text: string, hashtags: string[], hashtagMode: 'あり' | 'なし') => {
   if (hashtagMode === 'なし') return text;
@@ -288,28 +284,66 @@ export const generateSNSPostContent = (
 
   const sc = getScenario(theme);
   const hook = sc.hook;
+  const p1 = sc.p1.replace(/\n/g, '');
+  const p2 = sc.p2.replace(/\n/g, '');
+  const p3 = sc.p3.replace(/\n/g, '');
+  const truth = sc.truth.replace(/\n/g, '');
+  const cta = sc.cta.replace(/\n/g, '');
+  const bridge = sc.bridge.replace(/\n/g, '');
 
-  const noteBase = trimByLength(`${hook}
+  // 200文字：フック＋3ポイントのみ、シンプル完結
+  const noteBase200 = `${hook}
 
-${sc.truth.replace(/\n/g, '')}
+①${p1}
+②${p2}
+③${p3}
 
-特に${profile}の方ほど、頑張っているのに結果が出ない悩みを抱えやすいです。
+${bridge}`;
 
-でも原因は能力や努力ではありません。意識すべきポイントがズレているだけです。
+  // 300文字：標準。真実＋3ポイント＋CTA
+  const noteBase300 = `${hook}
 
-うまくいく人が共通してやっていること、それはこの3つです。
+${truth}
 
-1. ${sc.p1.replace(/\n/g, '')}
-2. ${sc.p2.replace(/\n/g, '')}
-3. ${sc.p3.replace(/\n/g, '')}
+この3つだけ意識してみてください。
 
-逆に止まっている人は、答えを急ぎすぎて、感情で動いて、結果的に遠回りしています。
+1. ${p1}
+2. ${p2}
+3. ${p3}
 
-${sc.cta.replace(/\n/g, '')}
+${cta}
+
+${bridge}`;
+
+  // 500文字：詳細版。背景説明＋3ポイント解説＋深いCTA
+  const noteBase500 = `${hook}
+
+${truth}
+
+特に${profile}の方ほど、頑張っているのに結果が出ないと悩みやすいです。でも原因は能力ではなく、意識すべきポイントがズレているだけです。
+
+うまくいく人が共通してやっていることは、この3つです。
+
+1. ${p1}
+   → これを意識するだけで相手の反応が変わります。
+
+2. ${p2}
+   → 多くの人が逆のことをやってしまっています。
+
+3. ${p3}
+   → 順番を変えるだけで結果は変わります。
+
+逆にうまくいかない人は、答えを急ぎすぎて、感情だけで動いて、結果的に遠回りしています。
+
+${cta}
 
 まずは今日、一つだけ試してみてください。
 
-気になるあの人との相性が知りたい方は、プロフィールのリンクから無料で相性診断できます。`, length);
+${bridge}`;
+
+  const noteBase = length === '200文字' ? noteBase200
+    : length === '500文字' ? noteBase500
+    : noteBase300;
 
   const tiktokBase = `${hook}
 
@@ -365,47 +399,23 @@ ${sc.cta}
 
 ${sc.bridge}`;
 
-  const xBase = trimByLength(`${sc.title}
+  const xBase = length === '200文字'
+    ? `${sc.title}\n\n・${p1}\n・${p2}\n・${p3}\n\n${bridge}`
+    : length === '500文字'
+    ? `${sc.title}\n\n${truth}\n\n・${p1}\n  （多くの人が逆をやっています）\n・${p2}\n  （これだけで相手の反応が変わります）\n・${p3}\n  （順番が大事です）\n\n${cta}\n\n${bridge}`
+    : `${sc.title}\n\n${truth}\n\n・${p1}\n・${p2}\n・${p3}\n\n${cta}\n\n${bridge}`;
 
-${sc.truth.replace(/\n/g, '')}
+  const instagramBase = length === '200文字'
+    ? `${hook}\n\n①${p1}\n②${p2}\n③${p3}\n\n${bridge}`
+    : length === '500文字'
+    ? `${hook}\n\n${truth}\n\nこの3つを意識するだけで結果は変わります。\n\n①${p1}\n 多くの人が逆のことをしています。\n\n②${p2}\n これをやるだけで相手の見え方が変わります。\n\n③${p3}\n 順番を変えるだけで全然違います。\n\n${cta}\n\n${bridge}`
+    : `${hook}\n\n${truth}\n\nこの3つを意識するだけで結果は変わります。\n\n①${p1}\n②${p2}\n③${p3}\n\n${cta}\n\n${bridge}`;
 
-・${sc.p1.replace(/\n/g, '')}
-・${sc.p2.replace(/\n/g, '')}
-・${sc.p3.replace(/\n/g, '')}
-
-${sc.cta.replace(/\n/g, '')}
-
-${sc.bridge.replace(/\n/g, '')}`, length);
-
-  const instagramBase = trimByLength(`${hook}
-
-${sc.truth.replace(/\n/g, '')}
-
-この3つを意識するだけで結果は変わります。
-
-①${sc.p1.replace(/\n/g, '')}
-②${sc.p2.replace(/\n/g, '')}
-③${sc.p3.replace(/\n/g, '')}
-
-${sc.cta.replace(/\n/g, '')}
-
-${sc.bridge.replace(/\n/g, '')}`, length);
-
-  const youtubeBase = trimByLength(`${hook}
-
-${profile}の方に知ってほしいことがあります。
-
-${sc.truth.replace(/\n/g, '')}
-
-今回のポイントはこの3つです。
-
-1. ${sc.p1.replace(/\n/g, '')}
-2. ${sc.p2.replace(/\n/g, '')}
-3. ${sc.p3.replace(/\n/g, '')}
-
-${sc.cta.replace(/\n/g, '')}
-
-まずは今日、1つだけ試してみてください。`, length);
+  const youtubeBase = length === '200文字'
+    ? `${hook}\n\n${profile}の方へ。\n\n1. ${p1}\n2. ${p2}\n3. ${p3}\n\n${bridge}`
+    : length === '500文字'
+    ? `${hook}\n\n${profile}の方に知ってほしいことがあります。\n\n${truth}\n\n今回のポイントはこの3つです。\n\n1. ${p1}\n   多くの方が逆のことをやっています。\n\n2. ${p2}\n   これを意識するだけで相手の反応が変わります。\n\n3. ${p3}\n   順番を変えるだけで結果は全然変わります。\n\n${cta}\n\nまずは今日、1つだけ試してみてください。\n\n${bridge}`
+    : `${hook}\n\n${profile}の方に知ってほしいことがあります。\n\n${truth}\n\n今回のポイントはこの3つです。\n\n1. ${p1}\n2. ${p2}\n3. ${p3}\n\n${cta}\n\nまずは今日、1つだけ試してみてください。`;
 
   const noteBlock = buildTemplateBlock(templateText, templateUrl);
   const xBlock = buildTemplateBlock(templateText, templateUrl);
