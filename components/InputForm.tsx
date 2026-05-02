@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { LoadingState } from '../types';
 import {
   SparklesIcon,
@@ -11,6 +11,38 @@ import {
 } from '@heroicons/react/24/solid';
 
 export type GenerateMode = 'script' | 'video' | 'post_data' | 'full_auto';
+
+const SNS_PLATFORMS = [
+  { key: 'note',      label: 'note',        url: 'https://note.com/login',                        color: '#41c9b4' },
+  { key: 'x',         label: 'X (Twitter)', url: 'https://twitter.com/login',                     color: '#000000' },
+  { key: 'tiktok',    label: 'TikTok',      url: 'https://www.tiktok.com/login',                  color: '#fe2c55' },
+  { key: 'instagram', label: 'Instagram',   url: 'https://www.instagram.com/accounts/login/',     color: '#e1306c' },
+  { key: 'youtube',   label: 'YouTube',     url: 'https://accounts.google.com/',                  color: '#ff0000' },
+  { key: 'threads',   label: 'Threads',     url: 'https://www.threads.net/login',                 color: '#7c3aed' },
+  { key: 'twitch',    label: 'Twitch',      url: 'https://www.twitch.tv/login',                   color: '#9146ff' },
+  { key: 'showroom',  label: 'SHOWROOM',    url: 'https://www.showroom-live.com/login',            color: '#f43f5e' },
+] as const;
+
+type SnsKey = typeof SNS_PLATFORMS[number]['key'];
+type SnsAccounts = Record<SnsKey, { id: string; password: string }>;
+
+const ACCOUNTS_KEY = 'sns_accounts_v1';
+
+const defaultAccounts: SnsAccounts = SNS_PLATFORMS.reduce(
+  (acc, p) => ({ ...acc, [p.key]: { id: '', password: '' } }),
+  {} as SnsAccounts
+);
+
+const loadAccounts = (): SnsAccounts => {
+  try {
+    const raw = localStorage.getItem(ACCOUNTS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<SnsAccounts>;
+      return { ...defaultAccounts, ...parsed };
+    }
+  } catch {}
+  return defaultAccounts;
+};
 
 interface InputFormProps {
   onGenerate: (
@@ -251,41 +283,17 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [showThemeHistory, setShowThemeHistory] = useState(false);
   const [presetApplied, setPresetApplied] = useState(false);
 
-  const SNS_PLATFORMS = [
-    { key: 'note',      label: 'note',      url: 'https://note.com/login',                          color: '#41c9b4' },
-    { key: 'x',         label: 'X (Twitter)', url: 'https://twitter.com/login',                    color: '#000000' },
-    { key: 'tiktok',    label: 'TikTok',    url: 'https://www.tiktok.com/login',                    color: '#fe2c55' },
-    { key: 'instagram', label: 'Instagram', url: 'https://www.instagram.com/accounts/login/',        color: '#e1306c' },
-    { key: 'youtube',   label: 'YouTube',   url: 'https://accounts.google.com/',                    color: '#ff0000' },
-    { key: 'threads',   label: 'Threads',   url: 'https://www.threads.net/login',                   color: '#7c3aed' },
-    { key: 'twitch',    label: 'Twitch',    url: 'https://www.twitch.tv/login',                     color: '#9146ff' },
-    { key: 'showroom',  label: 'SHOWROOM',  url: 'https://www.showroom-live.com/login',              color: '#f43f5e' },
-  ] as const;
-
-  type SnsKey = typeof SNS_PLATFORMS[number]['key'];
-  type SnsAccounts = Record<SnsKey, { id: string; password: string }>;
-
-  const ACCOUNTS_STORAGE_KEY = 'sns_accounts_v1';
-
-  const loadAccounts = (): SnsAccounts => {
-    try {
-      const raw = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
-      if (raw) return JSON.parse(raw) as SnsAccounts;
-    } catch {}
-    return SNS_PLATFORMS.reduce((acc, p) => ({ ...acc, [p.key]: { id: '', password: '' } }), {} as SnsAccounts);
-  };
-
   const [accounts, setAccounts] = useState<SnsAccounts>(loadAccounts);
   const [showPasswords, setShowPasswords] = useState<Record<SnsKey, boolean>>(
     SNS_PLATFORMS.reduce((acc, p) => ({ ...acc, [p.key]: false }), {} as Record<SnsKey, boolean>)
   );
 
+  useEffect(() => {
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+  }, [accounts]);
+
   const updateAccount = (key: SnsKey, field: 'id' | 'password', value: string) => {
-    setAccounts(prev => {
-      const next = { ...prev, [key]: { ...prev[key], [field]: value } };
-      localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    setAccounts(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
   };
 
   const toggleShowPassword = (key: SnsKey) => {
