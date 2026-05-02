@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LoadingState } from '../types';
 import {
   SparklesIcon,
@@ -77,6 +77,22 @@ const defaultSettings: FormSettings = {
   scheduleNoon: '12:00',
   scheduleNight: '20:00',
 };
+
+const HISTORY_KEYS_CONST = {
+  theme: 'history_theme',
+  gender: 'history_gender',
+  age: 'history_age',
+  length: 'history_length',
+  templateText: 'history_template_text',
+  templateUrl: 'history_template_url',
+  tiktokTemplateText: 'history_tiktok_template_text',
+  insertPosition: 'history_insert_position',
+  tiktokInsertPosition: 'history_tiktok_insert_position',
+  hashtagMode: 'history_hashtag_mode',
+  scheduleMorning: 'history_schedule_morning',
+  scheduleNoon: 'history_schedule_noon',
+  scheduleNight: 'history_schedule_night',
+} as const;
 
 const loadSettings = (): FormSettings => {
   try {
@@ -385,24 +401,8 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [suggestionPage, setSuggestionPage] = useState(0);
   const [isSuggesting, setIsSuggesting] = useState(false);
 
-  const HISTORY_KEYS = useMemo(
-    () => ({
-      theme: 'history_theme',
-      gender: 'history_gender',
-      age: 'history_age',
-      length: 'history_length',
-      templateText: 'history_template_text',
-      templateUrl: 'history_template_url',
-      tiktokTemplateText: 'history_tiktok_template_text',
-      insertPosition: 'history_insert_position',
-      tiktokInsertPosition: 'history_tiktok_insert_position',
-      hashtagMode: 'history_hashtag_mode',
-      scheduleMorning: 'history_schedule_morning',
-      scheduleNoon: 'history_schedule_noon',
-      scheduleNight: 'history_schedule_night',
-    }),
-    []
-  );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const HISTORY_KEYS = HISTORY_KEYS_CONST;
 
   const [themeHistory, setThemeHistory] = useState<string[]>(() => readHistory(HISTORY_KEYS.theme));
   const [genderHistory, setGenderHistory] = useState<string[]>(() => readHistory(HISTORY_KEYS.gender));
@@ -415,17 +415,45 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [tiktokInsertPositionHistory, setTiktokInsertPositionHistory] = useState<string[]>(() => readHistory(HISTORY_KEYS.tiktokInsertPosition));
   const [hashtagModeHistory, setHashtagModeHistory] = useState<string[]>(() => readHistory(HISTORY_KEYS.hashtagMode));
 
+  // テキスト入力系：800ms デバウンスで保存
+  useEffect(() => {
+    if (!theme.trim()) return;
+    const t = setTimeout(() => setThemeHistory(addHistory(HISTORY_KEYS.theme, theme)), 800);
+    return () => clearTimeout(t);
+  }, [theme]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!templateText.trim()) return;
+    const t = setTimeout(() => setTemplateTextHistory(addHistory(HISTORY_KEYS.templateText, templateText)), 800);
+    return () => clearTimeout(t);
+  }, [templateText]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!templateUrl.trim()) return;
+    const t = setTimeout(() => setTemplateUrlHistory(addHistory(HISTORY_KEYS.templateUrl, templateUrl)), 800);
+    return () => clearTimeout(t);
+  }, [templateUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!tiktokTemplateText.trim()) return;
+    const t = setTimeout(() => setTiktokTemplateTextHistory(addHistory(HISTORY_KEYS.tiktokTemplateText, tiktokTemplateText)), 800);
+    return () => clearTimeout(t);
+  }, [tiktokTemplateText]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 選択系：即時保存
+  useEffect(() => { setGenderHistory(addHistory(HISTORY_KEYS.gender, gender)); }, [gender]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setAgeHistory(addHistory(HISTORY_KEYS.age, age)); }, [age]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setLengthHistory(addHistory(HISTORY_KEYS.length, length)); }, [length]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setHashtagModeHistory(addHistory(HISTORY_KEYS.hashtagMode, hashtagMode)); }, [hashtagMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setInsertPositionHistory(addHistory(HISTORY_KEYS.insertPosition, insertPosition)); }, [insertPosition]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setTiktokInsertPositionHistory(addHistory(HISTORY_KEYS.tiktokInsertPosition, tiktokInsertPosition)); }, [tiktokInsertPosition]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const saveAllHistories = () => {
+    // 生成時にも保存（デバウンスを待たずに即時確定）
     setThemeHistory(addHistory(HISTORY_KEYS.theme, theme));
-    setGenderHistory(addHistory(HISTORY_KEYS.gender, gender));
-    setAgeHistory(addHistory(HISTORY_KEYS.age, age));
-    setLengthHistory(addHistory(HISTORY_KEYS.length, length));
     setTemplateTextHistory(addHistory(HISTORY_KEYS.templateText, templateText));
     setTemplateUrlHistory(addHistory(HISTORY_KEYS.templateUrl, templateUrl));
     setTiktokTemplateTextHistory(addHistory(HISTORY_KEYS.tiktokTemplateText, tiktokTemplateText));
-    setInsertPositionHistory(addHistory(HISTORY_KEYS.insertPosition, insertPosition));
-    setTiktokInsertPositionHistory(addHistory(HISTORY_KEYS.tiktokInsertPosition, tiktokInsertPosition));
-    setHashtagModeHistory(addHistory(HISTORY_KEYS.hashtagMode, hashtagMode));
     addHistory(HISTORY_KEYS.scheduleMorning, scheduleMorning);
     addHistory(HISTORY_KEYS.scheduleNoon, scheduleNoon);
     addHistory(HISTORY_KEYS.scheduleNight, scheduleNight);
