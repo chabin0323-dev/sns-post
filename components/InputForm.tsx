@@ -226,13 +226,13 @@ export const InputForm: React.FC<InputFormProps> = ({
   const isLoading = loadingState === LoadingState.LOADING;
 
   const [theme, setTheme] = useState('');
-  const [gender, setGender] = useState('男性');
+  const [gender, setGender] = useState('女性');
   const [age, setAge] = useState('30代');
   const [length, setLength] = useState('300文字');
 
   const [templateText, setTemplateText] = useState('詳しくはこちら👇');
-  const [templateUrl, setTemplateUrl] = useState('');
-  const [tiktokTemplateText, setTiktokTemplateText] = useState('続きはプロフィールから👇');
+  const [templateUrl, setTemplateUrl] = useState('https://nexa-lovelab.com');
+  const [tiktokTemplateText, setTiktokTemplateText] = useState('プロフィールから無料で占えます👇');
 
   const [insertPosition, setInsertPosition] = useState<'start' | 'end'>('end');
   const [tiktokInsertPosition, setTiktokInsertPosition] = useState<'start' | 'end' | 'both'>('start');
