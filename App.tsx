@@ -203,12 +203,7 @@ const App: React.FC = () => {
       const buzzAnalysis = (mode === 'full_auto')
         ? analyzeBuzzFromHistory(theme, historyForAnalysis) : undefined;
 
-      // 台本モードはTikTok台本のみ（他プラットフォームを空にしない）
-      const modeBase = mode === 'script'
-        ? { ...base, xPost: '', instagramPost: '', youtubePost: '', content: '' }
-        : mode === 'video'
-        ? { ...base, xPost: '', instagramPost: '', youtubePost: '', content: '' }
-        : base;
+      const modeBase = base;
 
       const result: GeneratedPost = {
         ...modeBase,
