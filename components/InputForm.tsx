@@ -44,6 +44,51 @@ const loadAccounts = (): SnsAccounts => {
   return defaultAccounts;
 };
 
+const SETTINGS_KEY = 'sns_form_settings_v1';
+
+type FormSettings = {
+  theme: string;
+  gender: string;
+  age: string;
+  length: string;
+  templateText: string;
+  templateUrl: string;
+  tiktokTemplateText: string;
+  insertPosition: 'start' | 'end';
+  tiktokInsertPosition: 'start' | 'end' | 'both';
+  hashtagMode: 'あり' | 'なし';
+  scheduleMorning: string;
+  scheduleNoon: string;
+  scheduleNight: string;
+};
+
+const defaultSettings: FormSettings = {
+  theme: '',
+  gender: '女性',
+  age: '30代',
+  length: '300文字',
+  templateText: '詳しくはこちら👇',
+  templateUrl: 'https://nexa-lovelab.com',
+  tiktokTemplateText: 'プロフィールから無料で占えます👇',
+  insertPosition: 'end',
+  tiktokInsertPosition: 'start',
+  hashtagMode: 'あり',
+  scheduleMorning: '08:00',
+  scheduleNoon: '12:00',
+  scheduleNight: '20:00',
+};
+
+const loadSettings = (): FormSettings => {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<FormSettings>;
+      return { ...defaultSettings, ...parsed };
+    }
+  } catch {}
+  return defaultSettings;
+};
+
 interface InputFormProps {
   onGenerate: (
     theme: string,
@@ -257,22 +302,24 @@ export const InputForm: React.FC<InputFormProps> = ({
 }) => {
   const isLoading = loadingState === LoadingState.LOADING;
 
-  const [theme, setTheme] = useState('');
-  const [gender, setGender] = useState('女性');
-  const [age, setAge] = useState('30代');
-  const [length, setLength] = useState('300文字');
+  const [savedSettings] = useState<FormSettings>(loadSettings);
 
-  const [templateText, setTemplateText] = useState('詳しくはこちら👇');
-  const [templateUrl, setTemplateUrl] = useState('https://nexa-lovelab.com');
-  const [tiktokTemplateText, setTiktokTemplateText] = useState('プロフィールから無料で占えます👇');
+  const [theme, setTheme] = useState(savedSettings.theme);
+  const [gender, setGender] = useState(savedSettings.gender);
+  const [age, setAge] = useState(savedSettings.age);
+  const [length, setLength] = useState(savedSettings.length);
 
-  const [insertPosition, setInsertPosition] = useState<'start' | 'end'>('end');
-  const [tiktokInsertPosition, setTiktokInsertPosition] = useState<'start' | 'end' | 'both'>('start');
-  const [hashtagMode, setHashtagMode] = useState<'あり' | 'なし'>('あり');
+  const [templateText, setTemplateText] = useState(savedSettings.templateText);
+  const [templateUrl, setTemplateUrl] = useState(savedSettings.templateUrl);
+  const [tiktokTemplateText, setTiktokTemplateText] = useState(savedSettings.tiktokTemplateText);
 
-  const [scheduleMorning, setScheduleMorning] = useState('08:00');
-  const [scheduleNoon, setScheduleNoon] = useState('12:00');
-  const [scheduleNight, setScheduleNight] = useState('20:00');
+  const [insertPosition, setInsertPosition] = useState<'start' | 'end'>(savedSettings.insertPosition);
+  const [tiktokInsertPosition, setTiktokInsertPosition] = useState<'start' | 'end' | 'both'>(savedSettings.tiktokInsertPosition);
+  const [hashtagMode, setHashtagMode] = useState<'あり' | 'なし'>( savedSettings.hashtagMode);
+
+  const [scheduleMorning, setScheduleMorning] = useState(savedSettings.scheduleMorning);
+  const [scheduleNoon, setScheduleNoon] = useState(savedSettings.scheduleNoon);
+  const [scheduleNight, setScheduleNight] = useState(savedSettings.scheduleNight);
   const [autoCtaEnabled, setAutoCtaEnabled] = useState(true);
 
   const [openBasic, setOpenBasic] = useState(false);
@@ -291,6 +338,21 @@ export const InputForm: React.FC<InputFormProps> = ({
   useEffect(() => {
     localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
   }, [accounts]);
+
+  useEffect(() => {
+    const settings: FormSettings = {
+      theme, gender, age, length,
+      templateText, templateUrl, tiktokTemplateText,
+      insertPosition, tiktokInsertPosition, hashtagMode,
+      scheduleMorning, scheduleNoon, scheduleNight,
+    };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  }, [
+    theme, gender, age, length,
+    templateText, templateUrl, tiktokTemplateText,
+    insertPosition, tiktokInsertPosition, hashtagMode,
+    scheduleMorning, scheduleNoon, scheduleNight,
+  ]);
 
   const updateAccount = (key: SnsKey, field: 'id' | 'password', value: string) => {
     setAccounts(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
