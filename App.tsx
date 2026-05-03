@@ -130,21 +130,31 @@ const App: React.FC = () => {
     safeSaveToLocalStorage(GENERATED_HISTORY_KEY, lightHistory);
   }, [generatedHistory]);
 
-  // タブを閉じる直前に同期保存
+  // タブを閉じる・切り替える直前に同期保存
   useEffect(() => {
-    const save = (e: BeforeUnloadEvent) => {
-      if (loadingState === LoadingState.LOADING) {
-        e.preventDefault();
-        e.returnValue = '入力内容が消去されますがよろしいですか？';
-      }
+    const persist = () => {
       if (currentPostRef.current) {
         safeSaveToLocalStorage(STORAGE_KEY, stripHeavyVideoData(currentPostRef.current));
       }
       const lightHistory = generatedHistoryRef.current.map(stripHeavyVideoData);
       safeSaveToLocalStorage(GENERATED_HISTORY_KEY, lightHistory);
     };
+    const save = (e: BeforeUnloadEvent) => {
+      if (loadingState === LoadingState.LOADING) {
+        e.preventDefault();
+        e.returnValue = '入力内容が消去されますがよろしいですか？';
+      }
+      persist();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') persist();
+    };
     window.addEventListener('beforeunload', save);
-    return () => window.removeEventListener('beforeunload', save);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('beforeunload', save);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [loadingState]);
 
   const startProgress = () => {

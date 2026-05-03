@@ -367,14 +367,23 @@ export const InputForm: React.FC<InputFormProps> = ({
   const accountsRef = useRef(accounts);
   accountsRef.current = accounts;
 
-  // タブを閉じる直前に同期保存（確実な永続化）
+  // タブを閉じる・切り替える直前に同期保存
   useEffect(() => {
     const save = () => {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settingsRef.current));
       localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accountsRef.current));
     };
+    // beforeunload: タブを閉じる・ページ遷移時
     window.addEventListener('beforeunload', save);
-    return () => window.removeEventListener('beforeunload', save);
+    // visibilitychange: タブ切り替え・最小化時（beforeunloadより確実）
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') save();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('beforeunload', save);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   // 変更時にも随時保存（beforeunload が呼ばれない場合のバックアップ）
