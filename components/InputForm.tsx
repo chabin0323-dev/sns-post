@@ -318,24 +318,23 @@ export const InputForm: React.FC<InputFormProps> = ({
 }) => {
   const isLoading = loadingState === LoadingState.LOADING;
 
-  const [savedSettings] = useState<FormSettings>(loadSettings);
+  const _s = loadSettings();
+  const [theme, setTheme] = useState<string>(_s.theme);
+  const [gender, setGender] = useState<string>(_s.gender);
+  const [age, setAge] = useState<string>(_s.age);
+  const [length, setLength] = useState<string>(_s.length);
 
-  const [theme, setTheme] = useState(savedSettings.theme);
-  const [gender, setGender] = useState(savedSettings.gender);
-  const [age, setAge] = useState(savedSettings.age);
-  const [length, setLength] = useState(savedSettings.length);
+  const [templateText, setTemplateText] = useState<string>(_s.templateText);
+  const [templateUrl, setTemplateUrl] = useState<string>(_s.templateUrl);
+  const [tiktokTemplateText, setTiktokTemplateText] = useState<string>(_s.tiktokTemplateText);
 
-  const [templateText, setTemplateText] = useState(savedSettings.templateText);
-  const [templateUrl, setTemplateUrl] = useState(savedSettings.templateUrl);
-  const [tiktokTemplateText, setTiktokTemplateText] = useState(savedSettings.tiktokTemplateText);
+  const [insertPosition, setInsertPosition] = useState<'start' | 'end'>(_s.insertPosition);
+  const [tiktokInsertPosition, setTiktokInsertPosition] = useState<'start' | 'end' | 'both'>(_s.tiktokInsertPosition);
+  const [hashtagMode, setHashtagMode] = useState<'あり' | 'なし'>(_s.hashtagMode);
 
-  const [insertPosition, setInsertPosition] = useState<'start' | 'end'>(savedSettings.insertPosition);
-  const [tiktokInsertPosition, setTiktokInsertPosition] = useState<'start' | 'end' | 'both'>(savedSettings.tiktokInsertPosition);
-  const [hashtagMode, setHashtagMode] = useState<'あり' | 'なし'>( savedSettings.hashtagMode);
-
-  const [scheduleMorning, setScheduleMorning] = useState(savedSettings.scheduleMorning);
-  const [scheduleNoon, setScheduleNoon] = useState(savedSettings.scheduleNoon);
-  const [scheduleNight, setScheduleNight] = useState(savedSettings.scheduleNight);
+  const [scheduleMorning, setScheduleMorning] = useState<string>(_s.scheduleMorning);
+  const [scheduleNoon, setScheduleNoon] = useState<string>(_s.scheduleNoon);
+  const [scheduleNight, setScheduleNight] = useState<string>(_s.scheduleNight);
   const [autoCtaEnabled, setAutoCtaEnabled] = useState(true);
 
   const [openBasic, setOpenBasic] = useState(false);

@@ -34,6 +34,11 @@ const sanitizePost = (data: any): GeneratedPost | null => {
   if (!isValidSavedPost(data)) return null;
   return {
     ...data,
+    threadsPost: typeof data.threadsPost === 'string' ? data.threadsPost : '',
+    twitchPost: typeof data.twitchPost === 'string' ? data.twitchPost : '',
+    showroomPost: typeof data.showroomPost === 'string' ? data.showroomPost : '',
+    instagramPost: typeof data.instagramPost === 'string' ? data.instagramPost : '',
+    youtubePost: typeof data.youtubePost === 'string' ? data.youtubePost : '',
     timestamp: data.timestamp ?? new Date().toISOString(),
     autoVideo: data.autoVideo
       ? {
