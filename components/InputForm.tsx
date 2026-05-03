@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LoadingState } from '../types';
 import {
   SparklesIcon,
@@ -350,24 +350,42 @@ export const InputForm: React.FC<InputFormProps> = ({
     SNS_PLATFORMS.reduce((acc, p) => ({ ...acc, [p.key]: false }), {} as Record<SnsKey, boolean>)
   );
 
-  useEffect(() => {
-    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
-  }, [accounts]);
-
-  useEffect(() => {
-    const settings: FormSettings = {
-      theme, gender, age, length,
-      templateText, templateUrl, tiktokTemplateText,
-      insertPosition, tiktokInsertPosition, hashtagMode,
-      scheduleMorning, scheduleNoon, scheduleNight,
-    };
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  }, [
+  // 毎レンダリングで最新値を ref に保持（beforeunload で同期保存するため）
+  const settingsRef = useRef<FormSettings>({
     theme, gender, age, length,
     templateText, templateUrl, tiktokTemplateText,
     insertPosition, tiktokInsertPosition, hashtagMode,
     scheduleMorning, scheduleNoon, scheduleNight,
-  ]);
+  });
+  settingsRef.current = {
+    theme, gender, age, length,
+    templateText, templateUrl, tiktokTemplateText,
+    insertPosition, tiktokInsertPosition, hashtagMode,
+    scheduleMorning, scheduleNoon, scheduleNight,
+  };
+
+  const accountsRef = useRef(accounts);
+  accountsRef.current = accounts;
+
+  // タブを閉じる直前に同期保存（確実な永続化）
+  useEffect(() => {
+    const save = () => {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settingsRef.current));
+      localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accountsRef.current));
+    };
+    window.addEventListener('beforeunload', save);
+    return () => window.removeEventListener('beforeunload', save);
+  }, []);
+
+  // 変更時にも随時保存（beforeunload が呼ばれない場合のバックアップ）
+  useEffect(() => {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settingsRef.current));
+  }, [theme, gender, age, length, templateText, templateUrl, tiktokTemplateText,
+      insertPosition, tiktokInsertPosition, hashtagMode, scheduleMorning, scheduleNoon, scheduleNight]);
+
+  useEffect(() => {
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+  }, [accounts]);
 
   const updateAccount = (key: SnsKey, field: 'id' | 'password', value: string) => {
     setAccounts(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));

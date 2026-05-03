@@ -112,15 +112,17 @@ const App: React.FC = () => {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const progressIntervalRef = useRef<number | null>(null);
 
+  // 最新値を ref で追跡（beforeunload で同期保存するため）
+  const currentPostRef = useRef(currentPost);
+  currentPostRef.current = currentPost;
+  const generatedHistoryRef = useRef(generatedHistory);
+  generatedHistoryRef.current = generatedHistory;
+
   useEffect(() => {
     if (!currentPost) return;
-
     const lightPost = stripHeavyVideoData(currentPost);
     const saved = safeSaveToLocalStorage(STORAGE_KEY, lightPost);
-
-    if (saved) {
-      setLastSaved(new Date());
-    }
+    if (saved) setLastSaved(new Date());
   }, [currentPost]);
 
   useEffect(() => {
@@ -128,16 +130,21 @@ const App: React.FC = () => {
     safeSaveToLocalStorage(GENERATED_HISTORY_KEY, lightHistory);
   }, [generatedHistory]);
 
+  // タブを閉じる直前に同期保存
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    const save = (e: BeforeUnloadEvent) => {
       if (loadingState === LoadingState.LOADING) {
         e.preventDefault();
         e.returnValue = '入力内容が消去されますがよろしいですか？';
       }
+      if (currentPostRef.current) {
+        safeSaveToLocalStorage(STORAGE_KEY, stripHeavyVideoData(currentPostRef.current));
+      }
+      const lightHistory = generatedHistoryRef.current.map(stripHeavyVideoData);
+      safeSaveToLocalStorage(GENERATED_HISTORY_KEY, lightHistory);
     };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('beforeunload', save);
+    return () => window.removeEventListener('beforeunload', save);
   }, [loadingState]);
 
   const startProgress = () => {
