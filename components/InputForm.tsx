@@ -367,15 +367,26 @@ export const InputForm: React.FC<InputFormProps> = ({
   const accountsRef = useRef(accounts);
   accountsRef.current = accounts;
 
-  // タブを閉じる・切り替える直前に同期保存
+  // タブを閉じる・切り替える直前に同期保存（設定＋履歴すべて）
   useEffect(() => {
     const save = () => {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settingsRef.current));
+      const s = settingsRef.current;
+      // フォーム設定
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
       localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accountsRef.current));
+      // 履歴（デバウンスのキャンセルを防ぐため直接保存）
+      if (s.theme) addHistory(HISTORY_KEYS_CONST.theme, s.theme);
+      if (s.templateText) addHistory(HISTORY_KEYS_CONST.templateText, s.templateText);
+      if (s.templateUrl) addHistory(HISTORY_KEYS_CONST.templateUrl, s.templateUrl);
+      if (s.tiktokTemplateText) addHistory(HISTORY_KEYS_CONST.tiktokTemplateText, s.tiktokTemplateText);
+      addHistory(HISTORY_KEYS_CONST.gender, s.gender);
+      addHistory(HISTORY_KEYS_CONST.age, s.age);
+      addHistory(HISTORY_KEYS_CONST.length, s.length);
+      addHistory(HISTORY_KEYS_CONST.hashtagMode, s.hashtagMode);
+      addHistory(HISTORY_KEYS_CONST.insertPosition, s.insertPosition);
+      addHistory(HISTORY_KEYS_CONST.tiktokInsertPosition, s.tiktokInsertPosition);
     };
-    // beforeunload: タブを閉じる・ページ遷移時
     window.addEventListener('beforeunload', save);
-    // visibilitychange: タブ切り替え・最小化時（beforeunloadより確実）
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') save();
     };
