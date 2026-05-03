@@ -518,11 +518,14 @@ ${sc.bridge}`;
     hashtagMode
   );
 
-  const tiktokText = appendHashtags(
-    insertBlockAdvanced(tiktokBase, tiktokBlock, tiktokInsertPosition),
-    tikTokHashtags,
-    hashtagMode
-  );
+  // 記事本文（ハッシュタグなし）
+  const tiktokBody = insertBlockAdvanced(tiktokBase, tiktokBlock, tiktokInsertPosition);
+  // ハッシュタグのみ（別枠コピー用）
+  const tiktokHashtagText = hashtagMode === 'あり' && tikTokHashtags.length > 0
+    ? tikTokHashtags.join(' ')
+    : '';
+  // 後方互換用（本文＋ハッシュタグ）
+  const tiktokText = tiktokHashtagText ? `${tiktokBody}\n\n${tiktokHashtagText}` : tiktokBody;
 
   const xText = appendHashtags(
     insertBlock(xBase, xBlock, insertPosition),
@@ -543,10 +546,11 @@ ${sc.bridge}`;
   return {
     title: hook,
     content: noteText,
-    capcutScript: tiktokText,
+    capcutScript: tiktokBody,
+    tiktokHashtagText,
     xPost: xText,
-    instagramPost: tiktokText,
-    youtubePost: tiktokText,
+    instagramPost: tiktokBody,
+    youtubePost: tiktokBody,
     threadsPost: threadsText,
     twitchPost: twitchText,
     showroomPost: showroomText,

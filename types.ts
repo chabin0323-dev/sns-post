@@ -73,6 +73,7 @@ export interface GeneratedPost {
   content: string;
   hashtags: string[];
   capcutScript: string;
+  tiktokHashtagText?: string;
   xPost: string;
   instagramPost: string;
   youtubePost: string;

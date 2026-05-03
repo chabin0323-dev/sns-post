@@ -262,6 +262,26 @@ export const ResultCard: React.FC<ResultCardProps> = ({
                 {block.text}
               </div>
 
+              {/* TikTok/Instagram/YouTube 専用：ハッシュタグ別枠 */}
+              {block.labels[0] === 'TikTok' && post.tiktokHashtagText && (
+                <div className="mb-4 rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
+                  <div className="text-xs font-black text-cyan-600 mb-2">ハッシュタグ（別枠）</div>
+                  <div className="text-sm text-slate-700 font-medium whitespace-pre-wrap mb-3">
+                    {post.tiktokHashtagText}
+                  </div>
+                  <button
+                    onClick={() => handleCopy(post.tiktokHashtagText!, copyKey + '_hashtag')}
+                    className="w-full py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white transition-all active:scale-[0.98]"
+                  >
+                    {copiedKey === copyKey + '_hashtag' ? (
+                      <><CheckIcon className="w-4 h-4" />ハッシュタグ コピー完了！</>
+                    ) : (
+                      <><ClipboardDocumentIcon className="w-4 h-4" />ハッシュタグをコピー</>
+                    )}
+                  </button>
+                </div>
+              )}
+
               <div className="flex flex-col gap-3">
                 <button
                   onClick={() => handleCopy(block.text, copyKey)}
