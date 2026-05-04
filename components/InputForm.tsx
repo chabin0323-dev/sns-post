@@ -484,7 +484,9 @@ export const InputForm: React.FC<InputFormProps> = ({
 
   const makeTargetUrl = (data: unknown): string => {
     const b64 = toSafeB64(data);
-    return `${window.location.origin}${window.location.pathname}?s=${b64}`;
+    // タイムスタンプを付けてSafariのキャッシュを無効化（毎回異なるURL）
+    const t = Date.now();
+    return `${window.location.origin}${window.location.pathname}?s=${b64}&t=${t}`;
   };
 
   const generateQr = useCallback(async (data: unknown): Promise<string> => {
