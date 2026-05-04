@@ -119,8 +119,13 @@ const importSettingsFromUrl = (): string | null => {
       }
       if (parsed.accounts && typeof parsed.accounts === 'object') {
         const existing = localStorage.getItem('sns_accounts_v1');
-        const base = existing ? JSON.parse(existing) : {};
-        localStorage.setItem('sns_accounts_v1', JSON.stringify({ ...base, ...parsed.accounts }));
+        const base: Record<string, Record<string, string>> = existing ? JSON.parse(existing) : {};
+        // Deep merge: プラットフォームごとに id/password/memo を個別マージ（上書きしない）
+        const merged = { ...base };
+        for (const [key, val] of Object.entries(parsed.accounts as Record<string, Record<string, string>>)) {
+          merged[key] = { ...(base[key] || {}), ...val };
+        }
+        localStorage.setItem('sns_accounts_v1', JSON.stringify(merged));
         imported += imported ? '・アカウント' : 'アカウント';
       }
       if (!parsed.settings && !parsed.accounts) {

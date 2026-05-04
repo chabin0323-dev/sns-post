@@ -134,8 +134,6 @@ const loadSettings = (): FormSettings => {
   return defaultSettings;
 };
 
-// モジュールロード時に1回だけ実行（importSettingsFromUrl後に呼ばれるため確実に最新値を取得）
-const initialSettings: FormSettings = loadSettings();
 
 interface InputFormProps {
   onGenerate: (
@@ -357,30 +355,26 @@ export const InputForm: React.FC<InputFormProps> = ({
 }) => {
   const isLoading = loadingState === LoadingState.LOADING;
 
-  // モジュールロード時に1回だけ読み込む（コンポーネント外で定義）
-  const [theme, setTheme] = useState<string>(initialSettings.theme);
-  const [gender, setGender] = useState<string>(initialSettings.gender);
-  const [age, setAge] = useState<string>(initialSettings.age);
-  const [length, setLength] = useState<string>(initialSettings.length);
-
-  const [templateText, setTemplateText] = useState<string>(initialSettings.templateText);
-  const [templateUrl, setTemplateUrl] = useState<string>(initialSettings.templateUrl);
-  const [tiktokTemplateText, setTiktokTemplateText] = useState<string>(initialSettings.tiktokTemplateText);
-
-  const [insertPosition, setInsertPosition] = useState<'start' | 'end'>(initialSettings.insertPosition);
-  const [tiktokInsertPosition, setTiktokInsertPosition] = useState<'start' | 'end' | 'both'>(initialSettings.tiktokInsertPosition);
-  const [hashtagMode, setHashtagMode] = useState<'あり' | 'なし'>(initialSettings.hashtagMode);
-
-  const [scheduleMorning, setScheduleMorning] = useState<string>(initialSettings.scheduleMorning);
-  const [scheduleNoon, setScheduleNoon] = useState<string>(initialSettings.scheduleNoon);
-  const [scheduleNight, setScheduleNight] = useState<string>(initialSettings.scheduleNight);
+  // lazy initializer: Reactの最初のrender時（importSettingsFromUrl実行後）に読み込む
+  const [theme, setTheme] = useState<string>(() => loadSettings().theme);
+  const [gender, setGender] = useState<string>(() => loadSettings().gender);
+  const [age, setAge] = useState<string>(() => loadSettings().age);
+  const [length, setLength] = useState<string>(() => loadSettings().length);
+  const [templateText, setTemplateText] = useState<string>(() => loadSettings().templateText);
+  const [templateUrl, setTemplateUrl] = useState<string>(() => loadSettings().templateUrl);
+  const [tiktokTemplateText, setTiktokTemplateText] = useState<string>(() => loadSettings().tiktokTemplateText);
+  const [insertPosition, setInsertPosition] = useState<'start' | 'end'>(() => loadSettings().insertPosition);
+  const [tiktokInsertPosition, setTiktokInsertPosition] = useState<'start' | 'end' | 'both'>(() => loadSettings().tiktokInsertPosition);
+  const [hashtagMode, setHashtagMode] = useState<'あり' | 'なし'>(() => loadSettings().hashtagMode);
+  const [scheduleMorning, setScheduleMorning] = useState<string>(() => loadSettings().scheduleMorning);
+  const [scheduleNoon, setScheduleNoon] = useState<string>(() => loadSettings().scheduleNoon);
+  const [scheduleNight, setScheduleNight] = useState<string>(() => loadSettings().scheduleNight);
   const [autoCtaEnabled, setAutoCtaEnabled] = useState(true);
-
-  const [xPhrase, setXPhrase] = useState<string>(initialSettings.xPhrase);
-  const [xUrl, setXUrl] = useState<string>(initialSettings.xUrl);
-  const [threadsPhrase, setThreadsPhrase] = useState<string>(initialSettings.threadsPhrase);
-  const [threadsUrl, setThreadsUrl] = useState<string>(initialSettings.threadsUrl);
-  const [igYtPhrase, setIgYtPhrase] = useState<string>(initialSettings.igYtPhrase);
+  const [xPhrase, setXPhrase] = useState<string>(() => loadSettings().xPhrase);
+  const [xUrl, setXUrl] = useState<string>(() => loadSettings().xUrl);
+  const [threadsPhrase, setThreadsPhrase] = useState<string>(() => loadSettings().threadsPhrase);
+  const [threadsUrl, setThreadsUrl] = useState<string>(() => loadSettings().threadsUrl);
+  const [igYtPhrase, setIgYtPhrase] = useState<string>(() => loadSettings().igYtPhrase);
 
   const [openBasic, setOpenBasic] = useState(false);
   const [openCommon, setOpenCommon] = useState(false);
