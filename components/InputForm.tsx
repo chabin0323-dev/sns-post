@@ -13,7 +13,7 @@ import {
 export type GenerateMode = 'script' | 'video' | 'post_data' | 'full_auto';
 
 const SNS_PLATFORMS = [
-  { key: 'note',      label: 'note',        url: 'https://note.com/',                              appScheme: null,               color: '#41c9b4' },
+  { key: 'note',      label: 'note',        url: 'https://note.com/',                              appScheme: 'https://note.com/', color: '#41c9b4' },
   { key: 'x',         label: 'X (Twitter)', url: 'https://twitter.com/',                           appScheme: 'twitter://timeline', color: '#000000' },
   { key: 'tiktok',    label: 'TikTok',      url: 'https://www.tiktok.com/',                        appScheme: 'snssdk1128://',     color: '#fe2c55' },
   { key: 'instagram', label: 'Instagram',   url: 'https://www.instagram.com/',                     appScheme: 'instagram://app',   color: '#e1306c' },
@@ -413,18 +413,20 @@ export const InputForm: React.FC<InputFormProps> = ({
   const accountsRef = useRef(accounts);
   accountsRef.current = accounts;
 
-  // タブを閉じる・切り替える直前に同期保存（設定＋履歴すべて）
+  // タブを閉じる・切り替える直前に同期保存
+  // settingsRef は毎レンダリングで更新されているため確実に最新値を持つ
   useEffect(() => {
     const save = () => {
+      // settingsRef は render 時に常に最新値で更新されているので確実
       const s = settingsRef.current;
-      // フォーム設定
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
       localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accountsRef.current));
-      // 履歴（デバウンスのキャンセルを防ぐため直接保存）
+      // 履歴を直接保存（デバウンスタイマーがキャンセルされる前に）
       if (s.theme) addHistory(HISTORY_KEYS_CONST.theme, s.theme);
       if (s.templateText) addHistory(HISTORY_KEYS_CONST.templateText, s.templateText);
       if (s.templateUrl) addHistory(HISTORY_KEYS_CONST.templateUrl, s.templateUrl);
       addHistory(HISTORY_KEYS_CONST.tiktokTemplateText, s.tiktokTemplateText || '（削除）');
+      if (s.xPhrase) addHistory(HISTORY_KEYS_CONST.theme, s.xPhrase); // X設定も履歴に保存
       addHistory(HISTORY_KEYS_CONST.gender, s.gender);
       addHistory(HISTORY_KEYS_CONST.age, s.age);
       addHistory(HISTORY_KEYS_CONST.length, s.length);
@@ -443,12 +445,31 @@ export const InputForm: React.FC<InputFormProps> = ({
     };
   }, []);
 
-  // 設定の変更を検知してバックアップ保存
+  // 設定の変更を検知して即座に保存（settingsRef を介さず state から直接組み立てる）
   useEffect(() => {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settingsRef.current));
+    const s: FormSettings = {
+      theme, gender, age, length,
+      templateText, templateUrl, tiktokTemplateText,
+      insertPosition, tiktokInsertPosition, hashtagMode,
+      scheduleMorning, scheduleNoon, scheduleNight,
+      xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
+    };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
   }, [theme, gender, age, length, templateText, templateUrl, tiktokTemplateText,
       insertPosition, tiktokInsertPosition, hashtagMode, scheduleMorning, scheduleNoon, scheduleNight,
       xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase]);
+
+  // 設定フィールドを即座に保存するヘルパー（state + ref + localStorage を同時更新）
+  const updateSetting = <K extends keyof FormSettings>(
+    setter: (v: FormSettings[K]) => void,
+    key: K,
+    value: FormSettings[K]
+  ) => {
+    setter(value);
+    const next = { ...settingsRef.current, [key]: value };
+    settingsRef.current = next;
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+  };
 
   // アカウント情報：入力のたびに即座に localStorage へ直書きする
   const updateAccount = (key: SnsKey, field: 'id' | 'password' | 'memo', value: string) => {
@@ -659,7 +680,7 @@ export const InputForm: React.FC<InputFormProps> = ({
             <SparklesIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-indigo-400" />
             <input
               value={theme}
-              onChange={(e) => setTheme(e.target.value)}
+              onChange={(e) => updateSetting(setTheme, 'theme', e.target.value)}
               placeholder="例：復縁、不倫、片思い"
               className="w-full pl-12 pr-4 py-4 rounded-2xl border outline-none border-indigo-200"
               disabled={isLoading}
@@ -740,19 +761,19 @@ export const InputForm: React.FC<InputFormProps> = ({
               <input
                 type="time"
                 value={scheduleMorning}
-                onChange={(e) => setScheduleMorning(e.target.value)}
+                onChange={(e) => updateSetting(setScheduleMorning, 'scheduleMorning', e.target.value)}
                 className="w-full p-3 rounded-xl border"
               />
               <input
                 type="time"
                 value={scheduleNoon}
-                onChange={(e) => setScheduleNoon(e.target.value)}
+                onChange={(e) => updateSetting(setScheduleNoon, 'scheduleNoon', e.target.value)}
                 className="w-full p-3 rounded-xl border"
               />
               <input
                 type="time"
                 value={scheduleNight}
-                onChange={(e) => setScheduleNight(e.target.value)}
+                onChange={(e) => updateSetting(setScheduleNight, 'scheduleNight', e.target.value)}
                 className="w-full p-3 rounded-xl border"
               />
             </div>
@@ -770,7 +791,7 @@ export const InputForm: React.FC<InputFormProps> = ({
               <div className="text-xs font-bold text-slate-500">性別</div>
               <div className="flex flex-wrap gap-2">
                 {['女性', '男性', '指定なし'].map((v) => (
-                  <button key={v} type="button" onClick={() => setGender(v)}
+                  <button key={v} type="button" onClick={() => updateSetting(setGender, 'gender', v)}
                     className={`px-4 py-2 rounded-full text-sm font-bold border transition-all active:scale-95 ${gender === v ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'}`}>
                     {v}
                   </button>
@@ -783,7 +804,7 @@ export const InputForm: React.FC<InputFormProps> = ({
               <div className="text-xs font-bold text-slate-500">年代</div>
               <div className="flex flex-wrap gap-2">
                 {['20代', '30代', '40代', '50代以上', '指定なし'].map((v) => (
-                  <button key={v} type="button" onClick={() => setAge(v)}
+                  <button key={v} type="button" onClick={() => updateSetting(setAge, 'age', v)}
                     className={`px-4 py-2 rounded-full text-sm font-bold border transition-all active:scale-95 ${age === v ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'}`}>
                     {v}
                   </button>
@@ -796,7 +817,7 @@ export const InputForm: React.FC<InputFormProps> = ({
               <div className="text-xs font-bold text-slate-500">文字数</div>
               <div className="flex flex-wrap gap-2">
                 {['200文字', '300文字', '500文字'].map((v) => (
-                  <button key={v} type="button" onClick={() => setLength(v)}
+                  <button key={v} type="button" onClick={() => updateSetting(setLength, 'length', v)}
                     className={`px-4 py-2 rounded-full text-sm font-bold border transition-all active:scale-95 ${length === v ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'}`}>
                     {v}
                   </button>
@@ -809,7 +830,7 @@ export const InputForm: React.FC<InputFormProps> = ({
               <div className="text-xs font-bold text-slate-500">ハッシュタグ</div>
               <div className="flex flex-wrap gap-2">
                 {[['あり', 'ハッシュタグあり'], ['なし', 'ハッシュタグなし']].map(([v, label]) => (
-                  <button key={v} type="button" onClick={() => setHashtagMode(v as 'あり' | 'なし')}
+                  <button key={v} type="button" onClick={() => updateSetting(setHashtagMode, 'hashtagMode', v as 'あり' | 'なし')}
                     className={`px-4 py-2 rounded-full text-sm font-bold border transition-all active:scale-95 ${hashtagMode === v ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'}`}>
                     {label}
                   </button>
@@ -830,7 +851,7 @@ export const InputForm: React.FC<InputFormProps> = ({
             <div className="p-4 space-y-4 bg-indigo-50 rounded-2xl border border-indigo-200">
               <input
                 value={templateText}
-                onChange={(e) => setTemplateText(e.target.value)}
+                onChange={(e) => updateSetting(setTemplateText, 'templateText', e.target.value)}
                 className="w-full p-3 rounded-xl border"
                 placeholder="詳しくはこちら👇"
               />
@@ -843,7 +864,7 @@ export const InputForm: React.FC<InputFormProps> = ({
 
               <input
                 value={templateUrl}
-                onChange={(e) => setTemplateUrl(e.target.value)}
+                onChange={(e) => updateSetting(setTemplateUrl, 'templateUrl', e.target.value)}
                 placeholder="URL"
                 className="w-full p-3 rounded-xl border"
               />
@@ -856,7 +877,7 @@ export const InputForm: React.FC<InputFormProps> = ({
 
               <select
                 value={insertPosition}
-                onChange={(e) => setInsertPosition(e.target.value as 'start' | 'end')}
+                onChange={(e) => updateSetting(setInsertPosition, 'insertPosition', e.target.value as 'start' | 'end')}
                 className="w-full p-3 rounded-xl border"
               >
                 <option value="start">最初</option>
@@ -883,7 +904,7 @@ export const InputForm: React.FC<InputFormProps> = ({
             <div className="p-4 space-y-4 bg-cyan-50 rounded-2xl border border-cyan-200">
               <input
                 value={tiktokTemplateText}
-                onChange={(e) => setTiktokTemplateText(e.target.value)}
+                onChange={(e) => updateSetting(setTiktokTemplateText, 'tiktokTemplateText', e.target.value)}
                 className="w-full p-3 rounded-xl border"
                 placeholder="続きはプロフィールから👇"
               />
@@ -897,7 +918,7 @@ export const InputForm: React.FC<InputFormProps> = ({
               <select
                 value={tiktokInsertPosition}
                 onChange={(e) =>
-                  setTiktokInsertPosition(e.target.value as 'start' | 'end' | 'both')
+                  updateSetting(setTiktokInsertPosition, 'tiktokInsertPosition', e.target.value as 'start' | 'end' | 'both')
                 }
                 className="w-full p-3 rounded-xl border"
               >
@@ -929,13 +950,13 @@ export const InputForm: React.FC<InputFormProps> = ({
           <div className="p-4 space-y-3 bg-sky-50 rounded-2xl border border-sky-200">
             <input
               value={xPhrase}
-              onChange={(e) => setXPhrase(e.target.value)}
+              onChange={(e) => updateSetting(setXPhrase, 'xPhrase', e.target.value)}
               className="w-full p-3 rounded-xl border"
               placeholder="▼無料で試す"
             />
             <input
               value={xUrl}
-              onChange={(e) => setXUrl(e.target.value)}
+              onChange={(e) => updateSetting(setXUrl, 'xUrl', e.target.value)}
               className="w-full p-3 rounded-xl border"
               placeholder="https://lovelab-sns-redirect.vercel.app"
             />
@@ -954,13 +975,13 @@ export const InputForm: React.FC<InputFormProps> = ({
           <div className="p-4 space-y-3 bg-purple-50 rounded-2xl border border-purple-200">
             <input
               value={threadsPhrase}
-              onChange={(e) => setThreadsPhrase(e.target.value)}
+              onChange={(e) => updateSetting(setThreadsPhrase, 'threadsPhrase', e.target.value)}
               className="w-full p-3 rounded-xl border"
               placeholder="▼無料で試す"
             />
             <input
               value={threadsUrl}
-              onChange={(e) => setThreadsUrl(e.target.value)}
+              onChange={(e) => updateSetting(setThreadsUrl, 'threadsUrl', e.target.value)}
               className="w-full p-3 rounded-xl border"
               placeholder="https://lovelab-sns-redirect.vercel.app"
             />
@@ -992,7 +1013,7 @@ export const InputForm: React.FC<InputFormProps> = ({
             </div>
             <input
               value={igYtPhrase}
-              onChange={(e) => setIgYtPhrase(e.target.value)}
+              onChange={(e) => updateSetting(setIgYtPhrase, 'igYtPhrase', e.target.value)}
               className="w-full p-3 rounded-xl border"
               placeholder="自由記入（例：プロフィールへ👆）"
             />
