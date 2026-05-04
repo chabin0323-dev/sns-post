@@ -106,12 +106,26 @@ const importSettingsFromUrl = () => {
     const params = new URLSearchParams(window.location.search);
     const encoded = params.get('s');
     if (!encoded) return;
-    const json = b64ToUtf8(encoded);   // ← 正しいUTF-8デコード
+    const json = b64ToUtf8(encoded);
     const parsed = JSON.parse(json);
     if (parsed && typeof parsed === 'object') {
-      const existing = localStorage.getItem('sns_form_settings_v1');
-      const base = existing ? JSON.parse(existing) : {};
-      localStorage.setItem('sns_form_settings_v1', JSON.stringify({ ...base, ...parsed }));
+      // 新形式: { settings, accounts } をまとめて保存
+      if (parsed.settings && typeof parsed.settings === 'object') {
+        const existing = localStorage.getItem('sns_form_settings_v1');
+        const base = existing ? JSON.parse(existing) : {};
+        localStorage.setItem('sns_form_settings_v1', JSON.stringify({ ...base, ...parsed.settings }));
+      }
+      if (parsed.accounts && typeof parsed.accounts === 'object') {
+        const existing = localStorage.getItem('sns_accounts_v1');
+        const base = existing ? JSON.parse(existing) : {};
+        localStorage.setItem('sns_accounts_v1', JSON.stringify({ ...base, ...parsed.accounts }));
+      }
+      // 旧形式（settings のみ）との後方互換
+      if (!parsed.settings && !parsed.accounts) {
+        const existing = localStorage.getItem('sns_form_settings_v1');
+        const base = existing ? JSON.parse(existing) : {};
+        localStorage.setItem('sns_form_settings_v1', JSON.stringify({ ...base, ...parsed }));
+      }
     }
     const url = new URL(window.location.href);
     url.searchParams.delete('s');

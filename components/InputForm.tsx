@@ -475,12 +475,16 @@ export const InputForm: React.FC<InputFormProps> = ({
   // 設定をURLに変換してクリップボードにコピー（スマホへの転送用）
   const handleShareSettings = () => {
     try {
-      const json = JSON.stringify(settingsRef.current);
-      // UTF-8 → Uint8Array → Base64（日本語を正しくエンコード）
+      // 設定 + アカウント情報を両方まとめてエンコード
+      const payload = {
+        settings: settingsRef.current,
+        accounts: accountsRef.current,
+      };
+      const json = JSON.stringify(payload);
+      // UTF-8 → Base64（URLセーフ）
       const bytes = new TextEncoder().encode(json);
       const binStr = Array.from(bytes, b => String.fromCharCode(b)).join('');
       const b64 = btoa(binStr);
-      // Base64のURLセーフな文字に変換（+→-, /→_, =削除）してURLパラメータに埋め込む
       const safeB64 = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
       const url = `${window.location.origin}${window.location.pathname}?s=${safeB64}`;
       navigator.clipboard.writeText(url).then(() => {
