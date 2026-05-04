@@ -134,6 +134,9 @@ const loadSettings = (): FormSettings => {
   return defaultSettings;
 };
 
+// モジュールロード時に1回だけ実行（importSettingsFromUrl後に呼ばれるため確実に最新値を取得）
+const initialSettings: FormSettings = loadSettings();
+
 interface InputFormProps {
   onGenerate: (
     theme: string,
@@ -354,30 +357,30 @@ export const InputForm: React.FC<InputFormProps> = ({
 }) => {
   const isLoading = loadingState === LoadingState.LOADING;
 
-  const _s = loadSettings();
-  const [theme, setTheme] = useState<string>(_s.theme);
-  const [gender, setGender] = useState<string>(_s.gender);
-  const [age, setAge] = useState<string>(_s.age);
-  const [length, setLength] = useState<string>(_s.length);
+  // モジュールロード時に1回だけ読み込む（コンポーネント外で定義）
+  const [theme, setTheme] = useState<string>(initialSettings.theme);
+  const [gender, setGender] = useState<string>(initialSettings.gender);
+  const [age, setAge] = useState<string>(initialSettings.age);
+  const [length, setLength] = useState<string>(initialSettings.length);
 
-  const [templateText, setTemplateText] = useState<string>(_s.templateText);
-  const [templateUrl, setTemplateUrl] = useState<string>(_s.templateUrl);
-  const [tiktokTemplateText, setTiktokTemplateText] = useState<string>(_s.tiktokTemplateText);
+  const [templateText, setTemplateText] = useState<string>(initialSettings.templateText);
+  const [templateUrl, setTemplateUrl] = useState<string>(initialSettings.templateUrl);
+  const [tiktokTemplateText, setTiktokTemplateText] = useState<string>(initialSettings.tiktokTemplateText);
 
-  const [insertPosition, setInsertPosition] = useState<'start' | 'end'>(_s.insertPosition);
-  const [tiktokInsertPosition, setTiktokInsertPosition] = useState<'start' | 'end' | 'both'>(_s.tiktokInsertPosition);
-  const [hashtagMode, setHashtagMode] = useState<'あり' | 'なし'>(_s.hashtagMode);
+  const [insertPosition, setInsertPosition] = useState<'start' | 'end'>(initialSettings.insertPosition);
+  const [tiktokInsertPosition, setTiktokInsertPosition] = useState<'start' | 'end' | 'both'>(initialSettings.tiktokInsertPosition);
+  const [hashtagMode, setHashtagMode] = useState<'あり' | 'なし'>(initialSettings.hashtagMode);
 
-  const [scheduleMorning, setScheduleMorning] = useState<string>(_s.scheduleMorning);
-  const [scheduleNoon, setScheduleNoon] = useState<string>(_s.scheduleNoon);
-  const [scheduleNight, setScheduleNight] = useState<string>(_s.scheduleNight);
+  const [scheduleMorning, setScheduleMorning] = useState<string>(initialSettings.scheduleMorning);
+  const [scheduleNoon, setScheduleNoon] = useState<string>(initialSettings.scheduleNoon);
+  const [scheduleNight, setScheduleNight] = useState<string>(initialSettings.scheduleNight);
   const [autoCtaEnabled, setAutoCtaEnabled] = useState(true);
 
-  const [xPhrase, setXPhrase] = useState<string>(_s.xPhrase);
-  const [xUrl, setXUrl] = useState<string>(_s.xUrl);
-  const [threadsPhrase, setThreadsPhrase] = useState<string>(_s.threadsPhrase);
-  const [threadsUrl, setThreadsUrl] = useState<string>(_s.threadsUrl);
-  const [igYtPhrase, setIgYtPhrase] = useState<string>(_s.igYtPhrase);
+  const [xPhrase, setXPhrase] = useState<string>(initialSettings.xPhrase);
+  const [xUrl, setXUrl] = useState<string>(initialSettings.xUrl);
+  const [threadsPhrase, setThreadsPhrase] = useState<string>(initialSettings.threadsPhrase);
+  const [threadsUrl, setThreadsUrl] = useState<string>(initialSettings.threadsUrl);
+  const [igYtPhrase, setIgYtPhrase] = useState<string>(initialSettings.igYtPhrase);
 
   const [openBasic, setOpenBasic] = useState(false);
   const [openCommon, setOpenCommon] = useState(false);
