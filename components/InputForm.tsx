@@ -389,6 +389,7 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [showThemeHistory, setShowThemeHistory] = useState(false);
   const [presetApplied, setPresetApplied] = useState(false);
   const [settingsUrlCopied, setSettingsUrlCopied] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   const [accounts, setAccounts] = useState<SnsAccounts>(loadAccounts);
   const [showPasswords, setShowPasswords] = useState<Record<SnsKey, boolean>>(
@@ -473,26 +474,24 @@ export const InputForm: React.FC<InputFormProps> = ({
   };
 
   // 設定をURLに変換してクリップボードにコピー（スマホへの転送用）
+  const utf8ToSafeB64 = (obj: unknown): string => {
+    const json = JSON.stringify(obj);
+    const bytes = new TextEncoder().encode(json);
+    const binStr = Array.from(bytes, b => String.fromCharCode(b)).join('');
+    return btoa(binStr).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  };
+
   const handleShareSettings = () => {
     try {
-      // 設定 + アカウント情報を両方まとめてエンコード
       const payload = {
         settings: settingsRef.current,
         accounts: accountsRef.current,
       };
-      const json = JSON.stringify(payload);
-      // UTF-8 → Base64（URLセーフ）
-      const bytes = new TextEncoder().encode(json);
-      const binStr = Array.from(bytes, b => String.fromCharCode(b)).join('');
-      const b64 = btoa(binStr);
-      const safeB64 = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-      const url = `${window.location.origin}${window.location.pathname}?s=${safeB64}`;
-      navigator.clipboard.writeText(url).then(() => {
-        setSettingsUrlCopied(true);
-        setTimeout(() => setSettingsUrlCopied(false), 4000);
-      }).catch(() => {
-        prompt('このURLをコピーしてスマホで開いてください', url);
-      });
+      const safeB64 = utf8ToSafeB64(payload);
+      const targetUrl = `${window.location.origin}${window.location.pathname}?s=${safeB64}`;
+      // QRコード画像URLを生成（外部APIでQRコードを作成）
+      const qr = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=10&data=${encodeURIComponent(targetUrl)}`;
+      setQrCodeUrl(qr);
     } catch (e) {
       console.error('Share failed:', e);
     }
@@ -1048,17 +1047,37 @@ export const InputForm: React.FC<InputFormProps> = ({
         )}
 
         {/* スマホへ設定を転送 */}
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-2">
-          <div className="text-xs font-black text-emerald-700">📱 スマホに設定を転送</div>
-          <p className="text-xs text-slate-500">PCで設定したnote・X設定などをスマホに引き継ぎできます。</p>
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
+          <div className="text-xs font-black text-emerald-700">📱 スマホに設定を転送（QRコード）</div>
+          <p className="text-xs text-slate-500">ボタンを押すとQRコードが表示されます。スマホのカメラで読み取るだけで全設定・アカウント情報が転送されます。</p>
           <button
             type="button"
             onClick={handleShareSettings}
-            className="w-full py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95"
-            style={{ background: settingsUrlCopied ? '#10b981' : '#059669' }}
+            className="w-full py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700"
           >
-            {settingsUrlCopied ? '✅ URLをコピーしました！スマホで開いてください' : '🔗 設定URLをコピーしてスマホで開く'}
+            📷 QRコードを表示してスマホに転送
           </button>
+          {qrCodeUrl && (
+            <div className="flex flex-col items-center gap-3 pt-2">
+              <div className="text-xs font-bold text-slate-600 text-center">
+                スマホのカメラでこのQRコードを読み取ってください
+              </div>
+              <img
+                src={qrCodeUrl}
+                alt="設定転送QRコード"
+                className="rounded-xl border border-emerald-300 bg-white"
+                width={240}
+                height={240}
+              />
+              <button
+                type="button"
+                onClick={() => setQrCodeUrl(null)}
+                className="text-xs text-slate-400 hover:text-slate-600"
+              >
+                閉じる ×
+              </button>
+            </div>
+          )}
         </div>
 
         {/* SNSアカウント管理 */}
