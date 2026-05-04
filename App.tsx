@@ -89,24 +89,36 @@ const readGeneratedHistory = (): GeneratedPost[] => {
 const getHistoryItemKey = (post: GeneratedPost, index?: number) =>
   `${post.timestamp ?? 'time'}__${post.title ?? 'title'}__${post.theme ?? 'theme'}__${index ?? ''}`;
 
+// URLセーフBase64 → UTF-8文字列に正しく変換（日本語対応）
+const b64ToUtf8 = (b64: string): string => {
+  // URLセーフ文字を標準Base64に戻す
+  const standard = b64.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = standard + '==='.slice((standard.length + 3) % 4);
+  const binStr = atob(padded);
+  const bytes = new Uint8Array(binStr.length);
+  for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+};
+
 // 起動時にURLパラメータから設定をインポート（スマホへの設定転送用）
 const importSettingsFromUrl = () => {
   try {
     const params = new URLSearchParams(window.location.search);
     const encoded = params.get('s');
     if (!encoded) return;
-    const json = atob(encoded);
+    const json = b64ToUtf8(encoded);   // ← 正しいUTF-8デコード
     const parsed = JSON.parse(json);
     if (parsed && typeof parsed === 'object') {
       const existing = localStorage.getItem('sns_form_settings_v1');
       const base = existing ? JSON.parse(existing) : {};
       localStorage.setItem('sns_form_settings_v1', JSON.stringify({ ...base, ...parsed }));
     }
-    // URLパラメータを消してリロードなしでクリーン
     const url = new URL(window.location.href);
     url.searchParams.delete('s');
     window.history.replaceState({}, '', url.toString());
-  } catch {}
+  } catch (e) {
+    console.error('Settings import failed:', e);
+  }
 };
 importSettingsFromUrl();
 

@@ -476,15 +476,22 @@ export const InputForm: React.FC<InputFormProps> = ({
   const handleShareSettings = () => {
     try {
       const json = JSON.stringify(settingsRef.current);
-      const encoded = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode(parseInt(p1, 16))));
-      const url = `${window.location.origin}${window.location.pathname}?s=${encoded}`;
+      // UTF-8 → Uint8Array → Base64（日本語を正しくエンコード）
+      const bytes = new TextEncoder().encode(json);
+      const binStr = Array.from(bytes, b => String.fromCharCode(b)).join('');
+      const b64 = btoa(binStr);
+      // Base64のURLセーフな文字に変換（+→-, /→_, =削除）してURLパラメータに埋め込む
+      const safeB64 = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+      const url = `${window.location.origin}${window.location.pathname}?s=${safeB64}`;
       navigator.clipboard.writeText(url).then(() => {
         setSettingsUrlCopied(true);
         setTimeout(() => setSettingsUrlCopied(false), 4000);
       }).catch(() => {
         prompt('このURLをコピーしてスマホで開いてください', url);
       });
-    } catch {}
+    } catch (e) {
+      console.error('Share failed:', e);
+    }
   };
 
   // アカウント情報：入力のたびに即座に localStorage へ直書きする
