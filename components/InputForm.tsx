@@ -415,8 +415,7 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [showThemeHistory, setShowThemeHistory] = useState(false);
   const [presetApplied, setPresetApplied] = useState(false);
   const [settingsUrlCopied, setSettingsUrlCopied] = useState(false);
-  const [qrSettingsUrl, setQrSettingsUrl] = useState<string | null>(null);
-  const [qrAccountsUrl, setQrAccountsUrl] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   const [accounts, setAccounts] = useState<SnsAccounts>(loadAccounts);
   const [showPasswords, setShowPasswords] = useState<Record<SnsKey, boolean>>(
@@ -581,25 +580,24 @@ export const InputForm: React.FC<InputFormProps> = ({
   const handleShareSettings = async () => {
     try {
       const s = settingsRef.current;
-      const essentialSettings = {
-        templateText: s.templateText,
-        templateUrl: s.templateUrl,
-        insertPosition: s.insertPosition,
-        xPhrase: s.xPhrase,
-        xUrl: s.xUrl,
-        threadsPhrase: s.threadsPhrase,
-        threadsUrl: s.threadsUrl,
-        igYtPhrase: s.igYtPhrase,
-        tiktokTemplateText: s.tiktokTemplateText,
-        tiktokInsertPosition: s.tiktokInsertPosition,
+      // 設定+アカウントを1枚のQRにまとめる（2枚に分けると干渉する問題を根本解決）
+      const payload = {
+        settings: {
+          templateText: s.templateText,
+          templateUrl: s.templateUrl,
+          insertPosition: s.insertPosition,
+          xPhrase: s.xPhrase,
+          xUrl: s.xUrl,
+          threadsPhrase: s.threadsPhrase,
+          threadsUrl: s.threadsUrl,
+          igYtPhrase: s.igYtPhrase,
+          tiktokTemplateText: s.tiktokTemplateText,
+          tiktokInsertPosition: s.tiktokInsertPosition,
+        },
+        accounts: accountsRef.current,
       };
-      // ブラウザ内でQR生成（外部API不使用）
-      const [settingsQr, accountsQr] = await Promise.all([
-        generateQr({ settings: essentialSettings }),
-        generateQr({ accounts: accountsRef.current }),
-      ]);
-      setQrSettingsUrl(settingsQr);
-      setQrAccountsUrl(accountsQr);
+      const qr = await generateQr(payload);
+      setQrDataUrl(qr);
     } catch (e) {
       console.error('QR generation failed:', e);
     }
@@ -1156,8 +1154,8 @@ export const InputForm: React.FC<InputFormProps> = ({
 
         {/* スマホへ設定を転送 */}
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
-          <div className="text-xs font-black text-emerald-700">📱 スマホに設定を転送（QRコード）</div>
-          <p className="text-xs text-slate-500">ボタンを押すと2枚のQRコードが表示されます。①②の順にスマホのカメラで読み取ってください。</p>
+          <div className="text-xs font-black text-emerald-700">📱 スマホに設定を転送（QRコード1枚）</div>
+          <p className="text-xs text-slate-500">ボタンを押すとQRコードが1枚表示されます。スマホのカメラで読み取ってください。設定・アカウント情報がまとめて転送されます。</p>
           <button
             type="button"
             onClick={handleShareSettings}
@@ -1165,23 +1163,13 @@ export const InputForm: React.FC<InputFormProps> = ({
           >
             📷 QRコードを表示する
           </button>
-          {(qrSettingsUrl || qrAccountsUrl) && (
-            <div className="space-y-4 pt-2">
-              {qrSettingsUrl && (
-                <div className="flex flex-col items-center gap-2">
-                  <div className="text-xs font-black text-emerald-700">① note・X・Threads・設定</div>
-                  <img src={qrSettingsUrl} alt="設定QR" className="rounded-xl border border-emerald-300 bg-white" width={280} height={280} />
-                </div>
-              )}
-              {qrAccountsUrl && (
-                <div className="flex flex-col items-center gap-2">
-                  <div className="text-xs font-black text-emerald-700">② SNSアカウント（ID・PW・メモ）</div>
-                  <img src={qrAccountsUrl} alt="アカウントQR" className="rounded-xl border border-emerald-300 bg-white" width={280} height={280} />
-                </div>
-              )}
+          {qrDataUrl && (
+            <div className="flex flex-col items-center gap-3 pt-2">
+              <div className="text-xs font-black text-emerald-700 text-center">スマホのカメラで読み取ってください</div>
+              <img src={qrDataUrl} alt="転送QR" className="rounded-xl border border-emerald-300 bg-white" width={300} height={300} />
               <button
                 type="button"
-                onClick={() => { setQrSettingsUrl(null); setQrAccountsUrl(null); }}
+                onClick={() => setQrDataUrl(null)}
                 className="w-full text-xs text-slate-400 hover:text-slate-600 py-2"
               >
                 閉じる ×
