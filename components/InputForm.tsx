@@ -487,15 +487,28 @@ export const InputForm: React.FC<InputFormProps> = ({
   const makeQrUrl = (data: unknown, param: string): string => {
     const b64 = toSafeB64(data);
     const target = `${window.location.origin}${window.location.pathname}?${param}=${b64}`;
-    // 400px・低エラー訂正(L)で最大データ量を確保
-    return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=L&margin=8&data=${encodeURIComponent(target)}`;
+    // Google Charts API：安定・高速、L=最低エラー訂正で最大データ量
+    return `https://chart.googleapis.com/chart?cht=qr&chs=400x400&chld=L|2&chl=${encodeURIComponent(target)}`;
   };
 
   const handleShareSettings = () => {
     try {
-      // ① 設定のみのQRコード（小さくて読み取りやすい）
-      setQrSettingsUrl(makeQrUrl({ settings: settingsRef.current }, 's'));
-      // ② アカウント情報のみのQRコード（ID・PW・メモ）
+      const s = settingsRef.current;
+      // ① URLと語句だけに絞った設定QR（データ量を最小限にして確実に読み取れるサイズに）
+      const essentialSettings = {
+        templateText: s.templateText,
+        templateUrl: s.templateUrl,
+        insertPosition: s.insertPosition,
+        xPhrase: s.xPhrase,
+        xUrl: s.xUrl,
+        threadsPhrase: s.threadsPhrase,
+        threadsUrl: s.threadsUrl,
+        igYtPhrase: s.igYtPhrase,
+        tiktokTemplateText: s.tiktokTemplateText,
+        tiktokInsertPosition: s.tiktokInsertPosition,
+      };
+      setQrSettingsUrl(makeQrUrl({ settings: essentialSettings }, 's'));
+      // ② アカウント情報のみのQRコード
       setQrAccountsUrl(makeQrUrl({ accounts: accountsRef.current }, 's'));
     } catch (e) {
       console.error('Share failed:', e);

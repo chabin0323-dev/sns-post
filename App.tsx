@@ -101,42 +101,49 @@ const b64ToUtf8 = (b64: string): string => {
 };
 
 // 起動時にURLパラメータから設定をインポート（スマホへの設定転送用）
-const importSettingsFromUrl = () => {
+// 戻り値: 何をインポートしたか（成功メッセージ表示用）
+const importSettingsFromUrl = (): string | null => {
   try {
     const params = new URLSearchParams(window.location.search);
     const encoded = params.get('s');
-    if (!encoded) return;
+    if (!encoded) return null;
     const json = b64ToUtf8(encoded);
     const parsed = JSON.parse(json);
+    let imported = '';
     if (parsed && typeof parsed === 'object') {
-      // 新形式: { settings, accounts } をまとめて保存
       if (parsed.settings && typeof parsed.settings === 'object') {
         const existing = localStorage.getItem('sns_form_settings_v1');
         const base = existing ? JSON.parse(existing) : {};
         localStorage.setItem('sns_form_settings_v1', JSON.stringify({ ...base, ...parsed.settings }));
+        imported += '設定';
       }
       if (parsed.accounts && typeof parsed.accounts === 'object') {
         const existing = localStorage.getItem('sns_accounts_v1');
         const base = existing ? JSON.parse(existing) : {};
         localStorage.setItem('sns_accounts_v1', JSON.stringify({ ...base, ...parsed.accounts }));
+        imported += imported ? '・アカウント' : 'アカウント';
       }
-      // 旧形式（settings のみ）との後方互換
       if (!parsed.settings && !parsed.accounts) {
         const existing = localStorage.getItem('sns_form_settings_v1');
         const base = existing ? JSON.parse(existing) : {};
         localStorage.setItem('sns_form_settings_v1', JSON.stringify({ ...base, ...parsed }));
+        imported = '設定';
       }
     }
     const url = new URL(window.location.href);
     url.searchParams.delete('s');
     window.history.replaceState({}, '', url.toString());
+    return imported || null;
   } catch (e) {
     console.error('Settings import failed:', e);
+    return null;
   }
 };
-importSettingsFromUrl();
+const importedLabel = importSettingsFromUrl();
 
 const App: React.FC = () => {
+  const [importNotice] = useState<string | null>(importedLabel);
+
   const [currentPost, setCurrentPost] = useState<GeneratedPost | null>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -347,6 +354,11 @@ const App: React.FC = () => {
       <Header onToggleGuide={() => setShowGuide(!showGuide)} />
 
       <main className="max-w-2xl mx-auto px-4 py-16 flex flex-col gap-12 flex-grow w-full">
+        {importNotice && (
+          <div className="rounded-2xl bg-emerald-500 text-white font-black text-center py-4 px-6 text-sm shadow-lg">
+            ✅ QRコードから転送完了！{importNotice}を保存しました。
+          </div>
+        )}
         {lastSaved && (
           <div className="fixed top-20 right-4 z-50 animate-fade-in">
             <div className="flex items-center gap-2 bg-emerald-500/90 backdrop-blur px-3 py-1.5 rounded-full border border-emerald-400/50 shadow-lg shadow-emerald-500/20">
