@@ -200,6 +200,20 @@ export const ResultCard: React.FC<ResultCardProps> = ({
 
   const [postedKey, setPostedKey] = useState('');
 
+  // X / Threads 投稿ボタン用：加重文字数で280ウェイト以内に切り詰め
+  const trimForShareUrl = (text: string): string => {
+    const MAX = 280;
+    let n = 0;
+    let result = '';
+    for (const c of text) {
+      const w = ((c.codePointAt(0) ?? 0) <= 0x10FF) ? 1 : 2;
+      if (n + w > MAX) return result.trimEnd() + '…';
+      n += w;
+      result += c;
+    }
+    return result;
+  };
+
   const handlePost = async (text: string, labels: string[], key: string) => {
     const config = getPostConfig(labels);
     if (!config) return;
@@ -207,7 +221,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
       await navigator.clipboard.writeText(text);
     } catch (_) {}
     if (config.prefill) {
-      window.open(config.url + encodeURIComponent(text.slice(0, 270)), '_blank');
+      window.open(config.url + encodeURIComponent(trimForShareUrl(text)), '_blank');
     } else {
       window.open(config.url, '_blank');
     }

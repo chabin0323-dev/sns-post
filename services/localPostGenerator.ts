@@ -1,3 +1,25 @@
+// X / Threads 文字数カウント（全角=2, 半角=1, 最大280ウェイト = 全角140文字相当）
+const twitterWeightedLength = (text: string): number => {
+  let n = 0;
+  for (const c of text) {
+    n += ((c.codePointAt(0) ?? 0) <= 0x10FF) ? 1 : 2;
+  }
+  return n;
+};
+
+const trimToTwitterLength = (text: string): string => {
+  const MAX_WEIGHT = 280;
+  let n = 0;
+  let result = '';
+  for (const c of text) {
+    const w = ((c.codePointAt(0) ?? 0) <= 0x10FF) ? 1 : 2;
+    if (n + w > MAX_WEIGHT) return result.trimEnd() + '…';
+    n += w;
+    result += c;
+  }
+  return result;
+};
+
 const getProfileLabel = (gender: string, age: string) => {
   const safeGender = gender === '指定なし' ? '' : gender;
   const safeAge = age === '指定なし' ? '' : age;
@@ -564,11 +586,11 @@ ${sc.bridge}`;
     ? tikTokHashtags.join(' ')
     : '';
 
-  const xText = appendHashtags(
+  const xText = trimToTwitterLength(appendHashtags(
     insertBlock(xBase, xBlock, insertPosition),
     xHashtags,
     hashtagMode
-  );
+  ));
 
   // Instagram/YouTube: プロフィール・概要欄リンク形式（同内容でグループ化）
   const instagramText = appendHashtags(
@@ -579,11 +601,11 @@ ${sc.bridge}`;
   // YouTubeも同じ内容にしてInstagramと一緒のブロックにまとめる
   const youtubeText = instagramText;
 
-  const threadsText = appendHashtags(
+  const threadsText = trimToTwitterLength(appendHashtags(
     insertBlock(threadsBase, buildTemplateBlock(templateText, templateUrl), insertPosition),
     xHashtags,
     hashtagMode
-  );
+  ));
 
   const twitchText = insertBlock(twitchBase, buildTemplateBlock(templateText, templateUrl), insertPosition);
 
