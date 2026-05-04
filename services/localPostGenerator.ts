@@ -1,4 +1,4 @@
-// X / Threads 文字数カウント（全角=2, 半角=1, 最大280ウェイト = 全角140文字相当）
+// X / Threads 文字数カウント（全角=2, 半角=1）
 const twitterWeightedLength = (text: string): number => {
   let n = 0;
   for (const c of text) {
@@ -7,18 +7,20 @@ const twitterWeightedLength = (text: string): number => {
   return n;
 };
 
-const trimToTwitterLength = (text: string): string => {
-  const MAX_WEIGHT = 280;
+// 指定ウェイト以内にトリム
+const trimToWeightedLength = (text: string, maxWeight: number): string => {
   let n = 0;
   let result = '';
   for (const c of text) {
     const w = ((c.codePointAt(0) ?? 0) <= 0x10FF) ? 1 : 2;
-    if (n + w > MAX_WEIGHT) return result.trimEnd() + '…';
+    if (n + w > maxWeight) return result.trimEnd() + '…';
     n += w;
     result += c;
   }
   return result;
 };
+
+const trimToTwitterLength = (text: string): string => trimToWeightedLength(text, 280);
 
 const getProfileLabel = (gender: string, age: string) => {
   const safeGender = gender === '指定なし' ? '' : gender;
@@ -589,24 +591,22 @@ ${sc.bridge}`;
     : '';
 
   // X: 独自フレーズ+URL を末尾に追加し140全角（280ウェイト）以内に収める
+  // X: CTA分のウェイトを先に確保してから本文をトリム→末尾にCTAを必ず追加
   const xCta = [xPhrase.trim(), xUrl.trim()].filter(Boolean).join('\n');
-  const xBody = appendHashtags(
-    insertBlock(xBase, xCta ? `\n${xCta}` : '', 'end'),
-    xHashtags,
-    hashtagMode
-  );
-  const xText = trimToTwitterLength(xBody);
+  const xCtaSuffix = xCta ? `\n\n${xCta}` : '';
+  const xCtaWeight = twitterWeightedLength(xCtaSuffix);
+  const xBodyRaw = appendHashtags(xBase, xHashtags, hashtagMode);
+  const xBodyTrimmed = trimToWeightedLength(xBodyRaw, 280 - xCtaWeight);
+  const xText = `${xBodyTrimmed}${xCtaSuffix}`;
 
-  // Threads: 独自フレーズ+URLを末尾追加、最大500文字
+  // Threads: CTA分を先に確保してから本文をトリム→末尾にCTAを必ず追加
   const threadsCta = [threadsPhrase.trim(), threadsUrl.trim()].filter(Boolean).join('\n');
-  const threadsBody = appendHashtags(
-    insertBlock(threadsBase, threadsCta ? `\n${threadsCta}` : '', 'end'),
-    xHashtags,
-    hashtagMode
-  );
-  const threadsText = threadsBody.length > 500
-    ? threadsBody.slice(0, 499).trimEnd() + '…'
-    : threadsBody;
+  const threadsCtaSuffix = threadsCta ? `\n\n${threadsCta}` : '';
+  const threadsBodyRaw = appendHashtags(threadsBase, xHashtags, hashtagMode);
+  const threadsBodyTrimmed = threadsBodyRaw.length + threadsCtaSuffix.length > 500
+    ? threadsBodyRaw.slice(0, 500 - threadsCtaSuffix.length - 1).trimEnd() + '…'
+    : threadsBodyRaw;
+  const threadsText = `${threadsBodyTrimmed}${threadsCtaSuffix}`;
 
   // Instagram/YouTube: URLなし、プロフィール誘導文のみ末尾追加
   const igYtCta = igYtPhrase.trim();
