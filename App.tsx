@@ -114,7 +114,11 @@ const importSettingsFromUrl = (): string | null => {
       if (parsed.settings && typeof parsed.settings === 'object') {
         const existing = localStorage.getItem('sns_form_settings_v1');
         const base = existing ? JSON.parse(existing) : {};
-        localStorage.setItem('sns_form_settings_v1', JSON.stringify({ ...base, ...parsed.settings }));
+        const merged = { ...base, ...parsed.settings };
+        localStorage.setItem('sns_form_settings_v1', JSON.stringify(merged));
+        // CookieにもURLを保存（iOS SafariのITP対策）
+        const exp = new Date(Date.now() + 365 * 864e5).toUTCString();
+        document.cookie = `snss1=${encodeURIComponent(JSON.stringify(merged))};expires=${exp};path=/;SameSite=Lax`;
         imported += '設定';
       }
       if (parsed.accounts && typeof parsed.accounts === 'object') {

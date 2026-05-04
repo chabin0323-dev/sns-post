@@ -123,12 +123,40 @@ const HISTORY_KEYS_CONST = {
   scheduleNight: 'history_schedule_night',
 } as const;
 
+// Cookie保存・読み込み（iOS SafariのITPでlocalStorageが消えても残る）
+const COOKIE_KEY = 'snss1';
+const COOKIE_EXPIRES_DAYS = 365;
+
+const saveToCookie = (settings: Partial<FormSettings>) => {
+  try {
+    const val = encodeURIComponent(JSON.stringify(settings));
+    const exp = new Date(Date.now() + COOKIE_EXPIRES_DAYS * 864e5).toUTCString();
+    document.cookie = `${COOKIE_KEY}=${val};expires=${exp};path=/;SameSite=Lax`;
+  } catch {}
+};
+
+const loadFromCookie = (): Partial<FormSettings> | null => {
+  try {
+    const m = document.cookie.match(new RegExp(`(?:^|;\\s*)${COOKIE_KEY}=([^;]+)`));
+    return m ? JSON.parse(decodeURIComponent(m[1])) : null;
+  } catch {}
+  return null;
+};
+
 const loadSettings = (): FormSettings => {
   try {
+    // localStorage を優先して読む
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<FormSettings>;
       return { ...defaultSettings, ...parsed };
+    }
+    // localStorage が消えていた場合は Cookie から復元
+    const cookie = loadFromCookie();
+    if (cookie) {
+      // Cookieから復元したらlocalStorageにも書き戻す
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...defaultSettings, ...cookie }));
+      return { ...defaultSettings, ...cookie };
     }
   } catch {}
   return defaultSettings;
@@ -421,6 +449,7 @@ export const InputForm: React.FC<InputFormProps> = ({
       // settingsRef は render 時に常に最新値で更新されているので確実
       const s = settingsRef.current;
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+      saveToCookie(s); // Cookieにも保存
       localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accountsRef.current));
       // 履歴を直接保存（デバウンスタイマーがキャンセルされる前に）
       if (s.theme) addHistory(HISTORY_KEYS_CONST.theme, s.theme);
@@ -460,7 +489,7 @@ export const InputForm: React.FC<InputFormProps> = ({
       insertPosition, tiktokInsertPosition, hashtagMode, scheduleMorning, scheduleNoon, scheduleNight,
       xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase]);
 
-  // 設定フィールドを即座に保存するヘルパー（state + ref + localStorage を同時更新）
+  // 設定フィールドを即座に保存（localStorage + Cookie の両方に書く）
   const updateSetting = <K extends keyof FormSettings>(
     setter: (v: FormSettings[K]) => void,
     key: K,
@@ -470,6 +499,7 @@ export const InputForm: React.FC<InputFormProps> = ({
     const next = { ...settingsRef.current, [key]: value };
     settingsRef.current = next;
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+    saveToCookie(next); // Cookieにも保存（iOS Safariのlocalストレージ消去対策）
   };
 
   // 設定をURLに変換してクリップボードにコピー（スマホへの転送用）
