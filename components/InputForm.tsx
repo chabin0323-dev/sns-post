@@ -24,12 +24,12 @@ const SNS_PLATFORMS = [
 ] as const;
 
 type SnsKey = typeof SNS_PLATFORMS[number]['key'];
-type SnsAccounts = Record<SnsKey, { id: string; password: string }>;
+type SnsAccounts = Record<SnsKey, { id: string; password: string; memo: string }>;
 
 const ACCOUNTS_KEY = 'sns_accounts_v1';
 
 const defaultAccounts: SnsAccounts = SNS_PLATFORMS.reduce(
-  (acc, p) => ({ ...acc, [p.key]: { id: '', password: '' } }),
+  (acc, p) => ({ ...acc, [p.key]: { id: '', password: '', memo: '' } }),
   {} as SnsAccounts
 );
 
@@ -37,8 +37,16 @@ const loadAccounts = (): SnsAccounts => {
   try {
     const raw = localStorage.getItem(ACCOUNTS_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as Partial<SnsAccounts>;
-      return { ...defaultAccounts, ...parsed };
+      const parsed = JSON.parse(raw) as Record<string, Partial<{ id: string; password: string; memo: string }>>;
+      const merged = { ...defaultAccounts };
+      for (const key of Object.keys(defaultAccounts) as SnsKey[]) {
+        merged[key] = {
+          id: parsed[key]?.id ?? '',
+          password: parsed[key]?.password ?? '',
+          memo: parsed[key]?.memo ?? '',
+        };
+      }
+      return merged;
     }
   } catch {}
   return defaultAccounts;
@@ -409,7 +417,7 @@ export const InputForm: React.FC<InputFormProps> = ({
     localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
   }, [accounts]);
 
-  const updateAccount = (key: SnsKey, field: 'id' | 'password', value: string) => {
+  const updateAccount = (key: SnsKey, field: 'id' | 'password' | 'memo', value: string) => {
     setAccounts(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
   };
 
@@ -882,7 +890,7 @@ export const InputForm: React.FC<InputFormProps> = ({
         {openAccounts && (
           <div className="space-y-3">
             {SNS_PLATFORMS.map((platform) => {
-              const acc = accounts[platform.key] ?? { id: '', password: '' };
+              const acc = accounts[platform.key] ?? { id: '', password: '', memo: '' };
               const isVisible = showPasswords[platform.key];
               return (
                 <div key={platform.key} className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
@@ -920,6 +928,13 @@ export const InputForm: React.FC<InputFormProps> = ({
                       {isVisible ? '隠す' : '表示'}
                     </button>
                   </div>
+                  <textarea
+                    value={acc.memo}
+                    onChange={(e) => updateAccount(platform.key, 'memo', e.target.value)}
+                    placeholder="備考（例：サブ垢用、法人カード紐付けなど）"
+                    rows={2}
+                    className="w-full p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-400 resize-none text-slate-600"
+                  />
                 </div>
               );
             })}
