@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import QRCode from 'qrcode';
 import { LoadingState } from '../types';
 import {
   SparklesIcon,
@@ -484,17 +485,24 @@ export const InputForm: React.FC<InputFormProps> = ({
     return btoa(binStr).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
   };
 
-  const makeQrUrl = (data: unknown, param: string): string => {
+  const makeTargetUrl = (data: unknown): string => {
     const b64 = toSafeB64(data);
-    const target = `${window.location.origin}${window.location.pathname}?${param}=${b64}`;
-    // Google Charts API：安定・高速、L=最低エラー訂正で最大データ量
-    return `https://chart.googleapis.com/chart?cht=qr&chs=400x400&chld=L|2&chl=${encodeURIComponent(target)}`;
+    return `${window.location.origin}${window.location.pathname}?s=${b64}`;
   };
 
-  const handleShareSettings = () => {
+  const generateQr = useCallback(async (data: unknown): Promise<string> => {
+    const url = makeTargetUrl(data);
+    return await QRCode.toDataURL(url, {
+      width: 400,
+      margin: 2,
+      errorCorrectionLevel: 'L',
+      color: { dark: '#000000', light: '#ffffff' },
+    });
+  }, []);
+
+  const handleShareSettings = async () => {
     try {
       const s = settingsRef.current;
-      // ① URLと語句だけに絞った設定QR（データ量を最小限にして確実に読み取れるサイズに）
       const essentialSettings = {
         templateText: s.templateText,
         templateUrl: s.templateUrl,
@@ -507,11 +515,15 @@ export const InputForm: React.FC<InputFormProps> = ({
         tiktokTemplateText: s.tiktokTemplateText,
         tiktokInsertPosition: s.tiktokInsertPosition,
       };
-      setQrSettingsUrl(makeQrUrl({ settings: essentialSettings }, 's'));
-      // ② アカウント情報のみのQRコード
-      setQrAccountsUrl(makeQrUrl({ accounts: accountsRef.current }, 's'));
+      // ブラウザ内でQR生成（外部API不使用）
+      const [settingsQr, accountsQr] = await Promise.all([
+        generateQr({ settings: essentialSettings }),
+        generateQr({ accounts: accountsRef.current }),
+      ]);
+      setQrSettingsUrl(settingsQr);
+      setQrAccountsUrl(accountsQr);
     } catch (e) {
-      console.error('Share failed:', e);
+      console.error('QR generation failed:', e);
     }
   };
 

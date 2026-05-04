@@ -15,10 +15,12 @@
     "@heroicons/react": "^2.2.0",
     "express": "^5.1.0",
     "path": "^0.12.7",
-    "url": "^0.11.4"
+    "url": "^0.11.4",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "@types/qrcode": "^1.5.5",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
