@@ -511,6 +511,8 @@ ${sc.bridge}`;
   const noteBlock = buildTemplateBlock(templateText, templateUrl);
   const xBlock = buildTemplateBlock(templateText, templateUrl);
   const tiktokBlock = buildTextOnlyTemplateBlock(tiktokTemplateText);
+  // Instagram/YouTubeはプロフィールリンク形式（noteXPhrase + URL）を使用
+  const igYtBlock = buildTemplateBlock(templateText, templateUrl);
 
   const noteText = appendHashtags(
     insertBlock(noteBase, noteBlock, insertPosition),
@@ -518,20 +520,27 @@ ${sc.bridge}`;
     hashtagMode
   );
 
-  // 記事本文（ハッシュタグなし）
+  // TikTok: 記事本文（ハッシュタグなし）
   const tiktokBody = insertBlockAdvanced(tiktokBase, tiktokBlock, tiktokInsertPosition);
-  // ハッシュタグのみ（別枠コピー用）
+  // TikTok ハッシュタグのみ（別枠コピー用）
   const tiktokHashtagText = hashtagMode === 'あり' && tikTokHashtags.length > 0
     ? tikTokHashtags.join(' ')
     : '';
-  // 後方互換用（本文＋ハッシュタグ）
-  const tiktokText = tiktokHashtagText ? `${tiktokBody}\n\n${tiktokHashtagText}` : tiktokBody;
 
   const xText = appendHashtags(
     insertBlock(xBase, xBlock, insertPosition),
     xHashtags,
     hashtagMode
   );
+
+  // Instagram/YouTube: プロフィール・概要欄リンク形式（同内容でグループ化）
+  const instagramText = appendHashtags(
+    insertBlock(instagramBase, igYtBlock, insertPosition),
+    getInstagramHashtags(theme),
+    hashtagMode
+  );
+  // YouTubeも同じ内容にしてInstagramと一緒のブロックにまとめる
+  const youtubeText = instagramText;
 
   const threadsText = appendHashtags(
     insertBlock(threadsBase, buildTemplateBlock(templateText, templateUrl), insertPosition),
@@ -549,8 +558,8 @@ ${sc.bridge}`;
     capcutScript: tiktokBody,
     tiktokHashtagText,
     xPost: xText,
-    instagramPost: tiktokBody,
-    youtubePost: tiktokBody,
+    instagramPost: instagramText,
+    youtubePost: youtubeText,
     threadsPost: threadsText,
     twitchPost: twitchText,
     showroomPost: showroomText,

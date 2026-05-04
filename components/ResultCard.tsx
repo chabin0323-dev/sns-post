@@ -190,7 +190,8 @@ export const ResultCard: React.FC<ResultCardProps> = ({
     const l = labels[0];
     if (l === 'X') return { label: 'X に投稿', url: 'https://x.com/intent/post?text=', prefill: true };
     if (l === 'note') return { label: 'note に投稿', url: 'https://note.com/notes/new', prefill: false };
-    if (l === 'TikTok') return { label: 'TikTok / Instagram / YouTube へ', url: 'https://www.tiktok.com/upload', prefill: false };
+    if (l === 'TikTok') return { label: 'TikTok へ', url: 'https://www.tiktok.com/upload', prefill: false };
+    if (l === 'Instagram') return { label: 'Instagram / YouTube へ', url: 'https://www.instagram.com/', prefill: false };
     if (l === 'Threads') return { label: 'Threads に投稿', url: 'https://www.threads.net/intent/post?text=', prefill: true };
     if (l === 'Twitch') return { label: 'Twitch Studio へ', url: 'https://dashboard.twitch.tv/', prefill: false };
     if (l === 'SHOWROOM') return { label: 'SHOWROOM へ', url: 'https://www.showroom-live.com/', prefill: false };
@@ -304,7 +305,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
                   <button
                     onClick={() => handlePost(block.text, block.labels, copyKey + '_post')}
                     className="w-full py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 transition-all transform active:scale-[0.98] bg-white border-2 border-current hover:opacity-80"
-                    style={{ color: block.labels[0] === 'X' ? '#000' : block.labels[0] === 'TikTok' ? '#fe2c55' : block.labels[0] === 'Threads' ? '#7c3aed' : block.labels[0] === 'Twitch' ? '#9146ff' : block.labels[0] === 'SHOWROOM' ? '#f43f5e' : '#41c9b4' }}
+                    style={{ color: block.labels[0] === 'X' ? '#000' : block.labels[0] === 'TikTok' ? '#fe2c55' : block.labels[0] === 'Instagram' ? '#e1306c' : block.labels[0] === 'Threads' ? '#7c3aed' : block.labels[0] === 'Twitch' ? '#9146ff' : block.labels[0] === 'SHOWROOM' ? '#f43f5e' : '#41c9b4' }}
                   >
                     {postedKey === copyKey + '_post' ? (
                       <>✅ コピー済み・投稿画面を開きました</>
