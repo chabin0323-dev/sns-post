@@ -380,7 +380,7 @@ export const InputForm: React.FC<InputFormProps> = ({
       if (s.theme) addHistory(HISTORY_KEYS_CONST.theme, s.theme);
       if (s.templateText) addHistory(HISTORY_KEYS_CONST.templateText, s.templateText);
       if (s.templateUrl) addHistory(HISTORY_KEYS_CONST.templateUrl, s.templateUrl);
-      if (s.tiktokTemplateText) addHistory(HISTORY_KEYS_CONST.tiktokTemplateText, s.tiktokTemplateText);
+      addHistory(HISTORY_KEYS_CONST.tiktokTemplateText, s.tiktokTemplateText || '（削除）');
       addHistory(HISTORY_KEYS_CONST.gender, s.gender);
       addHistory(HISTORY_KEYS_CONST.age, s.age);
       addHistory(HISTORY_KEYS_CONST.length, s.length);
@@ -474,8 +474,9 @@ export const InputForm: React.FC<InputFormProps> = ({
   }, [templateUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!tiktokTemplateText.trim()) return;
-    const t = setTimeout(() => setTiktokTemplateTextHistory(addHistory(HISTORY_KEYS.tiktokTemplateText, tiktokTemplateText)), 800);
+    // 空欄も「（削除）」として履歴に保存する
+    const val = tiktokTemplateText.trim() || '（削除）';
+    const t = setTimeout(() => setTiktokTemplateTextHistory(addHistory(HISTORY_KEYS.tiktokTemplateText, val)), 800);
     return () => clearTimeout(t);
   }, [tiktokTemplateText]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -492,7 +493,7 @@ export const InputForm: React.FC<InputFormProps> = ({
     setThemeHistory(addHistory(HISTORY_KEYS.theme, theme));
     setTemplateTextHistory(addHistory(HISTORY_KEYS.templateText, templateText));
     setTemplateUrlHistory(addHistory(HISTORY_KEYS.templateUrl, templateUrl));
-    setTiktokTemplateTextHistory(addHistory(HISTORY_KEYS.tiktokTemplateText, tiktokTemplateText));
+    setTiktokTemplateTextHistory(addHistory(HISTORY_KEYS.tiktokTemplateText, tiktokTemplateText || '（削除）'));
     addHistory(HISTORY_KEYS.scheduleMorning, scheduleMorning);
     addHistory(HISTORY_KEYS.scheduleNoon, scheduleNoon);
     addHistory(HISTORY_KEYS.scheduleNight, scheduleNight);
@@ -562,61 +563,24 @@ export const InputForm: React.FC<InputFormProps> = ({
           <p className="text-sm text-gray-500">テーマを入れるだけで投稿完成</p>
         </div>
 
-        {/* 占いTikTok専用プリセット */}
-        <div className="rounded-3xl overflow-hidden border border-purple-200 bg-gradient-to-br from-[#1a0035] to-[#3d0068]">
-          <div className="p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-2xl">🔮</span>
-              <div>
-                <div className="font-black text-white text-base tracking-wide">占いTikTok 専用プリセット</div>
-                <div className="text-xs text-purple-300 mt-0.5">NEXA LoveLAB 用の最適設定をワンタップで適用</div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={applyFortunePreset}
-              className={`w-full py-3 rounded-2xl font-black text-sm tracking-wider transition-all active:scale-95 ${
-                presetApplied
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white hover:opacity-90 shadow-lg shadow-purple-500/30'
-              }`}
-            >
-              {presetApplied ? '✅ 設定を適用しました！' : '✨ 占いTikTok設定を一括適用'}
-            </button>
-            {presetApplied && (
-              <div className="mt-3 grid grid-cols-2 gap-1.5 text-xs">
-                {[
-                  ['👤', '対象：女性 30代'],
-                  ['🔗', 'URL：nexa-lovelab.com'],
-                  ['📍', 'CTA：プロフィールから無料で占えます👇'],
-                  ['⏰', '投稿：07:00 / 12:00 / 21:00'],
-                ].map(([icon, text]) => (
-                  <div key={text as string} className="flex items-center gap-1.5 bg-white/10 rounded-xl px-2.5 py-1.5 text-purple-100">
-                    <span>{icon}</span><span>{text}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          {/* 占いテーマ候補 */}
-          <div className="border-t border-white/10 px-5 py-4">
-            <div className="text-xs font-black text-purple-300 uppercase tracking-widest mb-3">✦ 占いテーマ候補 ✦</div>
-            <div className="flex flex-wrap gap-2">
-              {FORTUNE_THEMES.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTheme(t)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all active:scale-95 ${
-                    theme === t
-                      ? 'bg-pink-500 text-white border-pink-400'
-                      : 'bg-white/10 text-purple-100 border-white/20 hover:bg-white/20'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
+        {/* 占いテーマ候補 */}
+        <div className="rounded-3xl overflow-hidden border border-purple-200 bg-gradient-to-br from-[#1a0035] to-[#3d0068] px-5 py-4">
+          <div className="text-xs font-black text-purple-300 uppercase tracking-widest mb-3">✦ 占いテーマ候補 ✦</div>
+          <div className="flex flex-wrap gap-2">
+            {FORTUNE_THEMES.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTheme(t)}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all active:scale-95 ${
+                  theme === t
+                    ? 'bg-pink-500 text-white border-pink-400'
+                    : 'bg-white/10 text-purple-100 border-white/20 hover:bg-white/20'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -880,7 +844,7 @@ export const InputForm: React.FC<InputFormProps> = ({
               <HistoryChips
                 title="TikTok決まり文履歴"
                 items={tiktokTemplateTextHistory}
-                onSelect={setTiktokTemplateText}
+                onSelect={(v) => setTiktokTemplateText(v === '（削除）' ? '' : v)}
                 onDelete={(value) => setTiktokTemplateTextHistory(removeHistory(HISTORY_KEYS.tiktokTemplateText, value))}
               />
 
