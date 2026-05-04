@@ -124,6 +124,7 @@ interface InputFormProps {
   onCancel: () => void;
   loadingState: LoadingState;
   progress: number;
+  relatedThemes?: string[];
 }
 
 const MAX_HISTORY = 10;
@@ -314,7 +315,8 @@ export const InputForm: React.FC<InputFormProps> = ({
   onGenerate,
   onCancel,
   loadingState,
-  progress
+  progress,
+  relatedThemes = [],
 }) => {
   const isLoading = loadingState === LoadingState.LOADING;
 
@@ -661,6 +663,27 @@ export const InputForm: React.FC<InputFormProps> = ({
               onSelect={setTheme}
               onDelete={(value) => setThemeHistory(removeHistory(HISTORY_KEYS.theme, value))}
             />
+          )}
+
+          {relatedThemes.length > 0 && (
+            <div className="rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-50 to-pink-50 p-4 space-y-2">
+              <div className="flex items-center gap-2 text-[11px] font-black text-orange-500 uppercase tracking-wider">
+                <span>🔥</span>
+                次のバズるテーマ（前回の関連）
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {relatedThemes.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTheme(t)}
+                    className="px-3 py-1.5 rounded-full text-xs font-bold border border-orange-300 bg-white text-orange-600 hover:bg-orange-500 hover:text-white transition-all active:scale-95"
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
 
           {suggestions.length > 0 && (

@@ -4,7 +4,7 @@ import { InputForm, GenerateMode } from './components/InputForm';
 import { ResultCard } from './components/ResultCard';
 import { UserGuide } from './components/UserGuide';
 import { LoadingState, GeneratedPost } from './types';
-import { generateSNSPostContent } from './services/localPostGenerator';
+import { generateSNSPostContent, generateRelatedThemes } from './services/localPostGenerator';
 import {
   analyzeBuzzFromHistory,
   buildPostPackage,
@@ -110,6 +110,7 @@ const App: React.FC = () => {
   const [showGuide, setShowGuide] = useState(false);
   const [progress, setProgress] = useState(0);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [relatedThemes, setRelatedThemes] = useState<string[]>([]);
   const progressIntervalRef = useRef<number | null>(null);
 
   // 最新値を ref で追跡（beforeunload で同期保存するため）
@@ -243,6 +244,7 @@ const App: React.FC = () => {
 
       setCurrentPost(result);
       setGeneratedHistory((prev) => [result, ...prev].slice(0, 30));
+      setRelatedThemes(generateRelatedThemes(theme));
       setLoadingState(LoadingState.SUCCESS);
     } catch (error) {
       console.error(error);
@@ -328,6 +330,7 @@ const App: React.FC = () => {
           onCancel={handleCancel}
           loadingState={loadingState}
           progress={progress}
+          relatedThemes={relatedThemes}
         />
 
         {(loadingState === LoadingState.SUCCESS || (currentPost && loadingState === LoadingState.IDLE)) && currentPost && (
