@@ -389,7 +389,8 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [showThemeHistory, setShowThemeHistory] = useState(false);
   const [presetApplied, setPresetApplied] = useState(false);
   const [settingsUrlCopied, setSettingsUrlCopied] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [qrSettingsUrl, setQrSettingsUrl] = useState<string | null>(null);
+  const [qrAccountsUrl, setQrAccountsUrl] = useState<string | null>(null);
 
   const [accounts, setAccounts] = useState<SnsAccounts>(loadAccounts);
   const [showPasswords, setShowPasswords] = useState<Record<SnsKey, boolean>>(
@@ -474,24 +475,28 @@ export const InputForm: React.FC<InputFormProps> = ({
   };
 
   // 設定をURLに変換してクリップボードにコピー（スマホへの転送用）
-  const utf8ToSafeB64 = (obj: unknown): string => {
-    const json = JSON.stringify(obj);
+  const toSafeB64 = (obj: unknown): string => {
+    // 空フィールドを除いてデータを小さくする
+    const clean = JSON.parse(JSON.stringify(obj, (_, v) => (v === '' ? undefined : v)));
+    const json = JSON.stringify(clean);
     const bytes = new TextEncoder().encode(json);
     const binStr = Array.from(bytes, b => String.fromCharCode(b)).join('');
     return btoa(binStr).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
   };
 
+  const makeQrUrl = (data: unknown, param: string): string => {
+    const b64 = toSafeB64(data);
+    const target = `${window.location.origin}${window.location.pathname}?${param}=${b64}`;
+    // 400px・低エラー訂正(L)で最大データ量を確保
+    return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=L&margin=8&data=${encodeURIComponent(target)}`;
+  };
+
   const handleShareSettings = () => {
     try {
-      const payload = {
-        settings: settingsRef.current,
-        accounts: accountsRef.current,
-      };
-      const safeB64 = utf8ToSafeB64(payload);
-      const targetUrl = `${window.location.origin}${window.location.pathname}?s=${safeB64}`;
-      // QRコード画像URLを生成（外部APIでQRコードを作成）
-      const qr = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=10&data=${encodeURIComponent(targetUrl)}`;
-      setQrCodeUrl(qr);
+      // ① 設定のみのQRコード（小さくて読み取りやすい）
+      setQrSettingsUrl(makeQrUrl({ settings: settingsRef.current }, 's'));
+      // ② アカウント情報のみのQRコード（ID・PW・メモ）
+      setQrAccountsUrl(makeQrUrl({ accounts: accountsRef.current }, 's'));
     } catch (e) {
       console.error('Share failed:', e);
     }
@@ -1049,30 +1054,32 @@ export const InputForm: React.FC<InputFormProps> = ({
         {/* スマホへ設定を転送 */}
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
           <div className="text-xs font-black text-emerald-700">📱 スマホに設定を転送（QRコード）</div>
-          <p className="text-xs text-slate-500">ボタンを押すとQRコードが表示されます。スマホのカメラで読み取るだけで全設定・アカウント情報が転送されます。</p>
+          <p className="text-xs text-slate-500">ボタンを押すと2枚のQRコードが表示されます。①②の順にスマホのカメラで読み取ってください。</p>
           <button
             type="button"
             onClick={handleShareSettings}
             className="w-full py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700"
           >
-            📷 QRコードを表示してスマホに転送
+            📷 QRコードを表示する
           </button>
-          {qrCodeUrl && (
-            <div className="flex flex-col items-center gap-3 pt-2">
-              <div className="text-xs font-bold text-slate-600 text-center">
-                スマホのカメラでこのQRコードを読み取ってください
-              </div>
-              <img
-                src={qrCodeUrl}
-                alt="設定転送QRコード"
-                className="rounded-xl border border-emerald-300 bg-white"
-                width={240}
-                height={240}
-              />
+          {(qrSettingsUrl || qrAccountsUrl) && (
+            <div className="space-y-4 pt-2">
+              {qrSettingsUrl && (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="text-xs font-black text-emerald-700">① note・X・Threads・設定</div>
+                  <img src={qrSettingsUrl} alt="設定QR" className="rounded-xl border border-emerald-300 bg-white" width={280} height={280} />
+                </div>
+              )}
+              {qrAccountsUrl && (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="text-xs font-black text-emerald-700">② SNSアカウント（ID・PW・メモ）</div>
+                  <img src={qrAccountsUrl} alt="アカウントQR" className="rounded-xl border border-emerald-300 bg-white" width={280} height={280} />
+                </div>
+              )}
               <button
                 type="button"
-                onClick={() => setQrCodeUrl(null)}
-                className="text-xs text-slate-400 hover:text-slate-600"
+                onClick={() => { setQrSettingsUrl(null); setQrAccountsUrl(null); }}
+                className="w-full text-xs text-slate-400 hover:text-slate-600 py-2"
               >
                 閉じる ×
               </button>
