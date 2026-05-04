@@ -13,15 +13,18 @@ import {
 export type GenerateMode = 'script' | 'video' | 'post_data' | 'full_auto';
 
 const SNS_PLATFORMS = [
-  { key: 'note',      label: 'note',        url: 'https://note.com/login',                        color: '#41c9b4' },
-  { key: 'x',         label: 'X (Twitter)', url: 'https://twitter.com/login',                     color: '#000000' },
-  { key: 'tiktok',    label: 'TikTok',      url: 'https://www.tiktok.com/login',                  color: '#fe2c55' },
-  { key: 'instagram', label: 'Instagram',   url: 'https://www.instagram.com/accounts/login/',     color: '#e1306c' },
-  { key: 'youtube',   label: 'YouTube',     url: 'https://accounts.google.com/',                  color: '#ff0000' },
-  { key: 'threads',   label: 'Threads',     url: 'https://www.threads.net/login',                 color: '#7c3aed' },
-  { key: 'twitch',    label: 'Twitch',      url: 'https://www.twitch.tv/login',                   color: '#9146ff' },
-  { key: 'showroom',  label: 'SHOWROOM',    url: 'https://www.showroom-live.com/login',            color: '#f43f5e' },
+  { key: 'note',      label: 'note',        url: 'https://note.com/',                              appScheme: null,               color: '#41c9b4' },
+  { key: 'x',         label: 'X (Twitter)', url: 'https://twitter.com/',                           appScheme: 'twitter://timeline', color: '#000000' },
+  { key: 'tiktok',    label: 'TikTok',      url: 'https://www.tiktok.com/',                        appScheme: 'snssdk1128://',     color: '#fe2c55' },
+  { key: 'instagram', label: 'Instagram',   url: 'https://www.instagram.com/',                     appScheme: 'instagram://app',   color: '#e1306c' },
+  { key: 'youtube',   label: 'YouTube',     url: 'https://m.youtube.com/',                         appScheme: 'youtube://',        color: '#ff0000' },
+  { key: 'threads',   label: 'Threads',     url: 'https://www.threads.net/',                       appScheme: 'threads://',        color: '#7c3aed' },
+  { key: 'twitch',    label: 'Twitch',      url: 'https://www.twitch.tv/',                         appScheme: 'twitch://open',     color: '#9146ff' },
+  { key: 'showroom',  label: 'SHOWROOM',    url: 'https://www.showroom-live.com/',                 appScheme: 'showroom://',       color: '#f43f5e' },
 ] as const;
+
+const isMobile = (): boolean =>
+  /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 type SnsKey = typeof SNS_PLATFORMS[number]['key'];
 type SnsAccounts = Record<SnsKey, { id: string; password: string; memo: string }>;
@@ -1009,19 +1012,33 @@ export const InputForm: React.FC<InputFormProps> = ({
             {SNS_PLATFORMS.map((platform) => {
               const acc = accounts[platform.key] ?? { id: '', password: '', memo: '' };
               const isVisible = showPasswords[platform.key];
+              const mobile = isMobile();
               return (
                 <div key={platform.key} className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className="font-black text-sm" style={{ color: platform.color }}>{platform.label}</span>
-                    <a
-                      href={platform.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-bold px-3 py-1.5 rounded-full text-white active:scale-95 transition-all"
-                      style={{ background: platform.color }}
-                    >
-                      ログインページを開く →
-                    </a>
+                    <div className="flex gap-2 flex-wrap justify-end">
+                      {/* スマホかつURIスキームがある場合：アプリを開くボタン */}
+                      {mobile && platform.appScheme && (
+                        <a
+                          href={platform.appScheme}
+                          className="text-xs font-bold px-3 py-1.5 rounded-full text-white active:scale-95 transition-all"
+                          style={{ background: platform.color }}
+                        >
+                          アプリを開く →
+                        </a>
+                      )}
+                      {/* PC or アプリなし：ブラウザで開く */}
+                      <a
+                        href={platform.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold px-3 py-1.5 rounded-full active:scale-95 transition-all"
+                        style={{ background: mobile && platform.appScheme ? '#94a3b8' : platform.color, color: '#fff' }}
+                      >
+                        {mobile && platform.appScheme ? 'ブラウザで開く' : 'ログインページを開く →'}
+                      </a>
+                    </div>
                   </div>
                   <input
                     type="text"
