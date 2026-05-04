@@ -89,6 +89,27 @@ const readGeneratedHistory = (): GeneratedPost[] => {
 const getHistoryItemKey = (post: GeneratedPost, index?: number) =>
   `${post.timestamp ?? 'time'}__${post.title ?? 'title'}__${post.theme ?? 'theme'}__${index ?? ''}`;
 
+// 起動時にURLパラメータから設定をインポート（スマホへの設定転送用）
+const importSettingsFromUrl = () => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('s');
+    if (!encoded) return;
+    const json = atob(encoded);
+    const parsed = JSON.parse(json);
+    if (parsed && typeof parsed === 'object') {
+      const existing = localStorage.getItem('sns_form_settings_v1');
+      const base = existing ? JSON.parse(existing) : {};
+      localStorage.setItem('sns_form_settings_v1', JSON.stringify({ ...base, ...parsed }));
+    }
+    // URLパラメータを消してリロードなしでクリーン
+    const url = new URL(window.location.href);
+    url.searchParams.delete('s');
+    window.history.replaceState({}, '', url.toString());
+  } catch {}
+};
+importSettingsFromUrl();
+
 const App: React.FC = () => {
   const [currentPost, setCurrentPost] = useState<GeneratedPost | null>(() => {
     try {

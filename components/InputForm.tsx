@@ -388,6 +388,7 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [openAccounts, setOpenAccounts] = useState(false);
   const [showThemeHistory, setShowThemeHistory] = useState(false);
   const [presetApplied, setPresetApplied] = useState(false);
+  const [settingsUrlCopied, setSettingsUrlCopied] = useState(false);
 
   const [accounts, setAccounts] = useState<SnsAccounts>(loadAccounts);
   const [showPasswords, setShowPasswords] = useState<Record<SnsKey, boolean>>(
@@ -469,6 +470,21 @@ export const InputForm: React.FC<InputFormProps> = ({
     const next = { ...settingsRef.current, [key]: value };
     settingsRef.current = next;
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+  };
+
+  // 設定をURLに変換してクリップボードにコピー（スマホへの転送用）
+  const handleShareSettings = () => {
+    try {
+      const json = JSON.stringify(settingsRef.current);
+      const encoded = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode(parseInt(p1, 16))));
+      const url = `${window.location.origin}${window.location.pathname}?s=${encoded}`;
+      navigator.clipboard.writeText(url).then(() => {
+        setSettingsUrlCopied(true);
+        setTimeout(() => setSettingsUrlCopied(false), 4000);
+      }).catch(() => {
+        prompt('このURLをコピーしてスマホで開いてください', url);
+      });
+    } catch {}
   };
 
   // アカウント情報：入力のたびに即座に localStorage へ直書きする
@@ -1019,6 +1035,20 @@ export const InputForm: React.FC<InputFormProps> = ({
             />
           </div>
         )}
+
+        {/* スマホへ設定を転送 */}
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-2">
+          <div className="text-xs font-black text-emerald-700">📱 スマホに設定を転送</div>
+          <p className="text-xs text-slate-500">PCで設定したnote・X設定などをスマホに引き継ぎできます。</p>
+          <button
+            type="button"
+            onClick={handleShareSettings}
+            className="w-full py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95"
+            style={{ background: settingsUrlCopied ? '#10b981' : '#059669' }}
+          >
+            {settingsUrlCopied ? '✅ URLをコピーしました！スマホで開いてください' : '🔗 設定URLをコピーしてスマホで開く'}
+          </button>
+        </div>
 
         {/* SNSアカウント管理 */}
         <SectionButton
