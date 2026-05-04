@@ -896,14 +896,15 @@ export const InputForm: React.FC<InputFormProps> = ({
                 <div key={platform.key} className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="font-black text-sm" style={{ color: platform.color }}>{platform.label}</span>
-                    <button
-                      type="button"
-                      onClick={() => window.open(platform.url, '_blank')}
+                    <a
+                      href={platform.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-xs font-bold px-3 py-1.5 rounded-full text-white active:scale-95 transition-all"
                       style={{ background: platform.color }}
                     >
                       ログインページを開く →
-                    </button>
+                    </a>
                   </div>
                   <input
                     type="text"
@@ -939,7 +940,7 @@ export const InputForm: React.FC<InputFormProps> = ({
               );
             })}
             <p className="text-xs text-slate-400 text-center px-2">
-              ※ ID・PWはこのブラウザのみに保存されます。入力後は自動保存されます。
+              ※ ログインページは新しいタブで開きます。このツールは元のタブに残ります。
             </p>
           </div>
         )}
