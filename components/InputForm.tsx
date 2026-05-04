@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import QRCode from 'qrcode';
+import React, { useState, useEffect, useRef } from 'react';
 import { LoadingState } from '../types';
 import {
   SparklesIcon,
@@ -414,8 +413,9 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [openAccounts, setOpenAccounts] = useState(false);
   const [showThemeHistory, setShowThemeHistory] = useState(false);
   const [presetApplied, setPresetApplied] = useState(false);
-  const [settingsUrlCopied, setSettingsUrlCopied] = useState(false);
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [exportCopied, setExportCopied] = useState(false);
+  const [importCode, setImportCode] = useState('');
+  const [importResult, setImportResult] = useState<'ok' | 'error' | null>(null);
 
   const [accounts, setAccounts] = useState<SnsAccounts>(loadAccounts);
   const [showPasswords, setShowPasswords] = useState<Record<SnsKey, boolean>>(
@@ -440,55 +440,6 @@ export const InputForm: React.FC<InputFormProps> = ({
 
   const accountsRef = useRef(accounts);
   accountsRef.current = accounts;
-
-  // QRコードから開かれた場合：リロードせずstateに直接反映
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const encoded = params.get('s');
-    if (!encoded) return;
-    try {
-      const standard = encoded.replace(/-/g, '+').replace(/_/g, '/');
-      const padded = standard + '==='.slice((standard.length + 3) % 4);
-      const binStr = atob(padded);
-      const bytes = new Uint8Array(binStr.length);
-      for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
-      const json = new TextDecoder().decode(bytes);
-      const parsed = JSON.parse(json);
-      if (!parsed || typeof parsed !== 'object') return;
-
-      if (parsed.settings && typeof parsed.settings === 'object') {
-        const s = { ...defaultSettings, ...parsed.settings };
-        // stateに直接反映（リロード不要）
-        updateSetting(setTemplateText, 'templateText', s.templateText ?? defaultSettings.templateText);
-        updateSetting(setTemplateUrl, 'templateUrl', s.templateUrl ?? defaultSettings.templateUrl);
-        updateSetting(setInsertPosition, 'insertPosition', s.insertPosition ?? defaultSettings.insertPosition);
-        updateSetting(setTiktokTemplateText, 'tiktokTemplateText', s.tiktokTemplateText ?? defaultSettings.tiktokTemplateText);
-        updateSetting(setTiktokInsertPosition, 'tiktokInsertPosition', s.tiktokInsertPosition ?? defaultSettings.tiktokInsertPosition);
-        updateSetting(setXPhrase, 'xPhrase', s.xPhrase ?? defaultSettings.xPhrase);
-        updateSetting(setXUrl, 'xUrl', s.xUrl ?? defaultSettings.xUrl);
-        updateSetting(setThreadsPhrase, 'threadsPhrase', s.threadsPhrase ?? defaultSettings.threadsPhrase);
-        updateSetting(setThreadsUrl, 'threadsUrl', s.threadsUrl ?? defaultSettings.threadsUrl);
-        updateSetting(setIgYtPhrase, 'igYtPhrase', s.igYtPhrase ?? defaultSettings.igYtPhrase);
-      }
-      if (parsed.accounts && typeof parsed.accounts === 'object') {
-        setAccounts(prev => {
-          const merged = { ...prev };
-          for (const [k, v] of Object.entries(parsed.accounts as Record<string, Record<string, string>>)) {
-            if (merged[k as SnsKey]) merged[k as SnsKey] = { ...merged[k as SnsKey], ...v };
-          }
-          localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(merged));
-          return merged;
-        });
-      }
-      // URLパラメータを消す（リロードしない）
-      const url = new URL(window.location.href);
-      url.searchParams.delete('s');
-      url.searchParams.delete('t');
-      window.history.replaceState({}, '', url.toString());
-    } catch (e) {
-      console.error('QR import in component failed:', e);
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // タブを閉じる・切り替える直前に同期保存
   // settingsRef は毎レンダリングで更新されているため確実に最新値を持つ
@@ -551,36 +502,10 @@ export const InputForm: React.FC<InputFormProps> = ({
   };
 
   // 設定をURLに変換してクリップボードにコピー（スマホへの転送用）
-  const toSafeB64 = (obj: unknown): string => {
-    // 空フィールドを除いてデータを小さくする
-    const clean = JSON.parse(JSON.stringify(obj, (_, v) => (v === '' ? undefined : v)));
-    const json = JSON.stringify(clean);
-    const bytes = new TextEncoder().encode(json);
-    const binStr = Array.from(bytes, b => String.fromCharCode(b)).join('');
-    return btoa(binStr).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  };
-
-  const makeTargetUrl = (data: unknown): string => {
-    const b64 = toSafeB64(data);
-    // タイムスタンプを付けてSafariのキャッシュを無効化（毎回異なるURL）
-    const t = Date.now();
-    return `${window.location.origin}${window.location.pathname}?s=${b64}&t=${t}`;
-  };
-
-  const generateQr = useCallback(async (data: unknown): Promise<string> => {
-    const url = makeTargetUrl(data);
-    return await QRCode.toDataURL(url, {
-      width: 400,
-      margin: 2,
-      errorCorrectionLevel: 'L',
-      color: { dark: '#000000', light: '#ffffff' },
-    });
-  }, []);
-
-  const handleShareSettings = async () => {
+  // 設定+アカウントをテキストコードにエクスポート
+  const handleExport = () => {
     try {
       const s = settingsRef.current;
-      // 設定+アカウントを1枚のQRにまとめる（2枚に分けると干渉する問題を根本解決）
       const payload = {
         settings: {
           templateText: s.templateText,
@@ -596,10 +521,67 @@ export const InputForm: React.FC<InputFormProps> = ({
         },
         accounts: accountsRef.current,
       };
-      const qr = await generateQr(payload);
-      setQrDataUrl(qr);
+      const json = JSON.stringify(payload);
+      const bytes = new TextEncoder().encode(json);
+      const binStr = Array.from(bytes, b => String.fromCharCode(b)).join('');
+      const code = 'SNSP1:' + btoa(binStr);
+      navigator.clipboard.writeText(code).then(() => {
+        setExportCopied(true);
+        setTimeout(() => setExportCopied(false), 3000);
+      }).catch(() => {
+        prompt('このコードをコピーしてLINEで自分に送ってください', code);
+      });
     } catch (e) {
-      console.error('QR generation failed:', e);
+      console.error('Export failed:', e);
+    }
+  };
+
+  // テキストコードをインポートしてstateに直接反映
+  const handleImport = () => {
+    try {
+      const raw = importCode.trim();
+      if (!raw.startsWith('SNSP1:')) {
+        setImportResult('error');
+        setTimeout(() => setImportResult(null), 3000);
+        return;
+      }
+      const b64 = raw.slice(6);
+      const binStr = atob(b64);
+      const bytes = new Uint8Array(binStr.length);
+      for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+      const json = new TextDecoder().decode(bytes);
+      const parsed = JSON.parse(json);
+
+      if (parsed.settings) {
+        const s = { ...defaultSettings, ...parsed.settings };
+        updateSetting(setTemplateText, 'templateText', s.templateText);
+        updateSetting(setTemplateUrl, 'templateUrl', s.templateUrl);
+        updateSetting(setInsertPosition, 'insertPosition', s.insertPosition);
+        updateSetting(setTiktokTemplateText, 'tiktokTemplateText', s.tiktokTemplateText);
+        updateSetting(setTiktokInsertPosition, 'tiktokInsertPosition', s.tiktokInsertPosition);
+        updateSetting(setXPhrase, 'xPhrase', s.xPhrase);
+        updateSetting(setXUrl, 'xUrl', s.xUrl);
+        updateSetting(setThreadsPhrase, 'threadsPhrase', s.threadsPhrase);
+        updateSetting(setThreadsUrl, 'threadsUrl', s.threadsUrl);
+        updateSetting(setIgYtPhrase, 'igYtPhrase', s.igYtPhrase);
+      }
+      if (parsed.accounts) {
+        setAccounts(prev => {
+          const merged = { ...prev };
+          for (const [k, v] of Object.entries(parsed.accounts as Record<string, Record<string, string>>)) {
+            if (merged[k as SnsKey]) merged[k as SnsKey] = { ...merged[k as SnsKey], ...(v as { id: string; password: string; memo: string }) };
+          }
+          localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(merged));
+          saveToCookie(settingsRef.current);
+          return merged;
+        });
+      }
+      setImportCode('');
+      setImportResult('ok');
+      setTimeout(() => setImportResult(null), 4000);
+    } catch (e) {
+      setImportResult('error');
+      setTimeout(() => setImportResult(null), 3000);
     }
   };
 
@@ -1152,30 +1134,48 @@ export const InputForm: React.FC<InputFormProps> = ({
           </div>
         )}
 
-        {/* スマホへ設定を転送 */}
+        {/* スマホへ設定を転送（テキストコード方式） */}
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
-          <div className="text-xs font-black text-emerald-700">📱 スマホに設定を転送（QRコード1枚）</div>
-          <p className="text-xs text-slate-500">ボタンを押すとQRコードが1枚表示されます。スマホのカメラで読み取ってください。設定・アカウント情報がまとめて転送されます。</p>
-          <button
-            type="button"
-            onClick={handleShareSettings}
-            className="w-full py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700"
-          >
-            📷 QRコードを表示する
-          </button>
-          {qrDataUrl && (
-            <div className="flex flex-col items-center gap-3 pt-2">
-              <div className="text-xs font-black text-emerald-700 text-center">スマホのカメラで読み取ってください</div>
-              <img src={qrDataUrl} alt="転送QR" className="rounded-xl border border-emerald-300 bg-white" width={300} height={300} />
-              <button
-                type="button"
-                onClick={() => setQrDataUrl(null)}
-                className="w-full text-xs text-slate-400 hover:text-slate-600 py-2"
-              >
-                閉じる ×
-              </button>
-            </div>
-          )}
+          <div className="text-xs font-black text-emerald-700">📱 スマホに設定を転送</div>
+
+          {/* PC側：エクスポート */}
+          <div className="space-y-1">
+            <div className="text-xs font-bold text-slate-600">① PCでコードをコピー</div>
+            <p className="text-xs text-slate-400">コピーしたコードをLINEなどで自分に送ってください。</p>
+            <button
+              type="button"
+              onClick={handleExport}
+              className="w-full py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700"
+            >
+              {exportCopied ? '✅ コピーしました！LINEで自分に送ってください' : '📋 設定コードをコピー'}
+            </button>
+          </div>
+
+          <div className="border-t border-emerald-200 pt-3 space-y-1">
+            <div className="text-xs font-bold text-slate-600">② スマホでコードを貼り付けて適用</div>
+            <p className="text-xs text-slate-400">LINEで受け取ったコードをここに貼り付けてください。</p>
+            <textarea
+              value={importCode}
+              onChange={(e) => setImportCode(e.target.value)}
+              placeholder="SNSP1: から始まるコードを貼り付け"
+              rows={3}
+              className="w-full p-3 rounded-xl border border-emerald-300 text-xs font-mono focus:outline-none focus:border-emerald-500 resize-none bg-white"
+            />
+            <button
+              type="button"
+              onClick={handleImport}
+              disabled={!importCode.trim()}
+              className="w-full py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40"
+            >
+              適用する
+            </button>
+            {importResult === 'ok' && (
+              <div className="text-center text-xs font-black text-emerald-600 py-1">✅ 設定・アカウント情報を反映しました！</div>
+            )}
+            {importResult === 'error' && (
+              <div className="text-center text-xs font-black text-red-500 py-1">❌ コードが正しくありません。コピーし直してください。</div>
+            )}
+          </div>
         </div>
 
         {/* SNSアカウント管理 */}

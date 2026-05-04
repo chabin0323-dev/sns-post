@@ -100,8 +100,7 @@ const b64ToUtf8 = (b64: string): string => {
   return new TextDecoder().decode(bytes);
 };
 
-// 起動時にURLパラメータから設定をインポート（スマホへの設定転送用）
-// 戻り値: 何をインポートしたか（成功メッセージ表示用）
+// URLパラメータからのインポートは廃止（テキストコード方式に移行）
 const importSettingsFromUrl = (): string | null => {
   try {
     const params = new URLSearchParams(window.location.search);
