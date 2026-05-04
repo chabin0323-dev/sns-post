@@ -139,18 +139,12 @@ const importSettingsFromUrl = (): string | null => {
         imported = '設定';
       }
     }
+    // URLパラメータを消すだけ（リロードしない）
     const url = new URL(window.location.href);
     url.searchParams.delete('s');
     url.searchParams.delete('t');
-    if (imported) {
-      // sessionStorageにフラグを保存してからリロード
-      // (リロード後もタブ内sessionStorageは保持される)
-      sessionStorage.setItem('_qr_imported', imported);
-      window.location.replace(url.toString());
-    } else {
-      window.history.replaceState({}, '', url.toString());
-    }
-    return null; // リロードするので戻り値は不要
+    window.history.replaceState({}, '', url.toString());
+    return imported || null;
   } catch (e) {
     console.error('Settings import failed:', e);
     return null;
@@ -159,14 +153,7 @@ const importSettingsFromUrl = (): string | null => {
 const importedLabel = importSettingsFromUrl();
 
 const App: React.FC = () => {
-  const [importNotice] = useState<string | null>(() => {
-    const notice = sessionStorage.getItem('_qr_imported');
-    if (notice) {
-      sessionStorage.removeItem('_qr_imported');
-      return notice;
-    }
-    return null;
-  });
+  const [importNotice] = useState<string | null>(importedLabel);
 
   const [currentPost, setCurrentPost] = useState<GeneratedPost | null>(() => {
     try {

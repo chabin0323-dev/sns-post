@@ -442,6 +442,55 @@ export const InputForm: React.FC<InputFormProps> = ({
   const accountsRef = useRef(accounts);
   accountsRef.current = accounts;
 
+  // QRコードから開かれた場合：リロードせずstateに直接反映
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('s');
+    if (!encoded) return;
+    try {
+      const standard = encoded.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = standard + '==='.slice((standard.length + 3) % 4);
+      const binStr = atob(padded);
+      const bytes = new Uint8Array(binStr.length);
+      for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+      const json = new TextDecoder().decode(bytes);
+      const parsed = JSON.parse(json);
+      if (!parsed || typeof parsed !== 'object') return;
+
+      if (parsed.settings && typeof parsed.settings === 'object') {
+        const s = { ...defaultSettings, ...parsed.settings };
+        // stateに直接反映（リロード不要）
+        updateSetting(setTemplateText, 'templateText', s.templateText ?? defaultSettings.templateText);
+        updateSetting(setTemplateUrl, 'templateUrl', s.templateUrl ?? defaultSettings.templateUrl);
+        updateSetting(setInsertPosition, 'insertPosition', s.insertPosition ?? defaultSettings.insertPosition);
+        updateSetting(setTiktokTemplateText, 'tiktokTemplateText', s.tiktokTemplateText ?? defaultSettings.tiktokTemplateText);
+        updateSetting(setTiktokInsertPosition, 'tiktokInsertPosition', s.tiktokInsertPosition ?? defaultSettings.tiktokInsertPosition);
+        updateSetting(setXPhrase, 'xPhrase', s.xPhrase ?? defaultSettings.xPhrase);
+        updateSetting(setXUrl, 'xUrl', s.xUrl ?? defaultSettings.xUrl);
+        updateSetting(setThreadsPhrase, 'threadsPhrase', s.threadsPhrase ?? defaultSettings.threadsPhrase);
+        updateSetting(setThreadsUrl, 'threadsUrl', s.threadsUrl ?? defaultSettings.threadsUrl);
+        updateSetting(setIgYtPhrase, 'igYtPhrase', s.igYtPhrase ?? defaultSettings.igYtPhrase);
+      }
+      if (parsed.accounts && typeof parsed.accounts === 'object') {
+        setAccounts(prev => {
+          const merged = { ...prev };
+          for (const [k, v] of Object.entries(parsed.accounts as Record<string, Record<string, string>>)) {
+            if (merged[k as SnsKey]) merged[k as SnsKey] = { ...merged[k as SnsKey], ...v };
+          }
+          localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(merged));
+          return merged;
+        });
+      }
+      // URLパラメータを消す（リロードしない）
+      const url = new URL(window.location.href);
+      url.searchParams.delete('s');
+      url.searchParams.delete('t');
+      window.history.replaceState({}, '', url.toString());
+    } catch (e) {
+      console.error('QR import in component failed:', e);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // タブを閉じる・切り替える直前に同期保存
   // settingsRef は毎レンダリングで更新されているため確実に最新値を持つ
   useEffect(() => {
