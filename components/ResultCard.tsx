@@ -186,44 +186,57 @@ export const ResultCard: React.FC<ResultCardProps> = ({
     }
   };
 
-  const getPostConfig = (labels: string[]): { label: string; url: string; prefill: boolean } | null => {
+  const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  // 加重文字数で280ウェイト以内に切り詰め
+  const trimForShareUrl = (text: string): string => {
+    const MAX = 280;
+    let n = 0; let result = '';
+    for (const c of text) {
+      const w = ((c.codePointAt(0) ?? 0) <= 0x10FF) ? 1 : 2;
+      if (n + w > MAX) return result.trimEnd() + '…';
+      n += w; result += c;
+    }
+    return result;
+  };
+
+  // SNSごとの投稿設定（PC用 web URL ＋ スマホ用 URI スキーム）
+  type PostConfig = { label: string; webUrl: string; appScheme?: string; prefill?: boolean };
+  const getPostConfig = (labels: string[]): PostConfig | null => {
     const l = labels[0];
-    if (l === 'X') return { label: 'X に投稿', url: 'https://x.com/intent/post?text=', prefill: true };
-    if (l === 'note') return { label: 'note に投稿', url: 'https://note.com/notes/new', prefill: false };
-    if (l === 'TikTok') return { label: 'TikTok へ', url: 'https://www.tiktok.com/upload', prefill: false };
-    if (l === 'Instagram') return { label: 'Instagram / YouTube へ', url: 'https://www.instagram.com/', prefill: false };
-    if (l === 'Threads') return { label: 'Threads に投稿', url: 'https://www.threads.net/intent/post?text=', prefill: true };
-    if (l === 'Twitch') return { label: 'Twitch Studio へ', url: 'https://dashboard.twitch.tv/', prefill: false };
-    if (l === 'SHOWROOM') return { label: 'SHOWROOM へ', url: 'https://www.showroom-live.com/', prefill: false };
+    if (l === 'X')         return { label: 'X に投稿',              webUrl: 'https://x.com/intent/post?text=',          appScheme: 'twitter://post?message=',   prefill: true };
+    if (l === 'note')      return { label: 'note に投稿',            webUrl: 'https://note.com/notes/new' };
+    if (l === 'TikTok')    return { label: 'TikTok アプリへ',        webUrl: 'https://www.tiktok.com/',                  appScheme: 'snssdk1128://' };
+    if (l === 'Instagram') return { label: 'Instagram / YouTube へ', webUrl: 'https://www.instagram.com/',               appScheme: 'instagram://app' };
+    if (l === 'Threads')   return { label: 'Threads に投稿',         webUrl: 'https://www.threads.net/intent/post?text=', appScheme: 'threads://', prefill: true };
+    if (l === 'Twitch')    return { label: 'Twitch アプリへ',        webUrl: 'https://dashboard.twitch.tv/',             appScheme: 'twitch://open' };
+    if (l === 'SHOWROOM')  return { label: 'SHOWROOM アプリへ',      webUrl: 'https://www.showroom-live.com/',           appScheme: 'showroom://' };
     return null;
   };
 
   const [postedKey, setPostedKey] = useState('');
 
-  // X / Threads 投稿ボタン用：加重文字数で280ウェイト以内に切り詰め
-  const trimForShareUrl = (text: string): string => {
-    const MAX = 280;
-    let n = 0;
-    let result = '';
-    for (const c of text) {
-      const w = ((c.codePointAt(0) ?? 0) <= 0x10FF) ? 1 : 2;
-      if (n + w > MAX) return result.trimEnd() + '…';
-      n += w;
-      result += c;
-    }
-    return result;
-  };
-
   const handlePost = async (text: string, labels: string[], key: string) => {
     const config = getPostConfig(labels);
     if (!config) return;
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch (_) {}
-    if (config.prefill) {
-      window.open(config.url + encodeURIComponent(trimForShareUrl(text)), '_blank');
+
+    // テキストをクリップボードにコピー
+    try { await navigator.clipboard.writeText(text); } catch (_) {}
+
+    const mobile = isMobile();
+    const encoded = encodeURIComponent(trimForShareUrl(text));
+
+    if (mobile && config.appScheme) {
+      // スマホ：URI スキームでアプリを直接起動（投稿文はクリップボードから貼り付け）
+      const scheme = config.prefill ? config.appScheme + encoded : config.appScheme;
+      window.location.href = scheme;
     } else {
-      window.open(config.url, '_blank');
+      // PC：ブラウザで開く
+      if (config.prefill) {
+        window.open(config.webUrl + encoded, '_blank');
+      } else {
+        window.open(config.webUrl, '_blank');
+      }
     }
     setPostedKey(key);
     setTimeout(() => setPostedKey(''), 3000);
@@ -315,19 +328,23 @@ export const ResultCard: React.FC<ResultCardProps> = ({
                   )}
                 </button>
 
-                {getPostConfig(block.labels) && (
-                  <button
-                    onClick={() => handlePost(block.text, block.labels, copyKey + '_post')}
-                    className="w-full py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 transition-all transform active:scale-[0.98] bg-white border-2 border-current hover:opacity-80"
-                    style={{ color: block.labels[0] === 'X' ? '#000' : block.labels[0] === 'TikTok' ? '#fe2c55' : block.labels[0] === 'Instagram' ? '#e1306c' : block.labels[0] === 'Threads' ? '#7c3aed' : block.labels[0] === 'Twitch' ? '#9146ff' : block.labels[0] === 'SHOWROOM' ? '#f43f5e' : '#41c9b4' }}
-                  >
-                    {postedKey === copyKey + '_post' ? (
-                      <>✅ コピー済み・投稿画面を開きました</>
-                    ) : (
-                      <>🚀 {getPostConfig(block.labels)!.label}{getPostConfig(block.labels)!.prefill ? '' : '（自動コピー）'}</>
-                    )}
-                  </button>
-                )}
+                {getPostConfig(block.labels) && (() => {
+                  const cfg = getPostConfig(block.labels)!;
+                  const mobile = isMobile();
+                  const hasApp = !!cfg.appScheme;
+                  const btnLabel = mobile && hasApp
+                    ? (cfg.prefill ? `📲 ${cfg.label}（アプリに直接入力）` : `📲 コピー済み → ${cfg.label}（貼り付けてください）`)
+                    : `🚀 ${cfg.label}${cfg.prefill ? '' : '（自動コピー）'}`;
+                  return (
+                    <button
+                      onClick={() => handlePost(block.text, block.labels, copyKey + '_post')}
+                      className="w-full py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 transition-all transform active:scale-[0.98] bg-white border-2 border-current hover:opacity-80"
+                      style={{ color: block.labels[0] === 'X' ? '#000' : block.labels[0] === 'TikTok' ? '#fe2c55' : block.labels[0] === 'Instagram' ? '#e1306c' : block.labels[0] === 'Threads' ? '#7c3aed' : block.labels[0] === 'Twitch' ? '#9146ff' : block.labels[0] === 'SHOWROOM' ? '#f43f5e' : '#41c9b4' }}
+                    >
+                      {postedKey === copyKey + '_post' ? <>✅ 完了！</> : <>{btnLabel}</>}
+                    </button>
+                  );
+                })()}
               </div>
             </div>
           </div>
