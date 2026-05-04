@@ -440,28 +440,20 @@ export const InputForm: React.FC<InputFormProps> = ({
     };
   }, []);
 
-  // 変更時にも随時保存（beforeunload が呼ばれない場合のバックアップ）
+  // 設定の変更を検知してバックアップ保存
   useEffect(() => {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settingsRef.current));
   }, [theme, gender, age, length, templateText, templateUrl, tiktokTemplateText,
       insertPosition, tiktokInsertPosition, hashtagMode, scheduleMorning, scheduleNoon, scheduleNight,
       xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase]);
 
-  useEffect(() => {
-    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
-  }, [accounts]);
-
-  // 備考欄が消える問題対策：30秒ごとに強制保存
-  useEffect(() => {
-    const id = setInterval(() => {
-      localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accountsRef.current));
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settingsRef.current));
-    }, 30000);
-    return () => clearInterval(id);
-  }, []);
-
+  // アカウント情報：入力のたびに即座に localStorage へ直書きする
   const updateAccount = (key: SnsKey, field: 'id' | 'password' | 'memo', value: string) => {
-    setAccounts(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
+    setAccounts(prev => {
+      const next = { ...prev, [key]: { ...prev[key], [field]: value } };
+      localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(next));
+      return next;
+    });
   };
 
   const toggleShowPassword = (key: SnsKey) => {
