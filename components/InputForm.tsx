@@ -539,13 +539,15 @@ export const InputForm: React.FC<InputFormProps> = ({
   // テキストコードをインポートしてstateに直接反映
   const handleImport = () => {
     try {
-      const raw = importCode.trim();
+      // LINEなどが改行・空白を挿入する場合に対応：全空白を除去してからチェック
+      const raw = importCode.replace(/\s/g, '');
       if (!raw.startsWith('SNSP1:')) {
         setImportResult('error');
         setTimeout(() => setImportResult(null), 3000);
         return;
       }
-      const b64 = raw.slice(6);
+      // base64部分だけ抽出（base64以外の文字も除去）
+      const b64 = raw.slice(6).replace(/[^A-Za-z0-9+/=]/g, '');
       const binStr = atob(b64);
       const bytes = new Uint8Array(binStr.length);
       for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
