@@ -68,7 +68,19 @@ type FormSettings = {
   scheduleMorning: string;
   scheduleNoon: string;
   scheduleNight: string;
+  xPhrase: string;
+  xUrl: string;
+  threadsPhrase: string;
+  threadsUrl: string;
+  igYtPhrase: string;
 };
+
+const IG_YT_PHRASE_PRESETS = [
+  '詳細はプロフィールのリンクから🔗',
+  'プロフィールのリンクをチェック✨',
+  '👆プロフィールから無料で試せます',
+  '気になる方はプロフィールへ💫',
+];
 
 const defaultSettings: FormSettings = {
   theme: '',
@@ -84,6 +96,11 @@ const defaultSettings: FormSettings = {
   scheduleMorning: '08:00',
   scheduleNoon: '12:00',
   scheduleNight: '20:00',
+  xPhrase: '▼無料で試す',
+  xUrl: 'https://lovelab-sns-redirect.vercel.app',
+  threadsPhrase: '▼無料で試す',
+  threadsUrl: 'https://lovelab-sns-redirect.vercel.app',
+  igYtPhrase: '詳細はプロフィールのリンクから🔗',
 };
 
 const HISTORY_KEYS_CONST = {
@@ -127,7 +144,12 @@ interface InputFormProps {
     autoCtaEnabled: boolean,
     scheduleTimes: string[],
     hashtagMode: 'あり' | 'なし',
-    mode: GenerateMode
+    mode: GenerateMode,
+    xPhrase: string,
+    xUrl: string,
+    threadsPhrase: string,
+    threadsUrl: string,
+    igYtPhrase: string
   ) => void;
   onCancel: () => void;
   loadingState: LoadingState;
@@ -347,9 +369,18 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [scheduleNight, setScheduleNight] = useState<string>(_s.scheduleNight);
   const [autoCtaEnabled, setAutoCtaEnabled] = useState(true);
 
+  const [xPhrase, setXPhrase] = useState<string>(_s.xPhrase);
+  const [xUrl, setXUrl] = useState<string>(_s.xUrl);
+  const [threadsPhrase, setThreadsPhrase] = useState<string>(_s.threadsPhrase);
+  const [threadsUrl, setThreadsUrl] = useState<string>(_s.threadsUrl);
+  const [igYtPhrase, setIgYtPhrase] = useState<string>(_s.igYtPhrase);
+
   const [openBasic, setOpenBasic] = useState(false);
   const [openCommon, setOpenCommon] = useState(false);
   const [openTiktok, setOpenTiktok] = useState(false);
+  const [openX, setOpenX] = useState(false);
+  const [openThreads, setOpenThreads] = useState(false);
+  const [openIgYt, setOpenIgYt] = useState(false);
   const [openAutomation, setOpenAutomation] = useState(true);
   const [openAccounts, setOpenAccounts] = useState(false);
   const [showThemeHistory, setShowThemeHistory] = useState(false);
@@ -366,12 +397,14 @@ export const InputForm: React.FC<InputFormProps> = ({
     templateText, templateUrl, tiktokTemplateText,
     insertPosition, tiktokInsertPosition, hashtagMode,
     scheduleMorning, scheduleNoon, scheduleNight,
+    xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
   });
   settingsRef.current = {
     theme, gender, age, length,
     templateText, templateUrl, tiktokTemplateText,
     insertPosition, tiktokInsertPosition, hashtagMode,
     scheduleMorning, scheduleNoon, scheduleNight,
+    xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
   };
 
   const accountsRef = useRef(accounts);
@@ -411,11 +444,21 @@ export const InputForm: React.FC<InputFormProps> = ({
   useEffect(() => {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settingsRef.current));
   }, [theme, gender, age, length, templateText, templateUrl, tiktokTemplateText,
-      insertPosition, tiktokInsertPosition, hashtagMode, scheduleMorning, scheduleNoon, scheduleNight]);
+      insertPosition, tiktokInsertPosition, hashtagMode, scheduleMorning, scheduleNoon, scheduleNight,
+      xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase]);
 
   useEffect(() => {
     localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
   }, [accounts]);
+
+  // 備考欄が消える問題対策：30秒ごとに強制保存
+  useEffect(() => {
+    const id = setInterval(() => {
+      localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accountsRef.current));
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settingsRef.current));
+    }, 30000);
+    return () => clearInterval(id);
+  }, []);
 
   const updateAccount = (key: SnsKey, field: 'id' | 'password' | 'memo', value: string) => {
     setAccounts(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
@@ -554,13 +597,13 @@ export const InputForm: React.FC<InputFormProps> = ({
     e.preventDefault();
     if (!theme.trim()) return;
     saveAllHistories();
-    onGenerate(theme, length, gender, age, templateText, templateUrl, tiktokTemplateText, insertPosition, tiktokInsertPosition, autoCtaEnabled, scheduleTimes, hashtagMode, 'script');
+    onGenerate(theme, length, gender, age, templateText, templateUrl, tiktokTemplateText, insertPosition, tiktokInsertPosition, autoCtaEnabled, scheduleTimes, hashtagMode, 'script', xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase);
   };
 
   const handleSubmitWithMode = (mode: GenerateMode) => {
     if (!theme.trim()) return;
     saveAllHistories();
-    onGenerate(theme, length, gender, age, templateText, templateUrl, tiktokTemplateText, insertPosition, tiktokInsertPosition, autoCtaEnabled, scheduleTimes, hashtagMode, mode);
+    onGenerate(theme, length, gender, age, templateText, templateUrl, tiktokTemplateText, insertPosition, tiktokInsertPosition, autoCtaEnabled, scheduleTimes, hashtagMode, mode, xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase);
   };
 
   return (
@@ -878,6 +921,88 @@ export const InputForm: React.FC<InputFormProps> = ({
             </div>
           )}
         </div>
+
+        {/* X設定 */}
+        <SectionButton
+          title="X（Twitter）設定"
+          subtitle="誘導語句・リンク（140全角字以内に収まるよう自動調整）"
+          isOpen={openX}
+          onClick={() => setOpenX(!openX)}
+          className="bg-sky-100 border-sky-200"
+        />
+        {openX && (
+          <div className="p-4 space-y-3 bg-sky-50 rounded-2xl border border-sky-200">
+            <input
+              value={xPhrase}
+              onChange={(e) => setXPhrase(e.target.value)}
+              className="w-full p-3 rounded-xl border"
+              placeholder="▼無料で試す"
+            />
+            <input
+              value={xUrl}
+              onChange={(e) => setXUrl(e.target.value)}
+              className="w-full p-3 rounded-xl border"
+              placeholder="https://lovelab-sns-redirect.vercel.app"
+            />
+          </div>
+        )}
+
+        {/* Threads設定 */}
+        <SectionButton
+          title="Threads設定"
+          subtitle="誘導語句・リンク（最大500文字）"
+          isOpen={openThreads}
+          onClick={() => setOpenThreads(!openThreads)}
+          className="bg-purple-100 border-purple-200"
+        />
+        {openThreads && (
+          <div className="p-4 space-y-3 bg-purple-50 rounded-2xl border border-purple-200">
+            <input
+              value={threadsPhrase}
+              onChange={(e) => setThreadsPhrase(e.target.value)}
+              className="w-full p-3 rounded-xl border"
+              placeholder="▼無料で試す"
+            />
+            <input
+              value={threadsUrl}
+              onChange={(e) => setThreadsUrl(e.target.value)}
+              className="w-full p-3 rounded-xl border"
+              placeholder="https://lovelab-sns-redirect.vercel.app"
+            />
+          </div>
+        )}
+
+        {/* Instagram/YouTube設定 */}
+        <SectionButton
+          title="Instagram・YouTube設定"
+          subtitle="プロフィール誘導文（URLなし）"
+          isOpen={openIgYt}
+          onClick={() => setOpenIgYt(!openIgYt)}
+          className="bg-pink-100 border-pink-200"
+        />
+        {openIgYt && (
+          <div className="p-4 space-y-3 bg-pink-50 rounded-2xl border border-pink-200">
+            <div className="text-xs font-bold text-slate-500 mb-1">候補から選ぶ</div>
+            <div className="flex flex-wrap gap-2">
+              {IG_YT_PHRASE_PRESETS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setIgYtPhrase(p)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all active:scale-95 ${igYtPhrase === p ? 'bg-pink-500 text-white border-pink-400' : 'bg-white text-slate-600 border-slate-300 hover:border-pink-400'}`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <input
+              value={igYtPhrase}
+              onChange={(e) => setIgYtPhrase(e.target.value)}
+              className="w-full p-3 rounded-xl border"
+              placeholder="自由記入（例：プロフィールへ👆）"
+            />
+          </div>
+        )}
 
         {/* SNSアカウント管理 */}
         <SectionButton

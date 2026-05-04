@@ -195,7 +195,12 @@ const App: React.FC = () => {
     autoCtaEnabled: boolean,
     scheduleTimes: string[],
     hashtagMode: 'あり' | 'なし',
-    mode: GenerateMode = 'script'
+    mode: GenerateMode = 'script',
+    xPhrase: string = '▼無料で試す',
+    xUrl: string = 'https://lovelab-sns-redirect.vercel.app',
+    threadsPhrase: string = '▼無料で試す',
+    threadsUrl: string = 'https://lovelab-sns-redirect.vercel.app',
+    igYtPhrase: string = '詳細はプロフィールのリンクから🔗'
   ) => {
     setLoadingState(LoadingState.LOADING);
     setShowGuide(false);
@@ -205,7 +210,8 @@ const App: React.FC = () => {
       const base = generateSNSPostContent(
         theme, length, gender, age,
         templateText, templateUrl, tiktokTemplateText,
-        insertPosition, tiktokInsertPosition, hashtagMode
+        insertPosition, tiktokInsertPosition, hashtagMode,
+        xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase
       );
 
       const historyForAnalysis = generatedHistory.map(stripHeavyVideoData);

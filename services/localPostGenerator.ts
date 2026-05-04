@@ -185,7 +185,12 @@ export const generateSNSPostContent = (
   tiktokTemplateText: string,
   insertPosition: 'start' | 'end',
   tiktokInsertPosition: 'start' | 'end' | 'both',
-  hashtagMode: 'あり' | 'なし'
+  hashtagMode: 'あり' | 'なし',
+  xPhrase: string = '▼無料で試す',
+  xUrl: string = 'https://lovelab-sns-redirect.vercel.app',
+  threadsPhrase: string = '▼無料で試す',
+  threadsUrl: string = 'https://lovelab-sns-redirect.vercel.app',
+  igYtPhrase: string = '詳細はプロフィールのリンクから🔗'
 ) => {
   const profile = getProfileLabel(gender, age);
 
@@ -568,10 +573,7 @@ ${sc.bridge}`;
     : `【ライブ配信】${sc.title}\n\n${truth}\n\n▶ ${p1}\n▶ ${p2}\n▶ ${p3}\n\nぜひ遊びに来てください！\n\n${bridge}`;
 
   const noteBlock = buildTemplateBlock(templateText, templateUrl);
-  const xBlock = buildTemplateBlock(templateText, templateUrl);
   const tiktokBlock = buildTextOnlyTemplateBlock(tiktokTemplateText);
-  // Instagram/YouTubeはプロフィールリンク形式（noteXPhrase + URL）を使用
-  const igYtBlock = buildTemplateBlock(templateText, templateUrl);
 
   const noteText = appendHashtags(
     insertBlock(noteBase, noteBlock, insertPosition),
@@ -586,26 +588,35 @@ ${sc.bridge}`;
     ? tikTokHashtags.join(' ')
     : '';
 
-  const xText = trimToTwitterLength(appendHashtags(
-    insertBlock(xBase, xBlock, insertPosition),
+  // X: 独自フレーズ+URL を末尾に追加し140全角（280ウェイト）以内に収める
+  const xCta = [xPhrase.trim(), xUrl.trim()].filter(Boolean).join('\n');
+  const xBody = appendHashtags(
+    insertBlock(xBase, xCta ? `\n${xCta}` : '', 'end'),
     xHashtags,
     hashtagMode
-  ));
+  );
+  const xText = trimToTwitterLength(xBody);
 
-  // Instagram/YouTube: プロフィール・概要欄リンク形式（同内容でグループ化）
+  // Threads: 独自フレーズ+URLを末尾追加、最大500文字
+  const threadsCta = [threadsPhrase.trim(), threadsUrl.trim()].filter(Boolean).join('\n');
+  const threadsBody = appendHashtags(
+    insertBlock(threadsBase, threadsCta ? `\n${threadsCta}` : '', 'end'),
+    xHashtags,
+    hashtagMode
+  );
+  const threadsText = threadsBody.length > 500
+    ? threadsBody.slice(0, 499).trimEnd() + '…'
+    : threadsBody;
+
+  // Instagram/YouTube: URLなし、プロフィール誘導文のみ末尾追加
+  const igYtCta = igYtPhrase.trim();
   const instagramText = appendHashtags(
-    insertBlock(instagramBase, igYtBlock, insertPosition),
+    insertBlock(instagramBase, igYtCta, 'end'),
     getInstagramHashtags(theme),
     hashtagMode
   );
   // YouTubeも同じ内容にしてInstagramと一緒のブロックにまとめる
   const youtubeText = instagramText;
-
-  const threadsText = trimToTwitterLength(appendHashtags(
-    insertBlock(threadsBase, buildTemplateBlock(templateText, templateUrl), insertPosition),
-    xHashtags,
-    hashtagMode
-  ));
 
   const twitchText = insertBlock(twitchBase, buildTemplateBlock(templateText, templateUrl), insertPosition);
 
