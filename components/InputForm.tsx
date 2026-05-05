@@ -501,6 +501,31 @@ export const InputForm: React.FC<InputFormProps> = ({
     saveToCookie(next); // Cookieにも保存（iOS Safariのlocalストレージ消去対策）
   };
 
+  const [bookmarkCopied, setBookmarkCopied] = useState(false);
+
+  // ブックマーク用URL生成（?c= パラメータ付き・毎回設定を自動読込）
+  const handleCopyBookmarkUrl = () => {
+    try {
+      const s = settingsRef.current;
+      const payload = { settings: {
+        templateText: s.templateText, templateUrl: s.templateUrl,
+        insertPosition: s.insertPosition, xPhrase: s.xPhrase, xUrl: s.xUrl,
+        threadsPhrase: s.threadsPhrase, threadsUrl: s.threadsUrl,
+        igYtPhrase: s.igYtPhrase, tiktokTemplateText: s.tiktokTemplateText,
+        tiktokInsertPosition: s.tiktokInsertPosition,
+      }};
+      const json = JSON.stringify(payload);
+      const bytes = new TextEncoder().encode(json);
+      const binStr = Array.from(bytes, b => String.fromCharCode(b)).join('');
+      const b64 = btoa(binStr).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+      const url = `${window.location.origin}${window.location.pathname}?c=${b64}`;
+      navigator.clipboard.writeText(url).then(() => {
+        setBookmarkCopied(true);
+        setTimeout(() => setBookmarkCopied(false), 3000);
+      }).catch(() => prompt('このURLをiPhoneのSafariで開いてブックマーク保存してください', url));
+    } catch (e) { console.error(e); }
+  };
+
   // エクスポート用ペイロードを生成
   const buildPayload = () => {
     const s = settingsRef.current;
@@ -1166,24 +1191,31 @@ export const InputForm: React.FC<InputFormProps> = ({
 
             {/* PC側 */}
           <div className="space-y-2">
-            <div className="text-xs font-bold text-slate-600">① PCでコピーまたはダウンロード</div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleCopyJson}
-                className="flex-1 py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700"
-              >
-                {exportCopied ? '✅ コピー完了！' : '📋 JSONをコピー'}
-              </button>
-              <button
-                type="button"
-                onClick={handleExport}
-                className="flex-1 py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 bg-slate-500 hover:bg-slate-600"
-              >
-                💾 ファイル保存
-              </button>
+            <div className="text-xs font-bold text-slate-600">① PCでブックマークURLをコピー（推奨）</div>
+            <button
+              type="button"
+              onClick={handleCopyBookmarkUrl}
+              className="w-full py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700"
+            >
+              {bookmarkCopied ? '✅ URLをコピーしました！' : '🔖 スマホ用ブックマークURLをコピー'}
+            </button>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              コピーしたURLをiPhoneのSafariで開いて<strong>ブックマーク保存</strong>。<br/>
+              毎回このブックマークから開くと設定が自動反映されます（storage不要）。
+            </p>
+            <div className="border-t border-emerald-200 pt-2">
+              <div className="text-xs font-bold text-slate-500 mb-1">または JSONで転送</div>
+              <div className="flex gap-2">
+                <button type="button" onClick={handleCopyJson}
+                  className="flex-1 py-2 rounded-xl font-bold text-xs text-white bg-slate-500 hover:bg-slate-600 active:scale-95 transition-all">
+                  {exportCopied ? '✅ コピー完了！' : '📋 JSONをコピー'}
+                </button>
+                <button type="button" onClick={handleExport}
+                  className="flex-1 py-2 rounded-xl font-bold text-xs text-white bg-slate-400 hover:bg-slate-500 active:scale-95 transition-all">
+                  💾 ファイル保存
+                </button>
+              </div>
             </div>
-            <p className="text-xs text-slate-400">「JSONをコピー」→ LINEで自分に送る、またはメモに貼る</p>
           </div>
 
           <div className="border-t border-emerald-200 pt-3 space-y-2">

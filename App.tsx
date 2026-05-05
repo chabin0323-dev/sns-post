@@ -100,11 +100,13 @@ const b64ToUtf8 = (b64: string): string => {
   return new TextDecoder().decode(bytes);
 };
 
-// URLパラメータからのインポートは廃止（テキストコード方式に移行）
+// URLパラメータ（?c=）から設定を読み込む（ブックマーク方式 - storage不要）
 const importSettingsFromUrl = (): string | null => {
   try {
     const params = new URLSearchParams(window.location.search);
-    const encoded = params.get('s');
+    // ?c= はブックマーク用（URLを消さない）、?s= は従来の一時転送用
+    const encoded = params.get('c') || params.get('s');
+    const isBookmark = !!params.get('c');
     if (!encoded) return null;
     const json = b64ToUtf8(encoded);
     const parsed = JSON.parse(json);
@@ -138,11 +140,14 @@ const importSettingsFromUrl = (): string | null => {
         imported = '設定';
       }
     }
-    // URLパラメータを消すだけ（リロードしない）
-    const url = new URL(window.location.href);
-    url.searchParams.delete('s');
-    url.searchParams.delete('t');
-    window.history.replaceState({}, '', url.toString());
+    if (!isBookmark) {
+      // ?s= は一時転送なのでURLから消す
+      const url = new URL(window.location.href);
+      url.searchParams.delete('s');
+      url.searchParams.delete('t');
+      window.history.replaceState({}, '', url.toString());
+    }
+    // ?c= はブックマークなのでURLはそのまま残す
     return imported || null;
   } catch (e) {
     console.error('Settings import failed:', e);
