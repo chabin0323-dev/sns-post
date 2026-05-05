@@ -80,7 +80,7 @@ const HISTORY_KEYS_CONST = {
   scheduleNight: 'history_schedule_night',
 } as const;
 
-// Cookie保存・読み込み（iOS SafariのITPでlocalStorageが消えても残る）
+// ── ストレージ層1: Cookie（ITP対策・365日保持）──────────────────────────────
 const COOKIE_KEY = 'snss1';
 const COOKIE_EXPIRES_DAYS = 365;
 
@@ -88,7 +88,8 @@ const saveToCookie = (settings: Partial<FormSettings>) => {
   try {
     const val = encodeURIComponent(JSON.stringify(settings));
     const exp = new Date(Date.now() + COOKIE_EXPIRES_DAYS * 864e5).toUTCString();
-    document.cookie = `${COOKIE_KEY}=${val};expires=${exp};path=/;SameSite=Lax`;
+    const secure = window.location.protocol === 'https:' ? ';Secure' : '';
+    document.cookie = `${COOKIE_KEY}=${val};expires=${exp};path=/;SameSite=Lax${secure}`;
   } catch {}
 };
 
@@ -100,24 +101,60 @@ const loadFromCookie = (): Partial<FormSettings> | null => {
   return null;
 };
 
-const loadSettings = (): FormSettings => {
+// ── ストレージ層2: URLハッシュ（ITPもCookie削除も関係なし）────────────────────
+const saveToHash = (settings: FormSettings) => {
   try {
-    // localStorage を優先して読む
+    const json = JSON.stringify(settings);
+    const bytes = new TextEncoder().encode(json);
+    let bin = '';
+    bytes.forEach(b => { bin += String.fromCharCode(b); });
+    const b64 = btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#s=${b64}`);
+  } catch {}
+};
+
+const loadFromHash = (): Partial<FormSettings> | null => {
+  try {
+    const m = window.location.hash.match(/[#&]s=([^&]+)/);
+    if (!m) return null;
+    const b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64 + '==='.slice((b64.length + 3) % 4);
+    const bin = atob(padded);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch {}
+  return null;
+};
+
+// ── 起動時設定読み込み（localStorage → Cookie → URLハッシュ → デフォルト）──────
+const loadSettings = (): FormSettings => {
+  // 1. localStorage（最速・最優先）
+  try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<FormSettings>;
-      return { ...defaultSettings, ...parsed };
-    }
-    // localStorage が消えていた場合は Cookie から復元
+    if (raw) return { ...defaultSettings, ...JSON.parse(raw) };
+  } catch {}
+  // 2. Cookie（ITPでlocalStorageが消えた場合）
+  try {
     const cookie = loadFromCookie();
     if (cookie) {
-      // Cookieから復元したらlocalStorageにも書き戻す
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...defaultSettings, ...cookie }));
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...defaultSettings, ...cookie })); } catch {}
       return { ...defaultSettings, ...cookie };
+    }
+  } catch {}
+  // 3. URLハッシュ（CookieもlocalStorageも消えた最終手段）
+  try {
+    const hash = loadFromHash();
+    if (hash) {
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...defaultSettings, ...hash })); } catch {}
+      return { ...defaultSettings, ...hash };
     }
   } catch {}
   return defaultSettings;
 };
+
+// モジュールロード時に1回だけ読み込む（lazy initializer重複呼び出し防止）
+const _initSettings = loadSettings();
 
 
 interface InputFormProps {
@@ -340,26 +377,25 @@ export const InputForm: React.FC<InputFormProps> = ({
 }) => {
   const isLoading = loadingState === LoadingState.LOADING;
 
-  // lazy initializer: Reactの最初のrender時（importSettingsFromUrl実行後）に読み込む
-  const [theme, setTheme] = useState<string>(() => loadSettings().theme);
-  const [gender, setGender] = useState<string>(() => loadSettings().gender);
-  const [age, setAge] = useState<string>(() => loadSettings().age);
-  const [length, setLength] = useState<string>(() => loadSettings().length);
-  const [templateText, setTemplateText] = useState<string>(() => loadSettings().templateText);
-  const [templateUrl, setTemplateUrl] = useState<string>(() => loadSettings().templateUrl);
-  const [tiktokTemplateText, setTiktokTemplateText] = useState<string>(() => loadSettings().tiktokTemplateText);
-  const [insertPosition, setInsertPosition] = useState<'start' | 'end'>(() => loadSettings().insertPosition);
-  const [tiktokInsertPosition, setTiktokInsertPosition] = useState<'start' | 'end' | 'both'>(() => loadSettings().tiktokInsertPosition);
-  const [hashtagMode, setHashtagMode] = useState<'あり' | 'なし'>(() => loadSettings().hashtagMode);
-  const [scheduleMorning, setScheduleMorning] = useState<string>(() => loadSettings().scheduleMorning);
-  const [scheduleNoon, setScheduleNoon] = useState<string>(() => loadSettings().scheduleNoon);
-  const [scheduleNight, setScheduleNight] = useState<string>(() => loadSettings().scheduleNight);
+  const [theme, setTheme] = useState<string>(_initSettings.theme);
+  const [gender, setGender] = useState<string>(_initSettings.gender);
+  const [age, setAge] = useState<string>(_initSettings.age);
+  const [length, setLength] = useState<string>(_initSettings.length);
+  const [templateText, setTemplateText] = useState<string>(_initSettings.templateText);
+  const [templateUrl, setTemplateUrl] = useState<string>(_initSettings.templateUrl);
+  const [tiktokTemplateText, setTiktokTemplateText] = useState<string>(_initSettings.tiktokTemplateText);
+  const [insertPosition, setInsertPosition] = useState<'start' | 'end'>(_initSettings.insertPosition);
+  const [tiktokInsertPosition, setTiktokInsertPosition] = useState<'start' | 'end' | 'both'>(_initSettings.tiktokInsertPosition);
+  const [hashtagMode, setHashtagMode] = useState<'あり' | 'なし'>(_initSettings.hashtagMode);
+  const [scheduleMorning, setScheduleMorning] = useState<string>(_initSettings.scheduleMorning);
+  const [scheduleNoon, setScheduleNoon] = useState<string>(_initSettings.scheduleNoon);
+  const [scheduleNight, setScheduleNight] = useState<string>(_initSettings.scheduleNight);
   const [autoCtaEnabled, setAutoCtaEnabled] = useState(true);
-  const [xPhrase, setXPhrase] = useState<string>(() => loadSettings().xPhrase);
-  const [xUrl, setXUrl] = useState<string>(() => loadSettings().xUrl);
-  const [threadsPhrase, setThreadsPhrase] = useState<string>(() => loadSettings().threadsPhrase);
-  const [threadsUrl, setThreadsUrl] = useState<string>(() => loadSettings().threadsUrl);
-  const [igYtPhrase, setIgYtPhrase] = useState<string>(() => loadSettings().igYtPhrase);
+  const [xPhrase, setXPhrase] = useState<string>(_initSettings.xPhrase);
+  const [xUrl, setXUrl] = useState<string>(_initSettings.xUrl);
+  const [threadsPhrase, setThreadsPhrase] = useState<string>(_initSettings.threadsPhrase);
+  const [threadsUrl, setThreadsUrl] = useState<string>(_initSettings.threadsUrl);
+  const [igYtPhrase, setIgYtPhrase] = useState<string>(_initSettings.igYtPhrase);
 
   const [openCommon, setOpenCommon] = useState(false);
   const [openTiktok, setOpenTiktok] = useState(false);
@@ -385,14 +421,13 @@ export const InputForm: React.FC<InputFormProps> = ({
     xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
   };
 
-  // タブを閉じる・切り替える直前に同期保存
-  // settingsRef は毎レンダリングで更新されているため確実に最新値を持つ
+  // タブを閉じる・バックグラウンド移行時に3箇所へ同期保存
   useEffect(() => {
     const save = () => {
-      // settingsRef は render 時に常に最新値で更新されているので確実
       const s = settingsRef.current;
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
-      saveToCookie(s); // Cookieにも保存
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch {}
+      saveToCookie(s);
+      saveToHash(s);
       // 履歴を直接保存（デバウンスタイマーがキャンセルされる前に）
       if (s.theme) addHistory(HISTORY_KEYS_CONST.theme, s.theme);
       if (s.templateText) addHistory(HISTORY_KEYS_CONST.templateText, s.templateText);
@@ -431,7 +466,7 @@ export const InputForm: React.FC<InputFormProps> = ({
       insertPosition, tiktokInsertPosition, hashtagMode, scheduleMorning, scheduleNoon, scheduleNight,
       xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase]);
 
-  // 設定フィールドを即座に保存（localStorage + Cookie の両方に書く）
+  // 設定変更時にlocalStorage・Cookie・URLハッシュの3箇所へ即時保存
   const updateSetting = <K extends keyof FormSettings>(
     setter: (v: FormSettings[K]) => void,
     key: K,
@@ -440,8 +475,9 @@ export const InputForm: React.FC<InputFormProps> = ({
     setter(value);
     const next = { ...settingsRef.current, [key]: value };
     settingsRef.current = next;
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
-    saveToCookie(next); // Cookieにも保存（iOS Safariのlocalストレージ消去対策）
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); } catch {}
+    saveToCookie(next);
+    saveToHash(next);
   };
 
 
