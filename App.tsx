@@ -89,75 +89,7 @@ const readGeneratedHistory = (): GeneratedPost[] => {
 const getHistoryItemKey = (post: GeneratedPost, index?: number) =>
   `${post.timestamp ?? 'time'}__${post.title ?? 'title'}__${post.theme ?? 'theme'}__${index ?? ''}`;
 
-// URLセーフBase64 → UTF-8文字列に正しく変換（日本語対応）
-const b64ToUtf8 = (b64: string): string => {
-  // URLセーフ文字を標準Base64に戻す
-  const standard = b64.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = standard + '==='.slice((standard.length + 3) % 4);
-  const binStr = atob(padded);
-  const bytes = new Uint8Array(binStr.length);
-  for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
-  return new TextDecoder().decode(bytes);
-};
-
-// URLパラメータ（?c=）から設定を読み込む（ブックマーク方式 - storage不要）
-const importSettingsFromUrl = (): string | null => {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    // ?c= はブックマーク用（URLを消さない）、?s= は従来の一時転送用
-    const encoded = params.get('c') || params.get('s');
-    const isBookmark = !!params.get('c');
-    if (!encoded) return null;
-    const json = b64ToUtf8(encoded);
-    const parsed = JSON.parse(json);
-    let imported = '';
-    if (parsed && typeof parsed === 'object') {
-      if (parsed.settings && typeof parsed.settings === 'object') {
-        const existing = localStorage.getItem('sns_form_settings_v1');
-        const base = existing ? JSON.parse(existing) : {};
-        const merged = { ...base, ...parsed.settings };
-        localStorage.setItem('sns_form_settings_v1', JSON.stringify(merged));
-        // CookieにもURLを保存（iOS SafariのITP対策）
-        const exp = new Date(Date.now() + 365 * 864e5).toUTCString();
-        document.cookie = `snss1=${encodeURIComponent(JSON.stringify(merged))};expires=${exp};path=/;SameSite=Lax`;
-        imported += '設定';
-      }
-      if (parsed.accounts && typeof parsed.accounts === 'object') {
-        const existing = localStorage.getItem('sns_accounts_v1');
-        const base: Record<string, Record<string, string>> = existing ? JSON.parse(existing) : {};
-        // Deep merge: プラットフォームごとに id/password/memo を個別マージ（上書きしない）
-        const merged = { ...base };
-        for (const [key, val] of Object.entries(parsed.accounts as Record<string, Record<string, string>>)) {
-          merged[key] = { ...(base[key] || {}), ...val };
-        }
-        localStorage.setItem('sns_accounts_v1', JSON.stringify(merged));
-        imported += imported ? '・アカウント' : 'アカウント';
-      }
-      if (!parsed.settings && !parsed.accounts) {
-        const existing = localStorage.getItem('sns_form_settings_v1');
-        const base = existing ? JSON.parse(existing) : {};
-        localStorage.setItem('sns_form_settings_v1', JSON.stringify({ ...base, ...parsed }));
-        imported = '設定';
-      }
-    }
-    if (!isBookmark) {
-      // ?s= は一時転送なのでURLから消す
-      const url = new URL(window.location.href);
-      url.searchParams.delete('s');
-      url.searchParams.delete('t');
-      window.history.replaceState({}, '', url.toString());
-    }
-    // ?c= はブックマークなのでURLはそのまま残す
-    return imported || null;
-  } catch (e) {
-    console.error('Settings import failed:', e);
-    return null;
-  }
-};
-const importedLabel = importSettingsFromUrl();
-
 const App: React.FC = () => {
-  const [importNotice] = useState<string | null>(importedLabel);
 
   const [currentPost, setCurrentPost] = useState<GeneratedPost | null>(() => {
     try {
@@ -369,11 +301,6 @@ const App: React.FC = () => {
       <Header onToggleGuide={() => setShowGuide(!showGuide)} />
 
       <main className="max-w-2xl mx-auto px-4 py-16 flex flex-col gap-12 flex-grow w-full">
-        {importNotice && (
-          <div className="rounded-2xl bg-emerald-500 text-white font-black text-center py-4 px-6 text-sm shadow-lg">
-            ✅ QRコードから転送完了！{importNotice}を保存しました。
-          </div>
-        )}
         {lastSaved && (
           <div className="fixed top-20 right-4 z-50 animate-fade-in">
             <div className="flex items-center gap-2 bg-emerald-500/90 backdrop-blur px-3 py-1.5 rounded-full border border-emerald-400/50 shadow-lg shadow-emerald-500/20">

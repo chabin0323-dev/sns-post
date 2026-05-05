@@ -12,48 +12,6 @@ import {
 
 export type GenerateMode = 'script' | 'video' | 'post_data' | 'full_auto';
 
-const SNS_PLATFORMS = [
-  { key: 'note',      label: 'note',        url: 'https://note.com/',                              appScheme: 'https://note.com/', color: '#41c9b4' },
-  { key: 'x',         label: 'X (Twitter)', url: 'https://twitter.com/',                           appScheme: 'twitter://timeline', color: '#000000' },
-  { key: 'tiktok',    label: 'TikTok',      url: 'https://www.tiktok.com/',                        appScheme: 'snssdk1128://',     color: '#fe2c55' },
-  { key: 'instagram', label: 'Instagram',   url: 'https://www.instagram.com/',                     appScheme: 'instagram://app',   color: '#e1306c' },
-  { key: 'youtube',   label: 'YouTube',     url: 'https://m.youtube.com/',                         appScheme: 'youtube://',        color: '#ff0000' },
-  { key: 'threads',   label: 'Threads',     url: 'https://www.threads.net/',                       appScheme: 'threads://',        color: '#7c3aed' },
-  { key: 'twitch',    label: 'Twitch',      url: 'https://www.twitch.tv/',                         appScheme: 'twitch://open',     color: '#9146ff' },
-  { key: 'showroom',  label: 'SHOWROOM',    url: 'https://www.showroom-live.com/',                 appScheme: 'showroom://',       color: '#f43f5e' },
-] as const;
-
-const isMobile = (): boolean =>
-  /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-type SnsKey = typeof SNS_PLATFORMS[number]['key'];
-type SnsAccounts = Record<SnsKey, { id: string; password: string; memo: string }>;
-
-const ACCOUNTS_KEY = 'sns_accounts_v1';
-
-const defaultAccounts: SnsAccounts = SNS_PLATFORMS.reduce(
-  (acc, p) => ({ ...acc, [p.key]: { id: '', password: '', memo: '' } }),
-  {} as SnsAccounts
-);
-
-const loadAccounts = (): SnsAccounts => {
-  try {
-    const raw = localStorage.getItem(ACCOUNTS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as Record<string, Partial<{ id: string; password: string; memo: string }>>;
-      const merged = { ...defaultAccounts };
-      for (const key of Object.keys(defaultAccounts) as SnsKey[]) {
-        merged[key] = {
-          id: parsed[key]?.id ?? '',
-          password: parsed[key]?.password ?? '',
-          memo: parsed[key]?.memo ?? '',
-        };
-      }
-      return merged;
-    }
-  } catch {}
-  return defaultAccounts;
-};
 
 const SETTINGS_KEY = 'sns_form_settings_v1';
 
@@ -403,24 +361,13 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [threadsUrl, setThreadsUrl] = useState<string>(() => loadSettings().threadsUrl);
   const [igYtPhrase, setIgYtPhrase] = useState<string>(() => loadSettings().igYtPhrase);
 
-  const [openBasic, setOpenBasic] = useState(false);
   const [openCommon, setOpenCommon] = useState(false);
   const [openTiktok, setOpenTiktok] = useState(false);
   const [openX, setOpenX] = useState(false);
   const [openThreads, setOpenThreads] = useState(false);
   const [openIgYt, setOpenIgYt] = useState(false);
   const [openAutomation, setOpenAutomation] = useState(true);
-  const [openAccounts, setOpenAccounts] = useState(false);
   const [showThemeHistory, setShowThemeHistory] = useState(false);
-  const [presetApplied, setPresetApplied] = useState(false);
-  const [exportCopied, setExportCopied] = useState(false);
-  const [pasteText, setPasteText] = useState('');
-  const [importResult, setImportResult] = useState<'ok' | 'error' | null>(null);
-
-  const [accounts, setAccounts] = useState<SnsAccounts>(loadAccounts);
-  const [showPasswords, setShowPasswords] = useState<Record<SnsKey, boolean>>(
-    SNS_PLATFORMS.reduce((acc, p) => ({ ...acc, [p.key]: false }), {} as Record<SnsKey, boolean>)
-  );
 
   // 毎レンダリングで最新値を ref に保持（beforeunload で同期保存するため）
   const settingsRef = useRef<FormSettings>({
@@ -438,9 +385,6 @@ export const InputForm: React.FC<InputFormProps> = ({
     xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
   };
 
-  const accountsRef = useRef(accounts);
-  accountsRef.current = accounts;
-
   // タブを閉じる・切り替える直前に同期保存
   // settingsRef は毎レンダリングで更新されているため確実に最新値を持つ
   useEffect(() => {
@@ -449,7 +393,6 @@ export const InputForm: React.FC<InputFormProps> = ({
       const s = settingsRef.current;
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
       saveToCookie(s); // Cookieにも保存
-      localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accountsRef.current));
       // 履歴を直接保存（デバウンスタイマーがキャンセルされる前に）
       if (s.theme) addHistory(HISTORY_KEYS_CONST.theme, s.theme);
       if (s.templateText) addHistory(HISTORY_KEYS_CONST.templateText, s.templateText);
@@ -501,153 +444,6 @@ export const InputForm: React.FC<InputFormProps> = ({
     saveToCookie(next); // Cookieにも保存（iOS Safariのlocalストレージ消去対策）
   };
 
-  const [bookmarkCopied, setBookmarkCopied] = useState(false);
-
-  // ブックマーク用URL生成（?c= パラメータ付き・毎回設定を自動読込）
-  const handleCopyBookmarkUrl = () => {
-    try {
-      const s = settingsRef.current;
-      const payload = { settings: {
-        templateText: s.templateText, templateUrl: s.templateUrl,
-        insertPosition: s.insertPosition, xPhrase: s.xPhrase, xUrl: s.xUrl,
-        threadsPhrase: s.threadsPhrase, threadsUrl: s.threadsUrl,
-        igYtPhrase: s.igYtPhrase, tiktokTemplateText: s.tiktokTemplateText,
-        tiktokInsertPosition: s.tiktokInsertPosition,
-      }};
-      const json = JSON.stringify(payload);
-      const bytes = new TextEncoder().encode(json);
-      const binStr = Array.from(bytes, b => String.fromCharCode(b)).join('');
-      const b64 = btoa(binStr).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-      const url = `${window.location.origin}${window.location.pathname}?c=${b64}`;
-      navigator.clipboard.writeText(url).then(() => {
-        setBookmarkCopied(true);
-        setTimeout(() => setBookmarkCopied(false), 3000);
-      }).catch(() => prompt('このURLをiPhoneのSafariで開いてブックマーク保存してください', url));
-    } catch (e) { console.error(e); }
-  };
-
-  // エクスポート用ペイロードを生成
-  const buildPayload = () => {
-    const s = settingsRef.current;
-    return {
-      settings: {
-        templateText: s.templateText,
-        templateUrl: s.templateUrl,
-        insertPosition: s.insertPosition,
-        xPhrase: s.xPhrase,
-        xUrl: s.xUrl,
-        threadsPhrase: s.threadsPhrase,
-        threadsUrl: s.threadsUrl,
-        igYtPhrase: s.igYtPhrase,
-        tiktokTemplateText: s.tiktokTemplateText,
-        tiktokInsertPosition: s.tiktokInsertPosition,
-      },
-      accounts: accountsRef.current,
-    };
-  };
-
-  // ファイルダウンロード
-  const handleExport = () => {
-    try {
-      const json = JSON.stringify(buildPayload(), null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'sns-settings.json';
-      a.click();
-      URL.revokeObjectURL(url);
-      setExportCopied(true);
-      setTimeout(() => setExportCopied(false), 3000);
-    } catch (e) {
-      console.error('Export failed:', e);
-    }
-  };
-
-  // JSONをクリップボードにコピー（スマホへの貼り付け用）
-  const handleCopyJson = () => {
-    try {
-      const json = JSON.stringify(buildPayload());
-      navigator.clipboard.writeText(json).then(() => {
-        setExportCopied(true);
-        setTimeout(() => setExportCopied(false), 3000);
-      });
-    } catch (e) {
-      console.error('Copy failed:', e);
-    }
-  };
-
-  // 貼り付けテキストからインポート
-  const handlePasteImport = () => {
-    try {
-      const parsed = JSON.parse(pasteText.trim());
-      applyParsed(parsed);
-      setPasteText('');
-    } catch {
-      setImportResult('error');
-      setTimeout(() => setImportResult(null), 3000);
-    }
-  };
-
-  // パースされたデータをstateに反映（共通処理）
-  const applyParsed = (parsed: { settings?: Record<string, string>; accounts?: Record<string, Record<string, string>> }) => {
-    if (parsed.settings) {
-      const s = { ...defaultSettings, ...parsed.settings };
-      updateSetting(setTemplateText, 'templateText', s.templateText);
-      updateSetting(setTemplateUrl, 'templateUrl', s.templateUrl);
-      updateSetting(setInsertPosition, 'insertPosition', s.insertPosition as 'start' | 'end');
-      updateSetting(setTiktokTemplateText, 'tiktokTemplateText', s.tiktokTemplateText);
-      updateSetting(setTiktokInsertPosition, 'tiktokInsertPosition', s.tiktokInsertPosition as 'start' | 'end' | 'both');
-      updateSetting(setXPhrase, 'xPhrase', s.xPhrase);
-      updateSetting(setXUrl, 'xUrl', s.xUrl);
-      updateSetting(setThreadsPhrase, 'threadsPhrase', s.threadsPhrase);
-      updateSetting(setThreadsUrl, 'threadsUrl', s.threadsUrl);
-      updateSetting(setIgYtPhrase, 'igYtPhrase', s.igYtPhrase);
-    }
-    if (parsed.accounts) {
-      setAccounts(prev => {
-        const merged = { ...prev };
-        for (const [k, v] of Object.entries(parsed.accounts!)) {
-          if (merged[k as SnsKey]) merged[k as SnsKey] = { ...merged[k as SnsKey], ...v };
-        }
-        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(merged));
-        return merged;
-      });
-    }
-    setImportResult('ok');
-    setTimeout(() => setImportResult(null), 4000);
-  };
-
-  // JSONファイルからインポートしてstateに直接反映
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const parsed = JSON.parse(ev.target?.result as string);
-        applyParsed(parsed);
-      } catch {
-        setImportResult('error');
-        setTimeout(() => setImportResult(null), 3000);
-      }
-      e.target.value = '';
-    };
-    reader.readAsText(file);
-  };
-
-  // アカウント情報：入力のたびに即座に localStorage へ直書きする
-  const updateAccount = (key: SnsKey, field: 'id' | 'password' | 'memo', value: string) => {
-    setAccounts(prev => {
-      const next = { ...prev, [key]: { ...prev[key], [field]: value } };
-      localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(next));
-      return next;
-    });
-  };
-
-  const toggleShowPassword = (key: SnsKey) => {
-    setShowPasswords(prev => ({ ...prev, [key]: !prev[key] }));
-  };
 
   const applyFortunePreset = () => {
     setGender(FORTUNE_PRESET.gender);
@@ -664,8 +460,6 @@ export const InputForm: React.FC<InputFormProps> = ({
     setScheduleNoon(FORTUNE_PRESET.scheduleNoon);
     setScheduleNight(FORTUNE_PRESET.scheduleNight);
     setOpenTiktok(true);
-    setPresetApplied(true);
-    setTimeout(() => setPresetApplied(false), 2000);
   };
 
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -1182,151 +976,6 @@ export const InputForm: React.FC<InputFormProps> = ({
               className="w-full p-3 rounded-xl border"
               placeholder="自由記入（例：プロフィールへ👆）"
             />
-          </div>
-        )}
-
-        {/* スマホへ設定を転送（テキストコード方式） */}
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
-          <div className="text-xs font-black text-emerald-700">📱 スマホに設定を転送</div>
-
-            {/* PC側 */}
-          <div className="space-y-2">
-            <div className="text-xs font-bold text-slate-600">① PCでブックマークURLをコピー（推奨）</div>
-            <button
-              type="button"
-              onClick={handleCopyBookmarkUrl}
-              className="w-full py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700"
-            >
-              {bookmarkCopied ? '✅ URLをコピーしました！' : '🔖 スマホ用ブックマークURLをコピー'}
-            </button>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              コピーしたURLをiPhoneのSafariで開いて<strong>ブックマーク保存</strong>。<br/>
-              毎回このブックマークから開くと設定が自動反映されます（storage不要）。
-            </p>
-            <div className="border-t border-emerald-200 pt-2">
-              <div className="text-xs font-bold text-slate-500 mb-1">または JSONで転送</div>
-              <div className="flex gap-2">
-                <button type="button" onClick={handleCopyJson}
-                  className="flex-1 py-2 rounded-xl font-bold text-xs text-white bg-slate-500 hover:bg-slate-600 active:scale-95 transition-all">
-                  {exportCopied ? '✅ コピー完了！' : '📋 JSONをコピー'}
-                </button>
-                <button type="button" onClick={handleExport}
-                  className="flex-1 py-2 rounded-xl font-bold text-xs text-white bg-slate-400 hover:bg-slate-500 active:scale-95 transition-all">
-                  💾 ファイル保存
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-emerald-200 pt-3 space-y-2">
-            <div className="text-xs font-bold text-slate-600">② スマホで貼り付けて適用</div>
-            <p className="text-xs text-slate-400">LINEやメモからJSONをコピーしてここに貼り付けてください。</p>
-            <textarea
-              value={pasteText}
-              onChange={(e) => setPasteText(e.target.value)}
-              placeholder='{"settings":{...},"accounts":{...}} の形式で貼り付け'
-              rows={4}
-              className="w-full p-3 rounded-xl border border-emerald-300 text-xs font-mono focus:outline-none focus:border-emerald-500 resize-none bg-white"
-            />
-            <button
-              type="button"
-              onClick={handlePasteImport}
-              disabled={!pasteText.trim()}
-              className="w-full py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40"
-            >
-              適用する
-            </button>
-            <div className="text-center text-xs text-slate-400">または</div>
-            <label className="block w-full py-2 rounded-xl font-bold text-sm text-center text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer transition-all active:scale-95">
-              📁 ファイルから読み込む
-              <input type="file" accept=".json,application/json" onChange={handleImport} className="hidden" />
-            </label>
-            {importResult === 'ok' && (
-              <div className="text-center text-xs font-black text-emerald-600 py-1">✅ 設定・アカウント情報を反映しました！</div>
-            )}
-            {importResult === 'error' && (
-              <div className="text-center text-xs font-black text-red-500 py-1">❌ 読み込みに失敗しました。再度コピーして貼り付けてください。</div>
-            )}
-          </div>
-        </div>
-
-        {/* SNSアカウント管理 */}
-        <SectionButton
-          title="SNSアカウント管理"
-          subtitle="ID・PW保存／ログインページを開く"
-          isOpen={openAccounts}
-          onClick={() => setOpenAccounts(!openAccounts)}
-          className="bg-gradient-to-r from-slate-100 to-slate-200 border-slate-300"
-        />
-        {openAccounts && (
-          <div className="space-y-3">
-            {SNS_PLATFORMS.map((platform) => {
-              const acc = accounts[platform.key] ?? { id: '', password: '', memo: '' };
-              const isVisible = showPasswords[platform.key];
-              const mobile = isMobile();
-              return (
-                <div key={platform.key} className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="font-black text-sm" style={{ color: platform.color }}>{platform.label}</span>
-                    <div className="flex gap-2 flex-wrap justify-end">
-                      {/* スマホかつURIスキームがある場合：アプリを開くボタン */}
-                      {mobile && platform.appScheme && (
-                        <a
-                          href={platform.appScheme}
-                          className="text-xs font-bold px-3 py-1.5 rounded-full text-white active:scale-95 transition-all"
-                          style={{ background: platform.color }}
-                        >
-                          アプリを開く →
-                        </a>
-                      )}
-                      {/* PC or アプリなし：ブラウザで開く */}
-                      <a
-                        href={platform.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs font-bold px-3 py-1.5 rounded-full active:scale-95 transition-all"
-                        style={{ background: mobile && platform.appScheme ? '#94a3b8' : platform.color, color: '#fff' }}
-                      >
-                        {mobile && platform.appScheme ? 'ブラウザで開く' : 'ログインページを開く →'}
-                      </a>
-                    </div>
-                  </div>
-                  <input
-                    type="text"
-                    value={acc.id}
-                    onChange={(e) => updateAccount(platform.key, 'id', e.target.value)}
-                    placeholder="メールアドレス / ID"
-                    className="w-full p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-400"
-                  />
-                  <div className="relative">
-                    <input
-                      type={isVisible ? 'text' : 'password'}
-                      value={acc.password}
-                      onChange={(e) => updateAccount(platform.key, 'password', e.target.value)}
-                      placeholder="パスワード"
-                      className="w-full p-3 pr-14 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-400"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => toggleShowPassword(platform.key)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 px-2 py-1 rounded-lg hover:bg-slate-100"
-                    >
-                      {isVisible ? '隠す' : '表示'}
-                    </button>
-                  </div>
-                  <textarea
-                    value={acc.memo}
-                    onChange={(e) => updateAccount(platform.key, 'memo', e.target.value)}
-                    placeholder="備考（例：サブ垢用、法人カード紐付けなど）"
-                    rows={2}
-                    className="w-full p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-400 resize-none text-slate-600"
-                  />
-                </div>
-              );
-            })}
-            <p className="text-xs text-slate-400 text-center px-2">
-              ※ ログインページは新しいタブで開きます。このツールは元のタブに残ります。
-            </p>
           </div>
         )}
 
