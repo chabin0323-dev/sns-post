@@ -101,53 +101,19 @@ const loadFromCookie = (): Partial<FormSettings> | null => {
   return null;
 };
 
-// ── ストレージ層2: URLハッシュ（ITPもCookie削除も関係なし）────────────────────
-const saveToHash = (settings: FormSettings) => {
-  try {
-    const json = JSON.stringify(settings);
-    const bytes = new TextEncoder().encode(json);
-    let bin = '';
-    bytes.forEach(b => { bin += String.fromCharCode(b); });
-    const b64 = btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#s=${b64}`);
-  } catch {}
-};
-
-const loadFromHash = (): Partial<FormSettings> | null => {
-  try {
-    const m = window.location.hash.match(/[#&]s=([^&]+)/);
-    if (!m) return null;
-    const b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padded = b64 + '==='.slice((b64.length + 3) % 4);
-    const bin = atob(padded);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return JSON.parse(new TextDecoder().decode(bytes));
-  } catch {}
-  return null;
-};
-
-// ── 起動時設定読み込み（localStorage → Cookie → URLハッシュ → デフォルト）──────
+// ── 起動時設定読み込み（localStorage → Cookie → デフォルト）──────────────────
 const loadSettings = (): FormSettings => {
   // 1. localStorage（最速・最優先）
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (raw) return { ...defaultSettings, ...JSON.parse(raw) };
   } catch {}
-  // 2. Cookie（ITPでlocalStorageが消えた場合）
+  // 2. Cookie（ITPでlocalStorageが消えた場合のフォールバック）
   try {
     const cookie = loadFromCookie();
     if (cookie) {
       try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...defaultSettings, ...cookie })); } catch {}
       return { ...defaultSettings, ...cookie };
-    }
-  } catch {}
-  // 3. URLハッシュ（CookieもlocalStorageも消えた最終手段）
-  try {
-    const hash = loadFromHash();
-    if (hash) {
-      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...defaultSettings, ...hash })); } catch {}
-      return { ...defaultSettings, ...hash };
     }
   } catch {}
   return defaultSettings;
@@ -421,13 +387,12 @@ export const InputForm: React.FC<InputFormProps> = ({
     xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
   };
 
-  // タブを閉じる・バックグラウンド移行時に3箇所へ同期保存
+  // タブを閉じる・バックグラウンド移行時にlocalStorage＋Cookieへ同期保存
   useEffect(() => {
     const save = () => {
       const s = settingsRef.current;
       try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch {}
       saveToCookie(s);
-      saveToHash(s);
       // 履歴を直接保存（デバウンスタイマーがキャンセルされる前に）
       if (s.theme) addHistory(HISTORY_KEYS_CONST.theme, s.theme);
       if (s.templateText) addHistory(HISTORY_KEYS_CONST.templateText, s.templateText);
@@ -452,7 +417,7 @@ export const InputForm: React.FC<InputFormProps> = ({
     };
   }, []);
 
-  // 設定の変更を検知して即座に保存（settingsRef を介さず state から直接組み立てる）
+  // 設定変更を検知してlocalStorage＋Cookieへ即座に保存
   useEffect(() => {
     const s: FormSettings = {
       theme, gender, age, length,
@@ -461,12 +426,13 @@ export const InputForm: React.FC<InputFormProps> = ({
       scheduleMorning, scheduleNoon, scheduleNight,
       xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
     };
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch {}
+    saveToCookie(s);
   }, [theme, gender, age, length, templateText, templateUrl, tiktokTemplateText,
       insertPosition, tiktokInsertPosition, hashtagMode, scheduleMorning, scheduleNoon, scheduleNight,
       xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase]);
 
-  // 設定変更時にlocalStorage・Cookie・URLハッシュの3箇所へ即時保存
+  // 設定変更時にlocalStorage＋Cookieへ即時保存
   const updateSetting = <K extends keyof FormSettings>(
     setter: (v: FormSettings[K]) => void,
     key: K,
@@ -477,7 +443,6 @@ export const InputForm: React.FC<InputFormProps> = ({
     settingsRef.current = next;
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); } catch {}
     saveToCookie(next);
-    saveToHash(next);
   };
 
 
