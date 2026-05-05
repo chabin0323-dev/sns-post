@@ -414,6 +414,7 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [showThemeHistory, setShowThemeHistory] = useState(false);
   const [presetApplied, setPresetApplied] = useState(false);
   const [exportCopied, setExportCopied] = useState(false);
+  const [pasteText, setPasteText] = useState('');
   const [importResult, setImportResult] = useState<'ok' | 'error' | null>(null);
 
   const [accounts, setAccounts] = useState<SnsAccounts>(loadAccounts);
@@ -500,26 +501,30 @@ export const InputForm: React.FC<InputFormProps> = ({
     saveToCookie(next); // Cookieにも保存（iOS Safariのlocalストレージ消去対策）
   };
 
-  // 設定+アカウントをJSONファイルとしてダウンロード
+  // エクスポート用ペイロードを生成
+  const buildPayload = () => {
+    const s = settingsRef.current;
+    return {
+      settings: {
+        templateText: s.templateText,
+        templateUrl: s.templateUrl,
+        insertPosition: s.insertPosition,
+        xPhrase: s.xPhrase,
+        xUrl: s.xUrl,
+        threadsPhrase: s.threadsPhrase,
+        threadsUrl: s.threadsUrl,
+        igYtPhrase: s.igYtPhrase,
+        tiktokTemplateText: s.tiktokTemplateText,
+        tiktokInsertPosition: s.tiktokInsertPosition,
+      },
+      accounts: accountsRef.current,
+    };
+  };
+
+  // ファイルダウンロード
   const handleExport = () => {
     try {
-      const s = settingsRef.current;
-      const payload = {
-        settings: {
-          templateText: s.templateText,
-          templateUrl: s.templateUrl,
-          insertPosition: s.insertPosition,
-          xPhrase: s.xPhrase,
-          xUrl: s.xUrl,
-          threadsPhrase: s.threadsPhrase,
-          threadsUrl: s.threadsUrl,
-          igYtPhrase: s.igYtPhrase,
-          tiktokTemplateText: s.tiktokTemplateText,
-          tiktokInsertPosition: s.tiktokInsertPosition,
-        },
-        accounts: accountsRef.current,
-      };
-      const json = JSON.stringify(payload, null, 2);
+      const json = JSON.stringify(buildPayload(), null, 2);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -534,6 +539,60 @@ export const InputForm: React.FC<InputFormProps> = ({
     }
   };
 
+  // JSONをクリップボードにコピー（スマホへの貼り付け用）
+  const handleCopyJson = () => {
+    try {
+      const json = JSON.stringify(buildPayload());
+      navigator.clipboard.writeText(json).then(() => {
+        setExportCopied(true);
+        setTimeout(() => setExportCopied(false), 3000);
+      });
+    } catch (e) {
+      console.error('Copy failed:', e);
+    }
+  };
+
+  // 貼り付けテキストからインポート
+  const handlePasteImport = () => {
+    try {
+      const parsed = JSON.parse(pasteText.trim());
+      applyParsed(parsed);
+      setPasteText('');
+    } catch {
+      setImportResult('error');
+      setTimeout(() => setImportResult(null), 3000);
+    }
+  };
+
+  // パースされたデータをstateに反映（共通処理）
+  const applyParsed = (parsed: { settings?: Record<string, string>; accounts?: Record<string, Record<string, string>> }) => {
+    if (parsed.settings) {
+      const s = { ...defaultSettings, ...parsed.settings };
+      updateSetting(setTemplateText, 'templateText', s.templateText);
+      updateSetting(setTemplateUrl, 'templateUrl', s.templateUrl);
+      updateSetting(setInsertPosition, 'insertPosition', s.insertPosition as 'start' | 'end');
+      updateSetting(setTiktokTemplateText, 'tiktokTemplateText', s.tiktokTemplateText);
+      updateSetting(setTiktokInsertPosition, 'tiktokInsertPosition', s.tiktokInsertPosition as 'start' | 'end' | 'both');
+      updateSetting(setXPhrase, 'xPhrase', s.xPhrase);
+      updateSetting(setXUrl, 'xUrl', s.xUrl);
+      updateSetting(setThreadsPhrase, 'threadsPhrase', s.threadsPhrase);
+      updateSetting(setThreadsUrl, 'threadsUrl', s.threadsUrl);
+      updateSetting(setIgYtPhrase, 'igYtPhrase', s.igYtPhrase);
+    }
+    if (parsed.accounts) {
+      setAccounts(prev => {
+        const merged = { ...prev };
+        for (const [k, v] of Object.entries(parsed.accounts!)) {
+          if (merged[k as SnsKey]) merged[k as SnsKey] = { ...merged[k as SnsKey], ...v };
+        }
+        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(merged));
+        return merged;
+      });
+    }
+    setImportResult('ok');
+    setTimeout(() => setImportResult(null), 4000);
+  };
+
   // JSONファイルからインポートしてstateに直接反映
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -542,36 +601,12 @@ export const InputForm: React.FC<InputFormProps> = ({
     reader.onload = (ev) => {
       try {
         const parsed = JSON.parse(ev.target?.result as string);
-        if (parsed.settings) {
-          const s = { ...defaultSettings, ...parsed.settings };
-          updateSetting(setTemplateText, 'templateText', s.templateText);
-          updateSetting(setTemplateUrl, 'templateUrl', s.templateUrl);
-          updateSetting(setInsertPosition, 'insertPosition', s.insertPosition);
-          updateSetting(setTiktokTemplateText, 'tiktokTemplateText', s.tiktokTemplateText);
-          updateSetting(setTiktokInsertPosition, 'tiktokInsertPosition', s.tiktokInsertPosition);
-          updateSetting(setXPhrase, 'xPhrase', s.xPhrase);
-          updateSetting(setXUrl, 'xUrl', s.xUrl);
-          updateSetting(setThreadsPhrase, 'threadsPhrase', s.threadsPhrase);
-          updateSetting(setThreadsUrl, 'threadsUrl', s.threadsUrl);
-          updateSetting(setIgYtPhrase, 'igYtPhrase', s.igYtPhrase);
-        }
-        if (parsed.accounts) {
-          setAccounts(prev => {
-            const merged = { ...prev };
-            for (const [k, v] of Object.entries(parsed.accounts as Record<string, Record<string, string>>)) {
-              if (merged[k as SnsKey]) merged[k as SnsKey] = { ...merged[k as SnsKey], ...(v as { id: string; password: string; memo: string }) };
-            }
-            localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(merged));
-            return merged;
-          });
-        }
-        setImportResult('ok');
-        setTimeout(() => setImportResult(null), 4000);
+        applyParsed(parsed);
       } catch {
         setImportResult('error');
         setTimeout(() => setImportResult(null), 3000);
       }
-      e.target.value = ''; // 同じファイルを再選択できるようにリセット
+      e.target.value = '';
     };
     reader.readAsText(file);
   };
@@ -1129,31 +1164,56 @@ export const InputForm: React.FC<InputFormProps> = ({
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
           <div className="text-xs font-black text-emerald-700">📱 スマホに設定を転送</div>
 
-            {/* PC側：ファイルダウンロード */}
-          <div className="space-y-1">
-            <div className="text-xs font-bold text-slate-600">① PCでファイルをダウンロード</div>
-            <p className="text-xs text-slate-400">ダウンロードした「sns-settings.json」をメールやiCloud経由でスマホに送ってください。</p>
-            <button
-              type="button"
-              onClick={handleExport}
-              className="w-full py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700"
-            >
-              {exportCopied ? '✅ ダウンロードしました！' : '💾 設定ファイルをダウンロード'}
-            </button>
+            {/* PC側 */}
+          <div className="space-y-2">
+            <div className="text-xs font-bold text-slate-600">① PCでコピーまたはダウンロード</div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleCopyJson}
+                className="flex-1 py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700"
+              >
+                {exportCopied ? '✅ コピー完了！' : '📋 JSONをコピー'}
+              </button>
+              <button
+                type="button"
+                onClick={handleExport}
+                className="flex-1 py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 bg-slate-500 hover:bg-slate-600"
+              >
+                💾 ファイル保存
+              </button>
+            </div>
+            <p className="text-xs text-slate-400">「JSONをコピー」→ LINEで自分に送る、またはメモに貼る</p>
           </div>
 
-          <div className="border-t border-emerald-200 pt-3 space-y-1">
-            <div className="text-xs font-bold text-slate-600">② スマホでファイルを選択して適用</div>
-            <p className="text-xs text-slate-400">受け取った「sns-settings.json」ファイルを選択してください。</p>
-            <label className="block w-full py-3 rounded-xl font-black text-sm text-center text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer transition-all active:scale-95">
-              📁 ファイルを選択して適用
+          <div className="border-t border-emerald-200 pt-3 space-y-2">
+            <div className="text-xs font-bold text-slate-600">② スマホで貼り付けて適用</div>
+            <p className="text-xs text-slate-400">LINEやメモからJSONをコピーしてここに貼り付けてください。</p>
+            <textarea
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+              placeholder='{"settings":{...},"accounts":{...}} の形式で貼り付け'
+              rows={4}
+              className="w-full p-3 rounded-xl border border-emerald-300 text-xs font-mono focus:outline-none focus:border-emerald-500 resize-none bg-white"
+            />
+            <button
+              type="button"
+              onClick={handlePasteImport}
+              disabled={!pasteText.trim()}
+              className="w-full py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40"
+            >
+              適用する
+            </button>
+            <div className="text-center text-xs text-slate-400">または</div>
+            <label className="block w-full py-2 rounded-xl font-bold text-sm text-center text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer transition-all active:scale-95">
+              📁 ファイルから読み込む
               <input type="file" accept=".json,application/json" onChange={handleImport} className="hidden" />
             </label>
             {importResult === 'ok' && (
               <div className="text-center text-xs font-black text-emerald-600 py-1">✅ 設定・アカウント情報を反映しました！</div>
             )}
             {importResult === 'error' && (
-              <div className="text-center text-xs font-black text-red-500 py-1">❌ ファイルの読み込みに失敗しました。</div>
+              <div className="text-center text-xs font-black text-red-500 py-1">❌ 読み込みに失敗しました。再度コピーして貼り付けてください。</div>
             )}
           </div>
         </div>
