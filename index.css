@@ -1,0 +1,4 @@
+/* Root stylesheet placeholder. This file exists to satisfy the static /index.css import. */
+html, body {
+  min-height: 100%;
+}
