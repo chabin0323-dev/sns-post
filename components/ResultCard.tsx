@@ -170,6 +170,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
   onSelectHistory,
   onDeleteHistory,
   onClearHistory,
+  onBackToTop,
 }) => {
   const [copiedKey, setCopiedKey] = useState('');
   const [videoLoading, setVideoLoading] = useState(false);
