@@ -895,7 +895,7 @@ export const InputForm: React.FC<InputFormProps> = ({
               <HistoryChips
                 title="TikTok決まり文履歴"
                 items={tiktokTemplateTextHistory}
-                onSelect={(v) => setTiktokTemplateText(v === '（削除）' ? '' : v)}
+                onSelect={(v) => updateSetting(setTiktokTemplateText, 'tiktokTemplateText', v === '（削除）' ? '' : v)}
                 onDelete={(value) => setTiktokTemplateTextHistory(removeHistory(HISTORY_KEYS.tiktokTemplateText, value))}
               />
 

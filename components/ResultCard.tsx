@@ -161,6 +161,7 @@ interface ResultCardProps {
   onSelectHistory?: (post: GeneratedPost) => void;
   onDeleteHistory?: (post: GeneratedPost, index: number) => void;
   onClearHistory?: () => void;
+  onBackToTop?: () => void;
 }
 
 export const ResultCard: React.FC<ResultCardProps> = ({
@@ -204,7 +205,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
   type PostConfig = { label: string; webUrl: string; appScheme?: string; prefill?: boolean };
   const getPostConfig = (labels: string[]): PostConfig | null => {
     const l = labels[0];
-    if (l === 'X')         return { label: 'X に投稿',              webUrl: 'https://x.com/intent/post?text=',          appScheme: 'twitter://post?message=',   prefill: true };
+    if (l === 'X')         return { label: 'X に投稿',              webUrl: 'https://x.com/intent/tweet?text=',          appScheme: 'twitter://post?message=',   prefill: true };
     if (l === 'note')      return { label: 'note に投稿',            webUrl: 'https://note.com/notes/new' };
     if (l === 'TikTok')    return { label: 'TikTok アプリへ',        webUrl: 'https://www.tiktok.com/',                  appScheme: 'snssdk1128://' };
     if (l === 'Instagram') return { label: 'Instagram / YouTube へ', webUrl: 'https://www.instagram.com/',               appScheme: 'instagram://app' };
@@ -229,7 +230,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
     if (mobile && config.appScheme) {
       // スマホ：URI スキームでアプリを直接起動（投稿文はクリップボードから貼り付け）
       const scheme = config.prefill ? config.appScheme + encoded : config.appScheme;
-      window.location.href = scheme;
+      window.open(scheme, '_blank');
     } else {
       // PC：ブラウザで開く
       if (config.prefill) {
@@ -261,6 +262,17 @@ export const ResultCard: React.FC<ResultCardProps> = ({
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 pb-20">
+      {onBackToTop && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onBackToTop}
+            className="px-4 py-2 rounded-2xl bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 font-black"
+          >
+            🔙 アプリTOPに戻る
+          </button>
+        </div>
+      )}
       {groupedBlocks.map((block, index) => {
         const themeClasses = themeClassMap[block.theme];
         const copyKey = `${block.labels.join('-')}-${index}`;

@@ -348,6 +348,7 @@ const App: React.FC = () => {
               onSelectHistory={handleSelectHistory}
               onDeleteHistory={handleDeleteHistory}
               onClearHistory={handleClearHistory}
+              onBackToTop={() => { setCurrentPost(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
           </div>
         )}
