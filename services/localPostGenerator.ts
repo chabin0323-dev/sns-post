@@ -603,8 +603,9 @@ ${sc.bridge}`;
   const threadsCta = [threadsPhrase.trim(), threadsUrl.trim()].filter(Boolean).join('\n');
   const threadsCtaSuffix = threadsCta ? `\n\n${threadsCta}` : '';
   const threadsBodyRaw = appendHashtags(threadsBase, xHashtags, hashtagMode);
-  const threadsBodyTrimmed = threadsBodyRaw.length + threadsCtaSuffix.length > 500
-    ? threadsBodyRaw.slice(0, 500 - threadsCtaSuffix.length - 1).trimEnd() + '…'
+  const threadsCtaWeight = threadsCtaSuffix.length;
+  const threadsBodyTrimmed = threadsBodyRaw.length + threadsCtaWeight > 500
+    ? trimToWeightedLength(threadsBodyRaw, 500 - threadsCtaWeight).trimEnd()
     : threadsBodyRaw;
   const threadsText = `${threadsBodyTrimmed}${threadsCtaSuffix}`;
 

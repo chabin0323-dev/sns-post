@@ -34,6 +34,7 @@ type FormSettings = {
   threadsPhrase: string;
   threadsUrl: string;
   igYtPhrase: string;
+  memo: string;
 };
 
 const IG_YT_PHRASE_PRESETS = [
@@ -62,6 +63,7 @@ const defaultSettings: FormSettings = {
   threadsPhrase: '▼無料で試す',
   threadsUrl: 'https://lovelab-sns-redirect.vercel.app',
   igYtPhrase: '詳細はプロフィールのリンクから🔗',
+  memo: '',
 };
 
 const HISTORY_KEYS_CONST = {
@@ -362,6 +364,7 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [threadsPhrase, setThreadsPhrase] = useState<string>(_initSettings.threadsPhrase);
   const [threadsUrl, setThreadsUrl] = useState<string>(_initSettings.threadsUrl);
   const [igYtPhrase, setIgYtPhrase] = useState<string>(_initSettings.igYtPhrase);
+  const [memo, setMemo] = useState<string>(_initSettings.memo);
 
   const [openCommon, setOpenCommon] = useState(false);
   const [openTiktok, setOpenTiktok] = useState(false);
@@ -378,6 +381,7 @@ export const InputForm: React.FC<InputFormProps> = ({
     insertPosition, tiktokInsertPosition, hashtagMode,
     scheduleMorning, scheduleNoon, scheduleNight,
     xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
+    memo,
   });
   settingsRef.current = {
     theme, gender, age, length,
@@ -385,6 +389,7 @@ export const InputForm: React.FC<InputFormProps> = ({
     insertPosition, tiktokInsertPosition, hashtagMode,
     scheduleMorning, scheduleNoon, scheduleNight,
     xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
+    memo,
   };
 
   // タブを閉じる・バックグラウンド移行時にlocalStorage＋Cookieへ同期保存
@@ -425,12 +430,13 @@ export const InputForm: React.FC<InputFormProps> = ({
       insertPosition, tiktokInsertPosition, hashtagMode,
       scheduleMorning, scheduleNoon, scheduleNight,
       xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
+      memo,
     };
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch {}
     saveToCookie(s);
   }, [theme, gender, age, length, templateText, templateUrl, tiktokTemplateText,
       insertPosition, tiktokInsertPosition, hashtagMode, scheduleMorning, scheduleNoon, scheduleNight,
-      xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase]);
+      xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase, memo];
 
   // 設定変更時にlocalStorage＋Cookieへ即時保存
   const updateSetting = <K extends keyof FormSettings>(
@@ -444,6 +450,18 @@ export const InputForm: React.FC<InputFormProps> = ({
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); } catch {}
     saveToCookie(next);
   };
+
+  // メモ欄は高頻度更新なので800msデバウンス
+  useEffect(() => {
+    if (!memo.trim()) {
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settingsRef.current, memo })); } catch {}
+      return;
+    }
+    const t = setTimeout(() => {
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settingsRef.current, memo })); } catch {}
+    }, 800);
+    return () => clearTimeout(t);
+  }, [memo]);
 
 
   const applyFortunePreset = () => {
@@ -979,6 +997,19 @@ export const InputForm: React.FC<InputFormProps> = ({
             />
           </div>
         )}
+
+        {/* メモ・備考欄 */}
+        <div className="space-y-3 p-4 bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200">
+          <label className="block text-xs font-bold text-violet-700 uppercase tracking-wider">📝 メモ・備考</label>
+          <textarea
+            value={memo}
+            onChange={(e) => updateSetting(setMemo, 'memo', e.target.value)}
+            placeholder="投稿のアイデア、修正案、注意点など自由に記入できます。10分以上の長時間保持が可能です。"
+            className="w-full h-32 p-4 rounded-xl border border-violet-200 bg-white text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+            disabled={isLoading}
+          />
+          <div className="text-xs text-violet-600 font-medium">💾 自動で保存されます</div>
+        </div>
 
         <div className="space-y-6">
           {!isLoading ? (
