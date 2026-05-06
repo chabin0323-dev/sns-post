@@ -50,7 +50,7 @@ const defaultSettings: FormSettings = {
   age: '30代',
   length: '300文字',
   templateText: '詳しくはこちら👇',
-  templateUrl: 'https://nexa-lovelab.com',
+  templateUrl: 'https://lovelab-sns-redirect.vercel.app',
   tiktokTemplateText: 'プロフィールから無料で占えます👇',
   insertPosition: 'end',
   tiktokInsertPosition: 'start',
@@ -344,6 +344,12 @@ export const InputForm: React.FC<InputFormProps> = ({
   relatedThemes = [],
 }) => {
   const isLoading = loadingState === LoadingState.LOADING;
+  const [savedNotification, setSavedNotification] = useState<{ section: string; timestamp: number } | null>(null);
+
+  const showSaveNotification = (section: string) => {
+    setSavedNotification({ section, timestamp: Date.now() });
+    setTimeout(() => setSavedNotification(null), 2000);
+  };
 
   const [theme, setTheme] = useState<string>(_initSettings.theme);
   const [gender, setGender] = useState<string>(_initSettings.gender);
@@ -436,7 +442,7 @@ export const InputForm: React.FC<InputFormProps> = ({
     saveToCookie(s);
   }, [theme, gender, age, length, templateText, templateUrl, tiktokTemplateText,
       insertPosition, tiktokInsertPosition, hashtagMode, scheduleMorning, scheduleNoon, scheduleNight,
-      xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase, memo];
+      xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase, memo]);
 
   // 設定変更時にlocalStorage＋Cookieへ即時保存
   const updateSetting = <K extends keyof FormSettings>(
