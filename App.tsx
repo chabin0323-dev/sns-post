@@ -24,8 +24,6 @@ const isValidSavedPost = (data: any): data is GeneratedPost => {
     typeof data === 'object' &&
     typeof data.title === 'string' &&
     typeof data.content === 'string' &&
-    typeof data.capcutScript === 'string' &&
-    typeof data.xPost === 'string' &&
     Array.isArray(data.hashtags)
   );
 };
@@ -34,6 +32,8 @@ const sanitizePost = (data: any): GeneratedPost | null => {
   if (!isValidSavedPost(data)) return null;
   return {
     ...data,
+    capcutScript: typeof data.capcutScript === 'string' ? data.capcutScript : '',
+    xPost: typeof data.xPost === 'string' ? data.xPost : '',
     threadsPost: typeof data.threadsPost === 'string' ? data.threadsPost : '',
     twitchPost: typeof data.twitchPost === 'string' ? data.twitchPost : '',
     showroomPost: typeof data.showroomPost === 'string' ? data.showroomPost : '',
@@ -86,27 +86,32 @@ const readGeneratedHistory = (): GeneratedPost[] => {
   }
 };
 
+const readLatestPost = (): GeneratedPost | null => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return null;
+    const parsed = JSON.parse(saved);
+    const normalized = sanitizePost(parsed);
+    if (normalized) return normalized;
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
+};
+
 const getHistoryItemKey = (post: GeneratedPost, index?: number) =>
   `${post.timestamp ?? 'time'}__${post.title ?? 'title'}__${post.theme ?? 'theme'}__${index ?? ''}`;
 
 const App: React.FC = () => {
-
+  const initialGeneratedHistory = readGeneratedHistory();
+  const [generatedHistory, setGeneratedHistory] = useState<GeneratedPost[]>(initialGeneratedHistory);
   const [currentPost, setCurrentPost] = useState<GeneratedPost | null>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return null;
-      const parsed = JSON.parse(saved);
-      const normalized = sanitizePost(parsed);
-      if (normalized) return normalized;
-      localStorage.removeItem(STORAGE_KEY);
-      return null;
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
-      return null;
-    }
+    const latestPost = readLatestPost();
+    if (latestPost) return latestPost;
+    return initialGeneratedHistory[0] ?? null;
   });
-
-  const [generatedHistory, setGeneratedHistory] = useState<GeneratedPost[]>(() => readGeneratedHistory());
   const [loadingState, setLoadingState] = useState<LoadingState>(LoadingState.IDLE);
   const [showGuide, setShowGuide] = useState(false);
   const [progress, setProgress] = useState(0);
