@@ -363,7 +363,10 @@ export const generateSNSPostContent = (
 ②${p2}
 ③${p3}
 
-${bridge}`;
+${bridge}
+
+これ保存して後で見返してね。
+いいねとスキがあれば嬉しいです。`;
 
   // 300文字：標準。真実＋3ポイント＋CTA
   const noteBase300 = `${hook}
@@ -377,6 +380,9 @@ ${truth}
 3. ${p3}
 
 ${cta}
+
+保存して後で見返してください。
+スキもらえると励みになります。
 
 ${bridge}`;
 
@@ -403,6 +409,8 @@ ${truth}
 ${cta}
 
 まずは今日、一つだけ試してみてください。
+保存して後でまた見返してね。
+スキしてくれると励みになります。
 
 ${bridge}`;
 
@@ -411,11 +419,11 @@ ${bridge}`;
     : noteBase300;
 
   // 200文字：短くテンポよく、3ポイントだけ
-  const tiktokBase200 = `${hook}
+  const tiktokBase200 = `これ知ってた？
 
-${profile}の方、見てください
+${hook}
 
-これだけ覚えてください
+今話題の${theme}、${profile}の方は特に見てください
 
 1つ目
 ${sc.p1}
@@ -431,7 +439,9 @@ ${sc.p3}
 ${sc.bridge}`;
 
   // 300文字：標準の台本
-  const tiktokBase300 = `${hook}
+  const tiktokBase300 = `これ知ってた？
+
+${hook}
 
 ちょっと待ってください
 
@@ -472,7 +482,9 @@ ${sc.cta}
 ${sc.bridge}`;
 
   // 500文字：各ポイントに解説を加えた詳細版
-  const tiktokBase500 = `${hook}
+  const tiktokBase500 = `これ知ってた？
+
+${hook}
 
 ちょっと待ってください
 
@@ -494,6 +506,9 @@ ${profile}の方に
 あなたのせいじゃないです
 
 知らないだけです
+
+今話題になっている
+トレンドにも共通することです
 
 うまくいく人は
 3つだけ意識しています
@@ -534,30 +549,32 @@ ${sc.bridge}`;
     : length === '500文字' ? tiktokBase500
     : tiktokBase300;
 
+  const xTitle = sc.title.match(/^[0-9０-９]/) ? sc.title : `3つの理由｜${sc.title}`;
+  const xQuestion = 'あなたはどっち派？ リプや引用RTで教えてください！';
   const xBase = length === '200文字'
-    ? `${sc.title}\n\n・${p1}\n・${p2}\n・${p3}\n\n${bridge}`
+    ? `${xTitle}\n\n・${p1}\n・${p2}\n・${p3}\n\n${bridge}\n\n${xQuestion}`
     : length === '500文字'
-    ? `${sc.title}\n\n${truth}\n\n・${p1}\n  （多くの人が逆をやっています）\n・${p2}\n  （これだけで相手の反応が変わります）\n・${p3}\n  （順番が大事です）\n\n${cta}\n\n${bridge}`
-    : `${sc.title}\n\n${truth}\n\n・${p1}\n・${p2}\n・${p3}\n\n${cta}\n\n${bridge}`;
+    ? `${xTitle}\n\n${truth}\n\n・${p1}\n  （多くの人が逆をやっています）\n・${p2}\n  （これだけで相手の反応が変わります）\n・${p3}\n  （順番が大事です）\n\n${cta}\n\n${bridge}\n\n${xQuestion}`
+    : `${xTitle}\n\n${truth}\n\n・${p1}\n・${p2}\n・${p3}\n\n${cta}\n\n${bridge}\n\n${xQuestion}`;
 
   const instagramBase = length === '200文字'
-    ? `${hook}\n\n①${p1}\n②${p2}\n③${p3}\n\n${bridge}`
+    ? `${hook}\n\nこれ保存して後で見て\n\n①${p1}\n②${p2}\n③${p3}\n\n${bridge}`
     : length === '500文字'
-    ? `${hook}\n\n${truth}\n\nこの3つを意識するだけで結果は変わります。\n\n①${p1}\n 多くの人が逆のことをしています。\n\n②${p2}\n これをやるだけで相手の見え方が変わります。\n\n③${p3}\n 順番を変えるだけで全然違います。\n\n${cta}\n\n${bridge}`
-    : `${hook}\n\n${truth}\n\nこの3つを意識するだけで結果は変わります。\n\n①${p1}\n②${p2}\n③${p3}\n\n${cta}\n\n${bridge}`;
+    ? `${hook}\n\n${truth}\n\n保存したくなる有益情報です。\n\n①${p1}\n 多くの人が逆のことをしています。\n\n②${p2}\n これをやるだけで相手の見え方が変わります。\n\n③${p3}\n 順番を変えるだけで全然違います。\n\n${cta}\n\nこれ保存して後で見てください。\n\n${bridge}`
+    : `${hook}\n\n${truth}\n\nこれ保存して後で見てください。\n\n①${p1}\n②${p2}\n③${p3}\n\n${cta}\n\n${bridge}`;
 
   const youtubeBase = length === '200文字'
-    ? `${hook}\n\n${profile}の方へ。\n\n1. ${p1}\n2. ${p2}\n3. ${p3}\n\n${bridge}`
+    ? `${hook}\n\n${profile}の方へ。\n\n1. ${p1}\n2. ${p2}\n3. ${p3}\n\n概要欄に詳細あり。\nコメントで教えてください。\n\n${bridge}`
     : length === '500文字'
-    ? `${hook}\n\n${profile}の方に知ってほしいことがあります。\n\n${truth}\n\n今回のポイントはこの3つです。\n\n1. ${p1}\n   多くの方が逆のことをやっています。\n\n2. ${p2}\n   これを意識するだけで相手の反応が変わります。\n\n3. ${p3}\n   順番を変えるだけで結果は全然変わります。\n\n${cta}\n\nまずは今日、1つだけ試してみてください。\n\n${bridge}`
-    : `${hook}\n\n${profile}の方に知ってほしいことがあります。\n\n${truth}\n\n今回のポイントはこの3つです。\n\n1. ${p1}\n2. ${p2}\n3. ${p3}\n\n${cta}\n\nまずは今日、1つだけ試してみてください。`;
+    ? `${hook}\n\n${profile}の方に知ってほしいことがあります。\n\n${truth}\n\n今回のポイントはこの3つです。\n\n1. ${p1}\n   多くの方が逆のことをやっています。\n\n2. ${p2}\n   これを意識するだけで相手の反応が変わります。\n\n3. ${p3}\n   順番を変えるだけで結果は全然変わります。\n\n概要欄に詳細あり。\nコメントで教えてください。\n\n${cta}\n\nまずは今日、1つだけ試してみてください。\n\n${bridge}`
+    : `${hook}\n\n${profile}の方に知ってほしいことがあります。\n\n${truth}\n\n今回のポイントはこの3つです。\n\n1. ${p1}\n2. ${p2}\n3. ${p3}\n\n概要欄に詳細あり。\nコメントで教えてください。\n\n${cta}\n\nまずは今日、1つだけ試してみてください。`;
 
   // Threads: Xと同フォーマット、少し長め（500文字）
   const threadsBase = length === '200文字'
-    ? `${sc.title}\n\n・${p1}\n・${p2}\n・${p3}\n\n${bridge}`
+    ? `実は私も同じような悩みがありました。\n\n${sc.title}\n\n・${p1}\n・${p2}\n・${p3}\n\n続きが気になる方はコメントしてください。\n\n${bridge}`
     : length === '500文字'
-    ? `${sc.title}\n\n${truth}\n\n${profile}の方ほど、この3つを意識するだけで状況が変わります。\n\n・${p1}\n・${p2}\n・${p3}\n\n${cta}\n\nまずは今日1つだけ試してみてください。\n\n${bridge}`
-    : `${sc.title}\n\n${truth}\n\n・${p1}\n・${p2}\n・${p3}\n\n${cta}\n\n${bridge}`;
+    ? `実は私も同じような悩みがありました。\n\n${sc.title}\n\n${truth}\n\n${profile}の方ほど、この3つを意識するだけで状況が変わります。\n\n・${p1}\n・${p2}\n・${p3}\n\n${cta}\n\n続きが気になる方はコメントで教えてください。\n\n${bridge}`
+    : `実は私も同じような悩みがありました。\n\n${sc.title}\n\n${truth}\n\n・${p1}\n・${p2}\n・${p3}\n\n${cta}\n\n続きが気になる方はコメントで教えてください。\n\n${bridge}`;
 
   // Twitch: 配信告知スタイル
   const twitchBase = length === '200文字'
