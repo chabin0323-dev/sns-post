@@ -804,7 +804,7 @@ export const InputForm: React.FC<InputFormProps> = ({
           </div>
 
           <SectionButton
-            title="note・X設定"
+            title="note設定"
             subtitle="決まり文・URL・挿入位置"
             isOpen={openCommon}
             onClick={() => setOpenCommon(!openCommon)}
