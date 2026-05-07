@@ -201,7 +201,9 @@ const App: React.FC = () => {
     xUrl: string = 'https://lovelab-sns-redirect.vercel.app',
     threadsPhrase: string = '▼無料で試す',
     threadsUrl: string = 'https://lovelab-sns-redirect.vercel.app',
-    igYtPhrase: string = '詳細はプロフィールのリンクから🔗'
+    igYtPhrase: string = '詳細はプロフィールのリンクから🔗',
+    xLength: string = '140文字全角',
+    threadsLength: string = '500文字'
   ) => {
     setLoadingState(LoadingState.LOADING);
     setShowGuide(false);
@@ -212,7 +214,8 @@ const App: React.FC = () => {
         theme, length, gender, age,
         templateText, templateUrl, tiktokTemplateText,
         insertPosition, tiktokInsertPosition, hashtagMode,
-        xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase
+        xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
+        xLength, threadsLength
       );
 
       const historyForAnalysis = generatedHistory.map(stripHeavyVideoData);

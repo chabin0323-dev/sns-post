@@ -191,7 +191,9 @@ export const generateSNSPostContent = (
   xUrl: string = 'https://lovelab-sns-redirect.vercel.app',
   threadsPhrase: string = '▼無料で試す',
   threadsUrl: string = 'https://lovelab-sns-redirect.vercel.app',
-  igYtPhrase: string = '詳細はプロフィールのリンクから🔗'
+  igYtPhrase: string = '詳細はプロフィールのリンクから🔗',
+  xLength: string = '140文字全角',
+  threadsLength: string = '500文字'
 ) => {
   const profile = getProfileLabel(gender, age);
 
@@ -551,9 +553,9 @@ ${sc.bridge}`;
 
   const xTitle = sc.title.match(/^[0-9０-９]/) ? sc.title : `3つの理由｜${sc.title}`;
   const xQuestion = 'あなたはどっち派？ リプや引用RTで教えてください！';
-  const xBase = length === '200文字'
+  const xBase = xLength === '200文字'
     ? `${xTitle}\n\n・${p1}\n・${p2}\n・${p3}\n\n${bridge}\n\n${xQuestion}`
-    : length === '500文字'
+    : xLength === '500文字'
     ? `${xTitle}\n\n${truth}\n\n・${p1}\n  （多くの人が逆をやっています）\n・${p2}\n  （これだけで相手の反応が変わります）\n・${p3}\n  （順番が大事です）\n\n${cta}\n\n${bridge}\n\n${xQuestion}`
     : `${xTitle}\n\n${truth}\n\n・${p1}\n・${p2}\n・${p3}\n\n${cta}\n\n${bridge}\n\n${xQuestion}`;
 
@@ -570,9 +572,9 @@ ${sc.bridge}`;
     : `${hook}\n\n${profile}の方に知ってほしいことがあります。\n\n${truth}\n\n今回のポイントはこの3つです。\n\n1. ${p1}\n2. ${p2}\n3. ${p3}\n\n概要欄に詳細あり。\nコメントで教えてください。\n\n${cta}\n\nまずは今日、1つだけ試してみてください。`;
 
   // Threads: Xと同フォーマット、少し長め（500文字）
-  const threadsBase = length === '200文字'
+  const threadsBase = threadsLength === '200文字'
     ? `実は私も同じような悩みがありました。\n\n${sc.title}\n\n・${p1}\n・${p2}\n・${p3}\n\n続きが気になる方はコメントしてください。\n\n${bridge}`
-    : length === '500文字'
+    : threadsLength === '500文字'
     ? `実は私も同じような悩みがありました。\n\n${sc.title}\n\n${truth}\n\n${profile}の方ほど、この3つを意識するだけで状況が変わります。\n\n・${p1}\n・${p2}\n・${p3}\n\n${cta}\n\n続きが気になる方はコメントで教えてください。\n\n${bridge}`
     : `実は私も同じような悩みがありました。\n\n${sc.title}\n\n${truth}\n\n・${p1}\n・${p2}\n・${p3}\n\n${cta}\n\n続きが気になる方はコメントで教えてください。\n\n${bridge}`;
 

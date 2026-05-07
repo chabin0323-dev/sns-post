@@ -34,6 +34,8 @@ type FormSettings = {
   threadsPhrase: string;
   threadsUrl: string;
   igYtPhrase: string;
+  xLength: string;
+  threadsLength: string;
 };
 
 const IG_YT_PHRASE_PRESETS = [
@@ -62,6 +64,8 @@ const defaultSettings: FormSettings = {
   threadsPhrase: '▼無料で試す',
   threadsUrl: 'https://lovelab-sns-redirect.vercel.app',
   igYtPhrase: '詳細はプロフィールのリンクから🔗',
+  xLength: '140文字全角',
+  threadsLength: '500文字',
 };
 
 const HISTORY_KEYS_CONST = {
@@ -142,7 +146,9 @@ interface InputFormProps {
     xUrl: string,
     threadsPhrase: string,
     threadsUrl: string,
-    igYtPhrase: string
+    igYtPhrase: string,
+    xLength: string,
+    threadsLength: string
   ) => void;
   onCancel: () => void;
   loadingState: LoadingState;
@@ -362,6 +368,13 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [scheduleMorning, setScheduleMorning] = useState<string>(_initSettings.scheduleMorning);
   const [scheduleNoon, setScheduleNoon] = useState<string>(_initSettings.scheduleNoon);
   const [scheduleNight, setScheduleNight] = useState<string>(_initSettings.scheduleNight);
+  const [xPhrase, setXPhrase] = useState<string>(_initSettings.xPhrase);
+  const [xUrl, setXUrl] = useState<string>(_initSettings.xUrl);
+  const [threadsPhrase, setThreadsPhrase] = useState<string>(_initSettings.threadsPhrase);
+  const [threadsUrl, setThreadsUrl] = useState<string>(_initSettings.threadsUrl);
+  const [igYtPhrase, setIgYtPhrase] = useState<string>(_initSettings.igYtPhrase);
+  const [xLength, setXLength] = useState<string>(_initSettings.xLength);
+  const [threadsLength, setThreadsLength] = useState<string>(_initSettings.threadsLength);
   const [autoCtaEnabled, setAutoCtaEnabled] = useState(true);
   const [xPhrase, setXPhrase] = useState<string>(_initSettings.xPhrase);
   const [xUrl, setXUrl] = useState<string>(_initSettings.xUrl);
@@ -383,6 +396,7 @@ export const InputForm: React.FC<InputFormProps> = ({
     insertPosition, tiktokInsertPosition, hashtagMode,
     scheduleMorning, scheduleNoon, scheduleNight,
     xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
+    xLength, threadsLength,
   });
   settingsRef.current = {
     theme, gender, age, length,
@@ -390,6 +404,7 @@ export const InputForm: React.FC<InputFormProps> = ({
     insertPosition, tiktokInsertPosition, hashtagMode,
     scheduleMorning, scheduleNoon, scheduleNight,
     xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
+    xLength, threadsLength,
   };
 
   // タブを閉じる・バックグラウンド移行時にlocalStorage＋Cookieへ同期保存
@@ -577,13 +592,13 @@ export const InputForm: React.FC<InputFormProps> = ({
     e.preventDefault();
     if (!theme.trim()) return;
     saveAllHistories();
-    onGenerate(theme, length, gender, age, templateText, templateUrl, tiktokTemplateText, insertPosition, tiktokInsertPosition, autoCtaEnabled, scheduleTimes, hashtagMode, 'script', xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase);
+    onGenerate(theme, length, gender, age, templateText, templateUrl, tiktokTemplateText, insertPosition, tiktokInsertPosition, autoCtaEnabled, scheduleTimes, hashtagMode, 'script', xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase, xLength, threadsLength);
   };
 
   const handleSubmitWithMode = (mode: GenerateMode) => {
     if (!theme.trim()) return;
     saveAllHistories();
-    onGenerate(theme, length, gender, age, templateText, templateUrl, tiktokTemplateText, insertPosition, tiktokInsertPosition, autoCtaEnabled, scheduleTimes, hashtagMode, mode, xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase);
+    onGenerate(theme, length, gender, age, templateText, templateUrl, tiktokTemplateText, insertPosition, tiktokInsertPosition, autoCtaEnabled, scheduleTimes, hashtagMode, mode, xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase, xLength, threadsLength);
   };
 
   return (
