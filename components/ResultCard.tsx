@@ -24,7 +24,6 @@ const groupChannels = (post: GeneratedPost): ChannelBlock[] => {
     { label: 'X', text: post.xPost, theme: 'sky' as const },
     { label: 'Threads', text: post.threadsPost || '', theme: 'purple' as const },
     { label: 'Twitch', text: post.twitchPost || '', theme: 'violet' as const },
-    { label: 'SHOWROOM', text: post.showroomPost || '', theme: 'rose' as const },
     { label: 'AIバズ台本', text: post.buzzScript?.fullScript || '', theme: 'amber' as const },
     {
       label: 'トレンド取得',
@@ -212,7 +211,6 @@ export const ResultCard: React.FC<ResultCardProps> = ({
     if (l === 'Instagram') return { label: 'Instagram / YouTube へ', webUrl: 'https://www.instagram.com/',               appScheme: 'instagram://app' };
     if (l === 'Threads')   return { label: 'Threads に投稿',         webUrl: 'https://www.threads.net/intent/post?text=', appScheme: 'threads://', prefill: true };
     if (l === 'Twitch')    return { label: 'Twitch アプリへ',        webUrl: 'https://dashboard.twitch.tv/',             appScheme: 'twitch://open' };
-    if (l === 'SHOWROOM')  return { label: 'SHOWROOM アプリへ',      webUrl: 'https://www.showroom-live.com/',           appScheme: 'showroom://' };
     return null;
   };
 
