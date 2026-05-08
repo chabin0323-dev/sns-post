@@ -354,11 +354,13 @@ export const generateTikTokScript = (
   const triggers = generatePsychologicalTriggers(theme, audience);
 
   const variations = [
-    `ちょっと待ってください\n\n${theme}で\n失敗してる${audience}\n\nめっちゃ多いです\n\nその理由は\n\n${analysis.main}\nがズレてるから\n\nでも実は\n成功してる人は\n全員同じことをやってます\n\n1つ目\n${analysis.expanded[0]}\n\n2つ目\n${analysis.expanded[1]}\n\n3つ目\n${analysis.expanded[2]}\n\nたったこれだけです\n\nマジで役立つよ！`,
+    `${audience}のあなたへ\n\n${theme}について\n本当に理解していますか？\n\n実は${audience}の多くが\n${analysis.main}を\n完全に見落としています\n\n${triggers.empathy}\n\nその気持ち、めっちゃ分かります\n\n${analysis.main}の見え方が\nズレてるだけで\n全部変わるんです\n\n具体例：\n${examples[0]}\n\nこれが全てなんです\n\nもう1つの重要ポイント：\n${analysis.expanded[1]}\n\n${audience}はここを見落とします\n\nしかし成功する人は\n必ずこれをやってます\n\nだから結果が変わるんです\n\n最後のポイント：\n${analysis.expanded[2]}\n\n今日からこれを意識してください\n\n人生が変わりますよ！`,
 
-    `${audience}のあなたへ\n\n${theme}について\n知ってますか？\n\n実は\n${triggers.empathy}\n\nそれはな\n\n${analysis.main}\nの見え方が\nズレてるだけ\n\n${examples[0]}\n\nここが全てです\n\nびっくりすると思う！`,
+    `ちょっと待ってください\n\n${theme}について\n${audience}の多くが\n大きな勘違いをしています\n\nどういうことか？\n\n${theme}で失敗する人の共通点\nそれは${analysis.main}\nの理解が浅いこと\n\n${triggers.loss}\n\nそれは本当です\n\n実は${audience}が\n${theme}で成功するには\n3つの要素が必要です\n\n1つ目：\n${analysis.expanded[0]}\nを深く理解する\n\n2つ目：\n${analysis.expanded[1]}\nを実装する\n\n3つ目：\n${analysis.expanded[2]}\nを継続する\n\nこの3つです\n\n具体例がこちら：\n${examples[1]}\n\nこれが成功する人と\n失敗する人の分かれ道\n\n今日からやってみてください\n\nマジで役立つよ！`,
 
-    `${theme}について\n\n知ってますか\n\nほとんどの人は\n${analysis.main}をミスってます\n\nでも\n${analysis.secondary || '正しい'}}方法を\nやるだけで\n\n人生が\n\nマジで変わります\n\n今日から\n試してみてください\n\n応援してるよ！`,
+    `${theme}について\n知ってますか？\n\n${triggers.curiosity}\n\nほとんどの${audience}は\n${analysis.main}をミスってます\n\nでもそれって当たり前\n\n誰も教えてくれないから\n\n実は${theme}の本質は\n${analysis.secondary || '意外とシンプル'}なんです\n\nではどうするのか？\n\n${examples[2]}\n\nこれが答えです\n\nさらに深掘りすると\n\n${triggers.rarity}\n\n本当です\n\n${audience}で成功する人は\n全員この視点を持ってます\n\n心理的なポイント：\n${analysis.expanded[3]}\n\nこれが無意識に\n行動を変えさせるんです\n\n今日から試してみて\n\n応援してますよ！`,
+
+    `${audience}さんへ\n\n${theme}で\n成功する人vs失敗する人\n\nその差は何だと思いますか？\n\n答えは\n${analysis.main}\nへのアプローチの違い\n\n失敗する人：\n表面的な情報だけで判断\n\n成功する人：\n本質を理解した上で行動\n\n${triggers.empathy}\n\nその通りです\n\nでは本質とは何か？\n\n${examples[0]}\nに隠されています\n\nさらに言うと\n\n${analysis.expanded[0]}\nが非常に重要\n\nこれを知ると\n${theme}への見方が変わります\n\nそして実装する際は\n${analysis.expanded[1]}\nこのポイントを押さえる\n\n最後に\n${analysis.expanded[2]}\nこれを継続する\n\nこの3段階で\n${audience}は必ず成功します\n\nマジで試してみてください！`,
   ];
 
   return variations[variant % variations.length];
