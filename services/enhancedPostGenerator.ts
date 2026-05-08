@@ -354,11 +354,11 @@ export const generateTikTokScript = (
   const triggers = generatePsychologicalTriggers(theme, audience);
 
   const variations = [
-    `ちょっと待ってください\n\n${theme}で\n失敗してる${audience}\n\nめっちゃ多いです\n\nその理由は\n\n${analysis.main}\nがズレてるから\n\nでも実は\n成功してる人は\n全員同じことをやってます\n\n1つ目\n${analysis.expanded[0]}\n\n2つ目\n${analysis.expanded[1]}\n\n3つ目\n${analysis.expanded[2]}\n\nたったこれだけです\n\nプロフをチェック👇\n\nマジで役立つよ！`,
+    `ちょっと待ってください\n\n${theme}で\n失敗してる${audience}\n\nめっちゃ多いです\n\nその理由は\n\n${analysis.main}\nがズレてるから\n\nでも実は\n成功してる人は\n全員同じことをやってます\n\n1つ目\n${analysis.expanded[0]}\n\n2つ目\n${analysis.expanded[1]}\n\n3つ目\n${analysis.expanded[2]}\n\nたったこれだけです\n\nマジで役立つよ！`,
 
-    `${audience}のあなたへ\n\n${theme}について\n知ってますか？\n\n実は\n${triggers.empathy}\n\nそれはな\n\n${analysis.main}\nの見え方が\nズレてるだけ\n\n${examples[0]}\n\nここが全てです\n\nプロフで\n詳しく説明してるので\n\nチェック👇\n\nびっくりすると思う！`,
+    `${audience}のあなたへ\n\n${theme}について\n知ってますか？\n\n実は\n${triggers.empathy}\n\nそれはな\n\n${analysis.main}\nの見え方が\nズレてるだけ\n\n${examples[0]}\n\nここが全てです\n\nびっくりすると思う！`,
 
-    `${theme}について\n\n知ってますか\n\nほとんどの人は\n${analysis.main}をミスってます\n\nでも\n${analysis.secondary || '正しい'}}方法を\nやるだけで\n\n人生が\n\nマジで変わります\n\n今日から\n試してみてください\n\nプロフをタップ👇\n\n応援してるよ！`,
+    `${theme}について\n\n知ってますか\n\nほとんどの人は\n${analysis.main}をミスってます\n\nでも\n${analysis.secondary || '正しい'}}方法を\nやるだけで\n\n人生が\n\nマジで変わります\n\n今日から\n試してみてください\n\n応援してるよ！`,
   ];
 
   return variations[variant % variations.length];

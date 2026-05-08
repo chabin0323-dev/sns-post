@@ -30,6 +30,11 @@ const trimToWeightedLength = (text: string, maxWeight: number): string => {
 
 const trimToTwitterLength = (text: string): string => trimToWeightedLength(text, 280);
 
+const parseLengthToNumber = (lengthString: string): number => {
+  const match = lengthString.match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : 500;
+};
+
 const getProfileLabel = (gender: string, age: string) => {
   const safeGender = gender === '指定なし' ? '' : gender;
   const safeAge = age === '指定なし' ? '' : age;
@@ -193,7 +198,12 @@ export const generateSNSPostContent = (
     hashtagMode
   );
 
-  const tiktokBody = insertBlockAdvanced(capcutScript, tiktokBlock, tiktokInsertPosition);
+  // TikTok: 指定された文字数に調整
+  const targetLength = parseLengthToNumber(length);
+  const tiktokBodyRaw = insertBlockAdvanced(capcutScript, tiktokBlock, tiktokInsertPosition);
+  const tiktokBody = tiktokBodyRaw.length > targetLength
+    ? trimToWeightedLength(tiktokBodyRaw, targetLength).trimEnd()
+    : tiktokBodyRaw;
   const tiktokHashtagText = hashtagMode === 'あり' && tikTokHashtags.length > 0
     ? tikTokHashtags.join(' ')
     : '';
