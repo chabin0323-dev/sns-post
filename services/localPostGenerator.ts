@@ -21,7 +21,7 @@ const trimToWeightedLength = (text: string, maxWeight: number): string => {
   let result = '';
   for (const c of text) {
     const w = ((c.codePointAt(0) ?? 0) <= 0x10FF) ? 1 : 2;
-    if (n + w > maxWeight) return result.trimEnd() + '…';
+    if (n + w > maxWeight) return result.trimEnd();
     n += w;
     result += c;
   }
@@ -33,6 +33,33 @@ const trimToTwitterLength = (text: string): string => trimToWeightedLength(text,
 const parseLengthToNumber = (lengthString: string): number => {
   const match = lengthString.match(/(\d+)/);
   return match ? parseInt(match[1], 10) : 500;
+};
+
+const parseTwitterWeightedLength = (lengthString: string): number => {
+  const base = parseLengthToNumber(lengthString);
+  return lengthString.includes('全角') ? base * 2 : base;
+};
+
+const ensureExactTwitterWeight = (text: string, targetWeight: number): string => {
+  let result = '';
+  let weight = 0;
+  for (const c of text) {
+    const w = ((c.codePointAt(0) ?? 0) <= 0x10FF) ? 1 : 2;
+    if (weight + w > targetWeight) break;
+    result += c;
+    weight += w;
+  }
+  while (weight < targetWeight) {
+    const needed = targetWeight - weight;
+    if (needed === 1) {
+      result += '.';
+      weight += 1;
+    } else {
+      result += '。';
+      weight += 2;
+    }
+  }
+  return result;
 };
 
 const extendTikTokText = (text: string, minLength: number, theme: string): string => {
@@ -242,14 +269,14 @@ export const generateSNSPostContent = (
     : '';
 
   // X: CTA処理
-  const xTargetLength = parseLengthToNumber(xLength);
+  const xTargetWeight = parseTwitterWeightedLength(xLength);
   const xCta = [xPhrase.trim(), xUrl.trim()].filter(Boolean).join('\n');
   const xCtaSuffix = xCta ? `\n\n${xCta}` : '';
   const xCtaWeight = twitterWeightedLength(xCtaSuffix);
   const xBodyRaw = appendHashtags(xPost, xHashtags, hashtagMode);
-  const xBodyTrimmed = trimToWeightedLength(xBodyRaw, Math.max(0, xTargetLength - xCtaWeight));
+  const xBodyTrimmed = trimToWeightedLength(xBodyRaw, Math.max(0, xTargetWeight - xCtaWeight));
   const xText = `${xBodyTrimmed}${xCtaSuffix}`;
-  const xTextAdjusted = ensureExactLength(xText, xTargetLength, '。');
+  const xTextAdjusted = ensureExactTwitterWeight(xText, xTargetWeight);
 
   // Threads: CTA処理
   const threadsTargetLength = parseLengthToNumber(threadsLength);
