@@ -349,27 +349,15 @@ const formatTikTokText = (text: string): string => {
   const result: string[] = [];
 
   for (const line of lines) {
-    if (!line) {
+    if (line === '') {
       result.push('');
       continue;
     }
 
-    let currentLine = '';
-    for (let i = 0; i < line.length; i++) {
-      currentLine += line[i];
-      
-      // 15文字に達したら、次の句読点や空白のところで改行
-      if (currentLine.length >= 15) {
-        const nextChar = line[i + 1];
-        if (!nextChar || [' ', '。', '、', '！', '？'].includes(nextChar) || currentLine.length >= 18) {
-          result.push(currentLine);
-          currentLine = '';
-        }
-      }
-    }
-    
-    if (currentLine) {
-      result.push(currentLine);
+    let start = 0;
+    while (start < line.length) {
+      result.push(line.slice(start, start + 15));
+      start += 15;
     }
   }
 
