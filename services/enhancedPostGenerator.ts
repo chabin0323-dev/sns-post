@@ -347,21 +347,29 @@ export const generateNotePost = (
 export const generateTikTokScript = (
   theme: string,
   audience: string,
-  variant: number = 0
+  variant: number = 0,
+  targetLength: number = 500
 ): string => {
   const analysis = analyzeThemeDeep(theme);
   const examples = generateThemeSpecificExamples(theme);
   const triggers = generatePsychologicalTriggers(theme, audience);
 
   const variations = [
-    `${audience}のあなたへ\n\n${theme}について\n本当に理解していますか？\n\n実は${audience}の多くが\n${analysis.main}を\n完全に見落としています\n\n${triggers.empathy}\n\nその気持ち、めっちゃ分かります\n\n${analysis.main}の見え方が\nズレてるだけで\n全部変わるんです\n\n具体例：\n${examples[0]}\n\nこれが全てなんです\n\nもう1つの重要ポイント：\n${analysis.expanded[1]}\n\n${audience}はここを見落とします\n\nしかし成功する人は\n必ずこれをやってます\n\nだから結果が変わるんです\n\n最後のポイント：\n${analysis.expanded[2]}\n\n今日からこれを意識してください\n\n人生が変わりますよ！`,
+    `${audience}のあなたへ\n\n${theme}について\n本当に理解していますか？\n\n実は${audience}の多くが\n${analysis.main}を\n完全に見落としています\n\n${triggers.empathy}\n\nその気持ち、めっちゃ分かります\n\n${analysis.main}の見え方が\nズレてるだけで\n全部変わるんです\n\n具体例：\n${examples[0]}\n\nこれが全てなんです\n\nもう1つの重要ポイント：\n${analysis.expanded[1]}\n\n${audience}はここを見落とします\n\nしかし成功する人は\n必ずこれをやってます\n\nだから結果が変わるんです\n\n最後のポイント：\n${analysis.expanded[2]}\n\n今日からこれを意識してください`,
 
-    `ちょっと待ってください\n\n${theme}について\n${audience}の多くが\n大きな勘違いをしています\n\nどういうことか？\n\n${theme}で失敗する人の共通点\nそれは${analysis.main}\nの理解が浅いこと\n\n${triggers.loss}\n\nそれは本当です\n\n実は${audience}が\n${theme}で成功するには\n3つの要素が必要です\n\n1つ目：\n${analysis.expanded[0]}\nを深く理解する\n\n2つ目：\n${analysis.expanded[1]}\nを実装する\n\n3つ目：\n${analysis.expanded[2]}\nを継続する\n\nこの3つです\n\n具体例がこちら：\n${examples[1]}\n\nこれが成功する人と\n失敗する人の分かれ道\n\n今日からやってみてください\n\nマジで役立つよ！`,
+    `ちょっと待ってください\n\n${theme}について\n${audience}の多くが\n大きな勘違いをしています\n\nどういうことか？\n\n${theme}で失敗する人の共通点\nそれは${analysis.main}\nの理解が浅いこと\n\n${triggers.loss}\n\nそれは本当です\n\n実は${audience}が\n${theme}で成功するには\n3つの要素が必要です\n\n1つ目：\n${analysis.expanded[0]}\nを深く理解する\n\n2つ目：\n${analysis.expanded[1]}\nを実装する\n\n3つ目：\n${analysis.expanded[2]}\nを継続する\n\nこの3つです\n\n具体例がこちら：\n${examples[1]}\n\nこれが成功する人と\n失敗する人の分かれ道\n\n今日からやってみてください`,
 
-    `${theme}について\n知ってますか？\n\n${triggers.curiosity}\n\nほとんどの${audience}は\n${analysis.main}をミスってます\n\nでもそれって当たり前\n\n誰も教えてくれないから\n\n実は${theme}の本質は\n${analysis.secondary || '意外とシンプル'}なんです\n\nではどうするのか？\n\n${examples[2]}\n\nこれが答えです\n\nさらに深掘りすると\n\n${triggers.rarity}\n\n本当です\n\n${audience}で成功する人は\n全員この視点を持ってます\n\n心理的なポイント：\n${analysis.expanded[3]}\n\nこれが無意識に\n行動を変えさせるんです\n\n今日から試してみて\n\n応援してますよ！`,
+    `${theme}について\n知ってますか？\n\n${triggers.curiosity}\n\nほとんどの${audience}は\n${analysis.main}をミスってます\n\nでもそれって当たり前\n\n誰も教えてくれないから\n\n実は${theme}の本質は\n${analysis.secondary || '意外とシンプル'}なんです\n\nではどうするのか？\n\n${examples[2]}\n\nこれが答えです\n\nさらに深掘りすると\n\n${triggers.rarity}\n\n本当です\n\n${audience}で成功する人は\n全員この視点を持ってます\n\n心理的なポイント：\n${analysis.expanded[3]}\n\nこれが無意識に\n行動を変えさせるんです\n\n今日から試してみて`,
 
-    `${audience}さんへ\n\n${theme}で\n成功する人vs失敗する人\n\nその差は何だと思いますか？\n\n答えは\n${analysis.main}\nへのアプローチの違い\n\n失敗する人：\n表面的な情報だけで判断\n\n成功する人：\n本質を理解した上で行動\n\n${triggers.empathy}\n\nその通りです\n\nでは本質とは何か？\n\n${examples[0]}\nに隠されています\n\nさらに言うと\n\n${analysis.expanded[0]}\nが非常に重要\n\nこれを知ると\n${theme}への見方が変わります\n\nそして実装する際は\n${analysis.expanded[1]}\nこのポイントを押さえる\n\n最後に\n${analysis.expanded[2]}\nこれを継続する\n\nこの3段階で\n${audience}は必ず成功します\n\nマジで試してみてください！`,
+    `${audience}さんへ\n\n${theme}で\n成功する人vs失敗する人\n\nその差は何だと思いますか？\n\n答えは\n${analysis.main}\nへのアプローチの違い\n\n失敗する人：\n表面的な情報だけで判断\n\n成功する人：\n本質を理解した上で行動\n\n${triggers.empathy}\n\nその通りです\n\nでは本質とは何か？\n\n${examples[0]}\nに隠されています\n\nさらに言うと\n\n${analysis.expanded[0]}\nが非常に重要\n\nこれを知ると\n${theme}への見方が変わります\n\nそして実装する際は\n${analysis.expanded[1]}\nこのポイントを押さえる\n\n最後に\n${analysis.expanded[2]}\nこれを継続する\n\nこの3段階で\n${audience}は必ず成功します\n\nまずはこのポイントを試してみてください`,
   ];
 
-  return variations[variant % variations.length];
+  const baseText = variations[variant % variations.length];
+  const minLength = Math.max(200, Math.ceil(targetLength * 0.8));
+  if (baseText.length >= minLength) return baseText;
+
+  const extension = `\n\nこの${theme}のポイントをさらに詳しく説明します。\n\n次に、よくある失敗の理由をもう少し掘り下げます。\n\nこれを意識すると、${theme}の結果が変わります。\n\n実際の場面では、この考え方が重要です。\n\nもう1つの視点として、${analysis.expanded[0]}と${analysis.expanded[1]}を組み合わせると、さらに理解が深まります。\n\nこの内容をもとに、次の行動を考えてみてください。`;
+  const extendedText = `${baseText}${extension}`;
+  if (extendedText.length >= minLength) return extendedText;
+  return extendedText.padEnd(minLength, '。').slice(0, minLength);
 };

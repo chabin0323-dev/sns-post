@@ -35,6 +35,25 @@ const parseLengthToNumber = (lengthString: string): number => {
   return match ? parseInt(match[1], 10) : 500;
 };
 
+const extendTikTokText = (text: string, minLength: number, theme: string): string => {
+  if (text.length >= minLength) return text;
+  const fillerLines = [
+    `この${theme}のポイントをさらに詳しく説明します。`,
+    `次に、よくある失敗の理由をもう少し掘り下げます。`,
+    `これを意識すると、${theme}の結果が変わります。`,
+    `実際の場面では、この考え方が重要です。`,
+  ];
+
+  let result = text.trimEnd();
+  let index = 0;
+  while (result.length < minLength) {
+    result += `\n\n${fillerLines[index % fillerLines.length]}`;
+    index += 1;
+  }
+
+  return result.trimEnd();
+};
+
 const getProfileLabel = (gender: string, age: string) => {
   const safeGender = gender === '指定なし' ? '' : gender;
   const safeAge = age === '指定なし' ? '' : age;
@@ -179,7 +198,8 @@ export const generateSNSPostContent = (
   const instagramPost = Enhanced.generateInstagramPost(theme, profile, variant);
   const youtubePost = Enhanced.generateYouTubePost(theme, profile, variant);
   const notePost = Enhanced.generateNotePost(theme, profile, variant);
-  const capcutScript = Enhanced.generateTikTokScript(theme, profile, variant);
+  const targetLength = parseLengthToNumber(length);
+  const capcutScript = Enhanced.generateTikTokScript(theme, profile, variant, targetLength);
 
   // ハッシュタグ設定
   const noteHashtags = getThemeTags(theme);
@@ -199,11 +219,12 @@ export const generateSNSPostContent = (
   );
 
   // TikTok: 指定された文字数に調整
-  const targetLength = parseLengthToNumber(length);
   const tiktokBodyRaw = insertBlockAdvanced(capcutScript, tiktokBlock, tiktokInsertPosition);
-  const tiktokBody = tiktokBodyRaw.length > targetLength
-    ? trimToWeightedLength(tiktokBodyRaw, targetLength).trimEnd()
-    : tiktokBodyRaw;
+  const minTikTokLength = Math.ceil(targetLength * 0.8);
+  const tiktokBodyExpanded = extendTikTokText(tiktokBodyRaw, minTikTokLength, theme);
+  const tiktokBody = tiktokBodyExpanded.length > targetLength
+    ? trimToWeightedLength(tiktokBodyExpanded, targetLength).trimEnd()
+    : tiktokBodyExpanded;
   const tiktokHashtagText = hashtagMode === 'あり' && tikTokHashtags.length > 0
     ? tikTokHashtags.join(' ')
     : '';

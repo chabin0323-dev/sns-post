@@ -52,7 +52,7 @@ const defaultSettings: FormSettings = {
   length: '300文字',
   templateText: '詳しくはこちら👇',
   templateUrl: 'https://lovelab-sns-redirect.vercel.app',
-  tiktokTemplateText: 'プロフィールから無料で占えます👇',
+  tiktokTemplateText: '',
   insertPosition: 'end',
   tiktokInsertPosition: 'start',
   hashtagMode: 'あり',
