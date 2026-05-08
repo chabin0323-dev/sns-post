@@ -10,13 +10,16 @@ const analyzeThemeDeep = (theme: string) => {
   const parts = theme.split(/[\s・〜～\-]+/).filter(p => p);
 
   const expandedKeywords: Record<string, string[]> = {
-    '恋愛': ['感情', '相手の気持ち', 'コミュニケーション', '信頼', '距離感', '心理'],
-    '副業': ['スキル', '時間管理', 'マネタイズ', 'マーケティング', '継続', '信頼'],
-    'SNS': ['アルゴリズム', 'エンゲージメント', 'フォロワー', 'バイラル', 'コンテンツ', '戦略'],
-    'ビジネス': ['戦略', 'リーダーシップ', 'マネジメント', '成長', 'ブランド', 'マインド'],
-    '美容': ['自信', 'セルフケア', 'トレンド', 'パーソナルカラー', 'メイク', 'マインド'],
-    'ダイエット': ['習慣', '心理', 'リバウンド', 'モチベーション', '栄養', '意識'],
-    '学習': ['脳科学', '習慣化', 'モチベーション', '復習', 'アウトプット', '実装'],
+    '恋愛': ['感情', '相手の気持ち', 'コミュニケーション', '信頼', '距離感', '心理', '告白', 'デート', 'LINE', '脈あり', '脈なし'],
+    '副業': ['スキル', '時間管理', 'マネタイズ', 'マーケティング', '継続', '信頼', 'ブログ', 'アフィリエイト', 'SNS', '収益化', 'モチベーション'],
+    'SNS': ['アルゴリズム', 'エンゲージメント', 'フォロワー', 'バイラル', 'コンテンツ', '戦略', '投稿', 'ハッシュタグ', 'ストーリー', 'リール', '分析'],
+    'ビジネス': ['戦略', 'リーダーシップ', 'マネジメント', '成長', 'ブランド', 'マインド', '営業', 'マーケティング', 'チーム', '目標', '成果'],
+    '美容': ['自信', 'セルフケア', 'トレンド', 'パーソナルカラー', 'メイク', 'マインド', 'スキンケア', 'ヘアケア', 'ファッション', '健康', '美意識'],
+    'ダイエット': ['習慣', '心理', 'リバウンド', 'モチベーション', '栄養', '意識', '運動', '食事', 'カロリー', '筋肉', 'メンタル'],
+    '学習': ['脳科学', '習慣化', 'モチベーション', '復習', 'アウトプット', '実装', '記憶', '集中', '計画', '効率', '成長'],
+    '健康': ['睡眠', 'ストレス', '免疫', '運動', '栄養', 'メンタル', '習慣', '予防', '回復', 'ライフスタイル', 'バランス'],
+    'お金': ['貯金', '投資', '節約', '資産', '収入', '支出', 'ファイナンシャル', 'リテラシー', 'リスク', '計画', '自由'],
+    '人間関係': ['コミュニケーション', '信頼', '境界線', '共感', '対立', '解決', '友情', '家族', '職場', '社交', '感情'],
   };
 
   const keywords = [...parts];
@@ -30,7 +33,7 @@ const analyzeThemeDeep = (theme: string) => {
     main: parts[0] || theme,
     secondary: parts[1] || '',
     tertiary: parts[2] || '',
-    expanded: [...new Set(keywords)].slice(0, 5),
+    expanded: [...new Set(keywords)].slice(0, 8), // 増やす
   };
 };
 
@@ -49,6 +52,16 @@ const generateScrollStoppingHooks = (theme: string): string[] => {
     `多くの人が${theme}を完全に勘違いしています`,
     `【事実】${theme}が変わるのはこのタイミングです`,
     `ほぼ全員が${theme}で同じ失敗をしています`,
+    `${theme}で損してる人、特徴あります`,
+    `これ知らないと${theme}で一生後悔します`,
+    `${theme}の真実、誰も教えてくれなかった`,
+    `え？${theme}ってそんなことだったの？`,
+    `${theme}で成功者と失敗者の決定的違い`,
+    `【緊急】${theme}で今すぐ変えるべきこと`,
+    `${theme}でほとんどの人が見落としてるポイント`,
+    `これをやらないと${theme}で結果出ません`,
+    `${theme}の本質、理解してますか？`,
+    `${theme}で劇的に変わるたった一つの方法`,
   ];
   return hooks;
 };
@@ -67,6 +80,11 @@ const generatePsychologicalTriggers = (
       `ほとんどの人が知らない${theme}の真実`,
       `${theme}で成功する人だけが知ってること`,
       `え？${theme}ってそういうことだったの？`,
+      `${theme}の意外な事実、知ってますか？`,
+      `${theme}で誰も教えてくれない秘密`,
+      `${theme}の本質は実は逆なんです`,
+      `${theme}で成功者の共通点、想像つきます？`,
+      `${theme}で劇的に変わる盲点`,
     ],
     loss: [
       `${theme}で知らないままだと、毎日損してます`,
@@ -74,18 +92,35 @@ const generatePsychologicalTriggers = (
       `${audience}が${theme}で失敗している本当の理由`,
       `今のままだと${audience}は${theme}で後悔します`,
       `${theme}を知らないと、もう戻れません`,
+      `${theme}で損してる人、特徴あります`,
+      `${theme}を失敗すると取り返しがつかない`,
+      `${audience}が${theme}で避けたい後悔`,
+      `${theme}で今すぐ変えないと一生損`,
+      `${theme}の失敗がもたらす悲惨な結果`,
     ],
     rarity: [
       `${theme}で成功してる${Math.random() > 0.5 ? '1%' : '一握り'}}だけが使ってる方法`,
       `このやり方、${theme}の${Math.random() > 0.5 ? '業界人' : 'プロ'}}だけが知ってます`,
       `${theme}で本当に効く方法は実は3つだけ`,
       `有名人も使ってる${theme}の秘密`,
+      `${theme}で成功者のみが知るテクニック`,
+      `${theme}の真の方法、限られた人だけ`,
+      `${theme}で差がつく特別な知識`,
+      `${theme}の成功法則、誰も知らない`,
+      `${theme}でトップ1%のやり方`,
+      `${theme}の隠された成功パターン`,
     ],
     empathy: [
       `${audience}ほど、${theme}で${Math.random() > 0.5 ? '頑張ってるのに結果出ない' : '悩んでる'}}`,
       `${audience}が${theme}で陥るあるあるパターン`,
       `${audience}だからこそ${theme}で失敗しやすい理由`,
       `${audience}の多くが${theme}で引っかかるポイント`,
+      `${audience}の${theme}での苦労、めっちゃわかる`,
+      `${audience}が${theme}で感じる孤独、共有したい`,
+      `${audience}の${theme}失敗談、誰かに聞いてほしい`,
+      `${audience}が${theme}で抱えるジレンマ`,
+      `${audience}の${theme}での葛藤、理解できる`,
+      `${audience}が${theme}で直面する壁`,
     ],
   };
 
@@ -102,30 +137,94 @@ const generatePsychologicalTriggers = (
 const generateThemeSpecificExamples = (theme: string): string[] => {
   const examples: Record<string, string[]> = {
     '恋愛': [
-      'LINEの返信が遅くなったら脈なし',
-      'デート4回目までが勝負ライン',
-      '相手と会う頻度は週1-2回が最適',
-      'LINE既読無視は脈なしのサイン',
+      'LINEの返信が遅くなったら脈なしの確率は70%',
+      'デート4回目までが勝負ライン（成功率80%）',
+      '相手と会う頻度は週1-2回が最適（データより）',
+      'LINE既読無視は脈なしのサイン（9割のケース）',
       '告白の成功率は事前準備で70%変わる',
+      '初デートで話す話題は過去の失敗談が効果的',
+      '相手の趣味を事前に調べておくと好感度20%アップ',
     ],
     '副業': [
       '副業初心者の80%は最初の3ヶ月で辞める',
       '月5万円稼ぐまでの平均期間は6ヶ月',
       '成功者の90%は継続を重視している',
       '正しい方法なら初月から売上が出る',
+      'SNS副業の成功率は戦略次第で50%変わる',
+      'ブログの収益化には最低100記事が必要',
+      'アフィリエイトの平均クリック率は2-3%',
     ],
     'SNS': [
       'SNS投稿の反応の80%は最初の1時間に決まる',
       'バズる投稿の冒頭1行は70%クリック率が変わる',
       '同じ内容でも見せ方で反応は3-5倍変わる',
       'フォロワー1000人までの最短期間は3ヶ月',
+      'ハッシュタグの最適数は8-12個',
+      'ストーリーの視聴完了率は60秒以内にフックが必要',
+      'リールのエンゲージメント率は音楽次第で2倍違う',
+    ],
+    'ビジネス': [
+      '新規事業の成功率はアイデアより実行力が80%',
+      'チームの生産性はリーダーのコミュニケーションで50%変わる',
+      '営業の成約率はフォローアップで30%向上',
+      'ブランド価値は顧客体験で決まる（データより）',
+      '成長企業の90%は目標設定を明確にしている',
+      'ミーティングの効率は事前準備で2倍向上',
+    ],
+    '美容': [
+      'スキンケアの効果は継続3ヶ月で実感（80%）',
+      'メイクの印象は眉毛で60%決まる',
+      'パーソナルカラーの適合で自信が20%アップ',
+      'ヘアケアの失敗はシャンプー選びで70%防げる',
+      'ファッションの満足度は体型理解で50%向上',
+      '美意識が高い人は幸福度が30%高い',
+    ],
+    'ダイエット': [
+      'リバウンドの原因は80%が食事制限の失敗',
+      '運動習慣の定着率は週3回以上で70%',
+      'カロリー制限より質の良い食事が大事',
+      'モチベーション維持には目標設定が鍵',
+      '筋肉量を増やすと基礎代謝が20%アップ',
+      '睡眠不足でダイエット効率が40%低下',
+    ],
+    '学習': [
+      '復習のタイミングは1日後・1週間後・1ヶ月後',
+      'アウトプットの効果は記憶定着率75%向上',
+      '集中力の持続時間は25分が最適',
+      '脳の学習効率は朝8-10時がピーク',
+      '言語学習の成功率は毎日15分継続で80%',
+      'テスト前の睡眠で記憶力が20%向上',
+    ],
+    '健康': [
+      '睡眠7-8時間が免疫力を30%向上',
+      'ストレス解消で心臓病リスク50%低下',
+      '運動習慣で寿命が5-10年延びる',
+      '野菜5皿でがんリスク20%減少',
+      '笑うことでストレスホルモンが40%減る',
+      '早寝早起きで生産性が20%アップ',
+    ],
+    'お金': [
+      '貯金の成功率は自動積立で80%向上',
+      '投資の複利効果で10年で資産2倍',
+      '節約の最大効果は固定費削減',
+      'ファイナンシャルリテラシーの高い人は資産2倍',
+      '借金の利息は年利15%で雪だるま式増加',
+      '保険の見直しで年間支出20%削減可能',
+    ],
+    '人間関係': [
+      '信頼関係の構築には共感が80%重要',
+      '対立解決の鍵は相手の話を聞くこと',
+      '友情の維持には週1回の連絡が最適',
+      '境界線の設定でストレス50%減少',
+      '感謝の表現で関係性が20%向上',
+      '職場での人間関係は生産性に30%影響',
     ],
   };
 
   const relevant = Object.entries(examples).find(([key]) =>
     theme.includes(key)
   );
-  return relevant ? relevant[1].slice(0, 3) : examples['副業'];
+  return relevant ? relevant[1].slice(0, 5) : examples['副業']; // 増やす
 };
 
 /**
@@ -143,10 +242,10 @@ export const generateXPost = (
   const hook = hooks[Math.floor(Math.random() * hooks.length)];
 
   const variations = [
-    `${hook}\n\n①${analysis.expanded[0]}\n②${analysis.expanded[1]}\n③${analysis.expanded[2]}\n\nこれ意識するだけで${theme}の結果が全然変わります`,
-    `${examples[0]}\n\n${audience}が${theme}で失敗する理由はこれです\n\n${triggers.loss}\n\n詳しくはプロフへ👇`,
-    `${triggers.empathy}\n\nそれは${theme}の本質を見落としてるから\n\n実は${Math.random() > 0.5 ? 'シンプル' : '奥が深い'}}んです\n\n続きはプロフで`,
-    `${triggers.rarity}\n\n${audience}で結果を出すために必要な3つ：\n\n・${examples[1]}\n・${analysis.main}\n・${analysis.secondary}\n\n続きはプロフ👇`,
+    `${hook}\n\n①${analysis.expanded[0]}\n②${analysis.expanded[1]}\n③${analysis.expanded[2]}\n\nこれ意識するだけで${theme}の結果が全然変わります\n\n${audience}のあなた、試してみて！`,
+    `${examples[0]}\n\n${audience}が${theme}で失敗する理由はこれです\n\n${triggers.loss}\n\n詳しくはプロフへ👇\n\nマジで知らないと損するよ`,
+    `${triggers.empathy}\n\nそれは${theme}の本質を見落としてるから\n\n実は${Math.random() > 0.5 ? 'シンプル' : '奥が深い'}}んです\n\n続きはプロフで\n\nびっくりすると思う！`,
+    `${triggers.rarity}\n\n${audience}で結果を出すために必要な3つ：\n\n・${examples[1]}\n・${analysis.main}\n・${analysis.secondary}\n\n続きはプロフ👇\n\n今すぐチェックして！`,
   ];
 
   const post = variations[variant % variations.length];
@@ -165,11 +264,11 @@ export const generateThreadsPost = (
   const triggers = generatePsychologicalTriggers(theme, audience);
 
   const variations = [
-    `実は私も同じような悩みがありました。\n\n${theme}について\n${audience}の方ほど\n頑張ってるのに結果が出ないと\n感じてるんじゃないでしょうか\n\n原因は努力不足ではなく\n${analysis.main}の見え方が\nズレてるだけなんです\n\n気づいた時全部変わりました`,
+    `実は私も同じような悩みがありました。\n\n${theme}について\n${audience}の方ほど\n頑張ってるのに結果が出ないと\n感じてるんじゃないでしょうか\n\n原因は努力不足ではなく\n${analysis.main}の見え方が\nズレてるだけなんです\n\n気づいた時全部変わりました\n\nあなたもきっと大丈夫だよ`,
 
-    `${theme}について\n改めて考えてみました\n\n${triggers.curiosity}\n\n多くの${audience}が\nここを見落としています\n\n①${analysis.expanded[0]}を理解する\n②${analysis.expanded[1]}を実行する\n③${analysis.expanded[2]}を工夫する\n\nこの3つで全部変わる`,
+    `${theme}について\n改めて考えてみました\n\n${triggers.curiosity}\n\n多くの${audience}が\nここを見落としています\n\n①${analysis.expanded[0]}を意識する\n②${analysis.expanded[1]}を実行する\n③${analysis.expanded[2]}を工夫する\n\nこの3つで全部変わる\n\n一緒に試してみませんか？`,
 
-    `${audience}のあなたへ\n\n${triggers.empathy}\n\nその気持ち\nめっちゃ分かります\n\n実は\n${theme}の${analysis.main}\nの部分が違ってるだけ\n\nそこ気づけば全部変わります`,
+    `${audience}のあなたへ\n\n${triggers.empathy}\n\nその気持ち\nめっちゃ分かります\n\n実は\n${theme}の${analysis.main}\nの部分が違ってるだけ\n\nそこ気づけば全部変わります\n\n応援してるよ！`,
   ];
 
   return variations[variant % variations.length];
@@ -187,11 +286,11 @@ export const generateInstagramPost = (
   const examples = generateThemeSpecificExamples(theme);
 
   const variations = [
-    `📌 ${theme}で成功する人vs失敗する人\n\n❌ 失敗する${audience}\n・${analysis.main}の見え方が狭い\n・${analysis.secondary}を見ていない\n・急いで結果を出そうとする\n\n✅ 成功する${audience}\n・①${analysis.expanded[0]}を意識\n・②${analysis.expanded[1]}を工夫\n・③${analysis.expanded[2]}を継続\n\n🔖保存して見返してください`,
+    `📌 ${theme}で成功する人vs失敗する人\n\n❌ 失敗する${audience}\n・${analysis.main}の見え方が狭い\n・${analysis.secondary}を見ていない\n・急いで結果を出そうとする\n\n✅ 成功する${audience}\n・①${analysis.expanded[0]}を意識\n・②${analysis.expanded[1]}を工夫\n・③${analysis.expanded[2]}を継続\n\n🔖保存して見返してください\n\nあなたの成功を応援してます！`,
 
-    `💡 ${theme}で結果を変える3ステップ\n\n▼ステップ1\n${examples[0]}\n\n▼ステップ2\n${examples[1]}\n\n▼ステップ3\n${examples[2]}\n\nこの順番が大事です\n\n✨ ${audience}の多くが\nこの順番を逆にしてます\n\n詳しくはプロフへ`,
+    `💡 ${theme}で結果を変える3ステップ\n\n▼ステップ1\n${examples[0]}\n\n▼ステップ2\n${examples[1]}\n\n▼ステップ3\n${examples[2]}\n\nこの順番が大事です\n\n✨ ${audience}の多くが\nこの順番を逆にしてます\n\n詳しくはプロフへ\n\n今日から実践してみて！`,
 
-    `【保存版】\n${theme}の基本\n\n${analysis.main}について\n絶対知るべきこと\n\n1️⃣ ${analysis.expanded[0]}\n2️⃣ ${analysis.expanded[1]}\n3️⃣ ${analysis.expanded[2]}\n\nこれだけで\n${theme}のレベルが\n劇的に変わります`,
+    `【保存版】\n${theme}の基本\n\n${analysis.main}について\n絶対知るべきこと\n\n1️⃣ ${analysis.expanded[0]}\n2️⃣ ${analysis.expanded[1]}\n3️⃣ ${analysis.expanded[2]}\n\nこれだけで\n${theme}のレベルが\n劇的に変わります\n\nブックマーク推奨です♡`,
   ];
 
   return variations[variant % variations.length];
@@ -209,11 +308,11 @@ export const generateYouTubePost = (
   const triggers = generatePsychologicalTriggers(theme, audience);
 
   const variations = [
-    `こんにちは。\n\nあなたは${theme}について\n本当に理解していますか？\n\n実は${audience}の多くが\n${analysis.main}を\n完全に見落としています\n\nこの動画では\n①${analysis.expanded[0]}について\n②${analysis.expanded[1]}について\n③${analysis.expanded[2]}について\n\n詳しく解説します\n\n${triggers.curiosity}\n\n最後まで見てください`,
+    `こんにちは。\n\nあなたは${theme}について\n本当に理解していますか？\n\n実は${audience}の多くが\n${analysis.main}を\n完全に見落としています\n\nこの動画では\n①${analysis.expanded[0]}について\n②${analysis.expanded[1]}について\n③${analysis.expanded[2]}について\n\n詳しく解説します\n\n最後まで見てください\n\nあなたの変化を期待してます！`,
 
-    `${theme}で${audience}が\n知らずにやってる失敗\n\nそれは\n${triggers.loss}\n\nこの動画では\nその理由と解決策を\n全て話します\n\n${analysis.expanded.slice(0, 3).join(' / ')}\n\nこの3つのポイントを\n理解するだけで\n${theme}のあなたは\n劇的に変わります`,
+    `${theme}で${audience}が\n知らずにやってる失敗\n\nそれは\n${triggers.loss}\n\nこの動画では\nその理由と解決策を\n全て話します\n\n${analysis.expanded.slice(0, 3).join(' / ')}\n\nこの3つのポイントを\n理解するだけで\n${theme}のあなたは\n劇的に変わります\n\n高評価よろしくお願いします`,
 
-    `${theme}について\n${audience}へ\n\nこれまで相談をもらった中で\n共通の悩みは\n${analysis.main}なんです\n\nそこで今回は\nその解決方法を\nステップバイステップで\n説明します\n\n高評価と登録\nお願いします`,
+    `${theme}について\n${audience}へ\n\nこれまで相談をもらった中で\n共通の悩みは\n${analysis.main}なんです\n\nそこで今回は\nその解決方法を\nステップバイステップで\n説明します\n\nチャンネル登録も\n忘れずにね！`,
   ];
 
   return variations[variant % variations.length];
@@ -232,11 +331,11 @@ export const generateNotePost = (
   const triggers = generatePsychologicalTriggers(theme, audience);
 
   const variations = [
-    `## ${theme}について、改めて考えてみた\n\n${audience}の多くは\n${theme}について\n間違った理解をしています\n\n### ${analysis.main}の本質\n\n${triggers.curiosity}\n\nこれを理解することで\n${theme}のレベルは\n劇的に変わります\n\n### 具体的な実装方法\n\n例えば${examples[0]}\n\nここを変えるだけで\n結果は全然違います\n\n### なぜ多くの人が失敗するのか\n\n${triggers.loss}`,
+    `## ${theme}について、改めて考えてみた\n\n${audience}の多くは\n${theme}について\n間違った理解をしています\n\n### ${analysis.main}の本質\n\n${triggers.curiosity}\n\nこれを理解することで\n${theme}のレベルは\n劇的に変わります\n\n### 具体的な実装方法\n\n例えば${examples[0]}\n\nここを変えるだけで\n結果は全然違います\n\n### なぜ多くの人が失敗するのか\n\n${triggers.loss}\n\nあなたはどう思いますか？`,
 
-    `## 『${theme}』で本当に必要なこと\n\n${theme}について\n深く考えたことはありますか？\n\nほとんどの${audience}は\n表面的な情報だけで判断します\n\nでも実は\n${analysis.main}の部分が\nすべてなんです\n\n### 私の経験\n\n${triggers.empathy}\n\nでもある日\n${analysis.expanded[0]}に気づきました`,
+    `## 『${theme}』で本当に必要なこと\n\n${theme}について\n深く考えたことはありますか？\n\nほとんどの${audience}は\n表面的な情報だけで判断します\n\nでも実は\n${analysis.main}の部分が\nすべてなんです\n\n### 私の経験\n\n${triggers.empathy}\n\nでもある日\n${analysis.expanded[0]}に気づきました\n\nその瞬間、すべてが変わりました`,
 
-    `## ${theme}の真実：${audience}が気づいていないこと\n\n${triggers.curiosity}\n\n### 背景\n\n${audience}の間で\n${theme}についての\n誤解が多いです\n\n### データが示すこと\n\n${examples[0]}\n${examples[1]}\n\n### 実装ガイド\n\n▶ ${analysis.expanded[0]}\n▶ ${analysis.expanded[1]}\n▶ ${analysis.expanded[2]}`,
+    `## ${theme}の真実：${audience}が気づいていないこと\n\n${triggers.curiosity}\n\n### 背景\n\n${audience}の間で\n${theme}についての\n誤解が多いです\n\n### データが示すこと\n\n${examples[0]}\n${examples[1]}\n\n### 実装ガイド\n\n▶ ${analysis.expanded[0]}\n▶ ${analysis.expanded[1]}\n▶ ${analysis.expanded[2]}\n\nこれであなたも変われるはずです`,
   ];
 
   return variations[variant % variations.length];
@@ -255,11 +354,11 @@ export const generateTikTokScript = (
   const triggers = generatePsychologicalTriggers(theme, audience);
 
   const variations = [
-    `ちょっと待ってください\n\n${theme}で\n失敗してる${audience}\n\nめっちゃ多いです\n\nその理由は\n\n${analysis.main}\nがズレてるから\n\nでも実は\n成功してる人は\n全員同じことをやってます\n\n1つ目\n${analysis.expanded[0]}\n\n2つ目\n${analysis.expanded[1]}\n\n3つ目\n${analysis.expanded[2]}\n\nたったこれだけです\n\nプロフをチェック👇`,
+    `ちょっと待ってください\n\n${theme}で\n失敗してる${audience}\n\nめっちゃ多いです\n\nその理由は\n\n${analysis.main}\nがズレてるから\n\nでも実は\n成功してる人は\n全員同じことをやってます\n\n1つ目\n${analysis.expanded[0]}\n\n2つ目\n${analysis.expanded[1]}\n\n3つ目\n${analysis.expanded[2]}\n\nたったこれだけです\n\nプロフをチェック👇\n\nマジで役立つよ！`,
 
-    `${audience}のあなたへ\n\n${theme}について\n知ってますか？\n\n実は\n${triggers.empathy}\n\nそれはな\n\n${analysis.main}\nの見え方が\nズレてるだけ\n\n${examples[0]}\n\nここが全てです\n\nプロフで\n詳しく説明してるので\n\nチェック👇`,
+    `${audience}のあなたへ\n\n${theme}について\n知ってますか？\n\n実は\n${triggers.empathy}\n\nそれはな\n\n${analysis.main}\nの見え方が\nズレてるだけ\n\n${examples[0]}\n\nここが全てです\n\nプロフで\n詳しく説明してるので\n\nチェック👇\n\nびっくりすると思う！`,
 
-    `${theme}について\n\n知ってますか\n\nほとんどの人は\n${analysis.main}をミスってます\n\nでも\n${analysis.secondary || '正しい'}}方法を\nやるだけで\n\n人生が\n\nマジで変わります\n\n今日から\n試してみてください\n\nプロフをタップ👇`,
+    `${theme}について\n\n知ってますか\n\nほとんどの人は\n${analysis.main}をミスってます\n\nでも\n${analysis.secondary || '正しい'}}方法を\nやるだけで\n\n人生が\n\nマジで変わります\n\n今日から\n試してみてください\n\nプロフをタップ👇\n\n応援してるよ！`,
   ];
 
   return variations[variant % variations.length];
