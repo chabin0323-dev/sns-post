@@ -98,6 +98,16 @@ const appendHashtags = (text: string, hashtags: string[], hashtagMode: 'あり' 
   return `${text}\n\n${hashtags.join(' ')}`;
 };
 
+const ensureExactLength = (text: string, targetLength: number, filler: string) => {
+  if (text.length === targetLength) return text;
+  if (text.length > targetLength) return text.slice(0, targetLength);
+  let result = text;
+  while (result.length < targetLength) {
+    result += filler;
+  }
+  return result.slice(0, targetLength);
+};
+
 // ========== ハッシュタグ生成 ==========
 
 const TAG_DB: Record<string, string[]> = {
@@ -217,35 +227,43 @@ export const generateSNSPostContent = (
     noteHashtags,
     hashtagMode
   );
+  const noteTextAdjusted = ensureExactLength(noteText, targetLength, '。');
 
   // TikTok: 指定された文字数に調整
   const tiktokBodyRaw = insertBlockAdvanced(capcutScript, tiktokBlock, tiktokInsertPosition);
   const minTikTokLength = Math.ceil(targetLength * 0.8);
   const tiktokBodyExpanded = extendTikTokText(tiktokBodyRaw, minTikTokLength, theme);
-  const tiktokBody = tiktokBodyExpanded.length > targetLength
+  const tiktokBodyBase = tiktokBodyExpanded.length > targetLength
     ? trimToWeightedLength(tiktokBodyExpanded, targetLength).trimEnd()
     : tiktokBodyExpanded;
+  const tiktokBody = ensureExactLength(tiktokBodyBase, targetLength, '。');
   const tiktokHashtagText = hashtagMode === 'あり' && tikTokHashtags.length > 0
     ? tikTokHashtags.join(' ')
     : '';
 
   // X: CTA処理
+  const xTargetLength = parseLengthToNumber(xLength);
   const xCta = [xPhrase.trim(), xUrl.trim()].filter(Boolean).join('\n');
   const xCtaSuffix = xCta ? `\n\n${xCta}` : '';
   const xCtaWeight = twitterWeightedLength(xCtaSuffix);
   const xBodyRaw = appendHashtags(xPost, xHashtags, hashtagMode);
-  const xBodyTrimmed = trimToWeightedLength(xBodyRaw, 280 - xCtaWeight);
+  const xBodyTrimmed = trimToWeightedLength(xBodyRaw, Math.max(0, xTargetLength - xCtaWeight));
   const xText = `${xBodyTrimmed}${xCtaSuffix}`;
+  const xTextAdjusted = ensureExactLength(xText, xTargetLength, '。');
 
   // Threads: CTA処理
+  const threadsTargetLength = parseLengthToNumber(threadsLength);
   const threadsCta = [threadsPhrase.trim(), threadsUrl.trim()].filter(Boolean).join('\n');
   const threadsCtaSuffix = threadsCta ? `\n\n${threadsCta}` : '';
   const threadsBodyRaw = appendHashtags(threadsPost, xHashtags, hashtagMode);
   const threadsCtaWeight = threadsCtaSuffix.length;
-  const threadsBodyTrimmed = threadsBodyRaw.length + threadsCtaWeight > 500
-    ? trimToWeightedLength(threadsBodyRaw, 500 - threadsCtaWeight).trimEnd()
-    : threadsBodyRaw;
+  const threadsBodyMinLength = Math.max(0, threadsTargetLength - threadsCtaWeight);
+  const threadsBodyExpanded = extendTikTokText(threadsBodyRaw, threadsBodyMinLength, theme);
+  const threadsBodyTrimmed = threadsBodyExpanded.length + threadsCtaWeight > threadsTargetLength
+    ? threadsBodyExpanded.slice(0, Math.max(0, threadsTargetLength - threadsCtaWeight)).trimEnd()
+    : threadsBodyExpanded;
   const threadsText = `${threadsBodyTrimmed}${threadsCtaSuffix}`;
+  const threadsTextAdjusted = ensureExactLength(threadsText, threadsTargetLength, '。');
 
   // Instagram/YouTube: プロフィール誘導
   const igYtCta = igYtPhrase.trim();
@@ -270,10 +288,10 @@ export const generateSNSPostContent = (
     content: noteText,
     capcutScript: tiktokBody,
     tiktokHashtagText,
-    xPost: xText,
+    xPost: xTextAdjusted,
     instagramPost: instagramText,
     youtubePost: youtubeText,
-    threadsPost: threadsText,
+    threadsPost: threadsTextAdjusted,
     twitchPost: twitchText,
     showroomPost: showroomText,
     hashtags: hashtagMode === 'あり'

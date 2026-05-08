@@ -434,9 +434,9 @@ export const generateTikTokScript = (
     return formatTikTokText(result.slice(0, targetLength).trimEnd());
   }
 
-  // まだ短い場合は句点で埋める
-  if (result.length < minLength) {
-    result = result.padEnd(minLength, '。');
+  // まだ短い場合は目標文字数まで句点で埋める
+  if (result.length < targetLength) {
+    result = result.padEnd(targetLength, '。');
   }
 
   return formatTikTokText(result);
