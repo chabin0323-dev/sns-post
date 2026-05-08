@@ -342,6 +342,41 @@ export const generateNotePost = (
 };
 
 /**
+ * テキストを15文字程度で改行
+ */
+const formatTikTokText = (text: string): string => {
+  const lines = text.split('\n');
+  const result: string[] = [];
+
+  for (const line of lines) {
+    if (!line) {
+      result.push('');
+      continue;
+    }
+
+    let currentLine = '';
+    for (let i = 0; i < line.length; i++) {
+      currentLine += line[i];
+      
+      // 15文字に達したら、次の句読点や空白のところで改行
+      if (currentLine.length >= 15) {
+        const nextChar = line[i + 1];
+        if (!nextChar || [' ', '。', '、', '！', '？'].includes(nextChar) || currentLine.length >= 18) {
+          result.push(currentLine);
+          currentLine = '';
+        }
+      }
+    }
+    
+    if (currentLine) {
+      result.push(currentLine);
+    }
+  }
+
+  return result.join('\n');
+};
+
+/**
  * TikTok向けの高度な生成 - トレンド・若者言葉重視
  */
 export const generateTikTokScript = (
@@ -408,13 +443,13 @@ export const generateTikTokScript = (
 
   // 指定文字数を超えた場合はトリム
   if (result.length > targetLength) {
-    return result.slice(0, targetLength).trimEnd();
+    return formatTikTokText(result.slice(0, targetLength).trimEnd());
   }
 
   // まだ短い場合は句点で埋める
   if (result.length < minLength) {
-    return result.padEnd(minLength, '。');
+    result = result.padEnd(minLength, '。');
   }
 
-  return result;
+  return formatTikTokText(result);
 };
