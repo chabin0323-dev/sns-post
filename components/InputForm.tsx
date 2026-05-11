@@ -33,7 +33,6 @@ type FormSettings = {
   xUrl: string;
   threadsPhrase: string;
   threadsUrl: string;
-  igYtPhrase: string;
   xLength: string;
   threadsLength: string;
 };
@@ -63,7 +62,6 @@ const defaultSettings: FormSettings = {
   xUrl: 'https://lovelab-sns-redirect.vercel.app',
   threadsPhrase: '▼無料で試す',
   threadsUrl: 'https://lovelab-sns-redirect.vercel.app',
-  igYtPhrase: '詳細はプロフィールのリンクから🔗',
   xLength: '140文字全角',
   threadsLength: '500文字',
 };
@@ -146,7 +144,6 @@ interface InputFormProps {
     xUrl: string,
     threadsPhrase: string,
     threadsUrl: string,
-    igYtPhrase: string,
     xLength: string,
     threadsLength: string
   ) => void;
@@ -372,7 +369,6 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [xUrl, setXUrl] = useState<string>(_initSettings.xUrl);
   const [threadsPhrase, setThreadsPhrase] = useState<string>(_initSettings.threadsPhrase);
   const [threadsUrl, setThreadsUrl] = useState<string>(_initSettings.threadsUrl);
-  const [igYtPhrase, setIgYtPhrase] = useState<string>(_initSettings.igYtPhrase);
   const [xLength, setXLength] = useState<string>(_initSettings.xLength);
   const [threadsLength, setThreadsLength] = useState<string>(_initSettings.threadsLength);
   const [autoCtaEnabled, setAutoCtaEnabled] = useState(true);
@@ -380,7 +376,6 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [openTiktok, setOpenTiktok] = useState(false);
   const [openX, setOpenX] = useState(false);
   const [openThreads, setOpenThreads] = useState(false);
-  const [openIgYt, setOpenIgYt] = useState(false);
   const [openAutomation, setOpenAutomation] = useState(true);
   const [showThemeHistory, setShowThemeHistory] = useState(false);
 
@@ -390,7 +385,7 @@ export const InputForm: React.FC<InputFormProps> = ({
     templateText, templateUrl, tiktokTemplateText,
     insertPosition, tiktokInsertPosition, hashtagMode,
     scheduleMorning, scheduleNoon, scheduleNight,
-    xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
+    xPhrase, xUrl, threadsPhrase, threadsUrl,
     xLength, threadsLength,
   });
   settingsRef.current = {
@@ -398,7 +393,7 @@ export const InputForm: React.FC<InputFormProps> = ({
     templateText, templateUrl, tiktokTemplateText,
     insertPosition, tiktokInsertPosition, hashtagMode,
     scheduleMorning, scheduleNoon, scheduleNight,
-    xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
+    xPhrase, xUrl, threadsPhrase, threadsUrl,
     xLength, threadsLength,
   };
 
@@ -439,13 +434,13 @@ export const InputForm: React.FC<InputFormProps> = ({
       templateText, templateUrl, tiktokTemplateText,
       insertPosition, tiktokInsertPosition, hashtagMode,
       scheduleMorning, scheduleNoon, scheduleNight,
-      xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase,
+      xPhrase, xUrl, threadsPhrase, threadsUrl,
     };
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch {}
     saveToCookie(s);
   }, [theme, gender, age, length, templateText, templateUrl, tiktokTemplateText,
       insertPosition, tiktokInsertPosition, hashtagMode, scheduleMorning, scheduleNoon, scheduleNight,
-      xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase]);
+      xPhrase, xUrl, threadsPhrase, threadsUrl]);
 
   // 設定変更時にlocalStorage＋Cookieへ即時保存
   const updateSetting = <K extends keyof FormSettings>(
@@ -587,13 +582,13 @@ export const InputForm: React.FC<InputFormProps> = ({
     e.preventDefault();
     if (!theme.trim()) return;
     saveAllHistories();
-    onGenerate(theme, length, gender, age, templateText, templateUrl, tiktokTemplateText, insertPosition, tiktokInsertPosition, autoCtaEnabled, scheduleTimes, hashtagMode, 'script', xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase, xLength, threadsLength);
+    onGenerate(theme, length, gender, age, templateText, templateUrl, tiktokTemplateText, insertPosition, tiktokInsertPosition, autoCtaEnabled, scheduleTimes, hashtagMode, 'script', xPhrase, xUrl, threadsPhrase, threadsUrl, xLength, threadsLength);
   };
 
   const handleSubmitWithMode = (mode: GenerateMode) => {
     if (!theme.trim()) return;
     saveAllHistories();
-    onGenerate(theme, length, gender, age, templateText, templateUrl, tiktokTemplateText, insertPosition, tiktokInsertPosition, autoCtaEnabled, scheduleTimes, hashtagMode, mode, xPhrase, xUrl, threadsPhrase, threadsUrl, igYtPhrase, xLength, threadsLength);
+    onGenerate(theme, length, gender, age, templateText, templateUrl, tiktokTemplateText, insertPosition, tiktokInsertPosition, autoCtaEnabled, scheduleTimes, hashtagMode, mode, xPhrase, xUrl, threadsPhrase, threadsUrl, xLength, threadsLength);
   };
 
   return (
@@ -960,39 +955,7 @@ export const InputForm: React.FC<InputFormProps> = ({
               placeholder="https://lovelab-sns-redirect.vercel.app"
             />
           </div>
-        )}
-
-        {/* Instagram/YouTube設定 */}
-        <SectionButton
-          title="Instagram・YouTube設定"
-          subtitle="プロフィール誘導文（URLなし）"
-          isOpen={openIgYt}
-          onClick={() => setOpenIgYt(!openIgYt)}
-          className="bg-pink-100 border-pink-200"
-        />
-        {openIgYt && (
-          <div className="p-4 space-y-3 bg-pink-50 rounded-2xl border border-pink-200">
-            <div className="text-xs font-bold text-slate-500 mb-1">候補から選ぶ</div>
-            <div className="flex flex-wrap gap-2">
-              {IG_YT_PHRASE_PRESETS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setIgYtPhrase(p)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all active:scale-95 ${igYtPhrase === p ? 'bg-pink-500 text-white border-pink-400' : 'bg-white text-slate-600 border-slate-300 hover:border-pink-400'}`}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-            <input
-              value={igYtPhrase}
-              onChange={(e) => updateSetting(setIgYtPhrase, 'igYtPhrase', e.target.value)}
-              className="w-full p-3 rounded-xl border"
-              placeholder="自由記入（例：プロフィールへ👆）"
-            />
-          </div>
-        )}
+        }}
 
         <div className="space-y-6">
           {!isLoading ? (

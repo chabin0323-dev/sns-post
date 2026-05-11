@@ -19,8 +19,6 @@ const groupChannels = (post: GeneratedPost): ChannelBlock[] => {
   const source = [
     { label: 'note', text: post.content, theme: 'light' as const },
     { label: 'TikTok', text: post.capcutScript, theme: 'dark' as const },
-    { label: 'Instagram', text: post.instagramPost || post.capcutScript, theme: 'dark' as const },
-    { label: 'YouTube', text: post.youtubePost || post.capcutScript, theme: 'dark' as const },
     { label: 'X', text: post.xPost, theme: 'sky' as const },
     { label: 'Threads', text: post.threadsPost || '', theme: 'purple' as const },
     { label: 'Twitch', text: post.twitchPost || '', theme: 'violet' as const },

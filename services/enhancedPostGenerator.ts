@@ -464,23 +464,49 @@ ${theme}はあなたが思うほど難しくありません。
  * テキストを15文字程度で改行
  */
 const formatTikTokText = (text: string): string => {
-  const lines = text.split('\n');
-  const result: string[] = [];
-
+  // 句点（。、！？）で分割して自然な改行を作る
+  let result = text;
+  
+  // 複数の句点が続く場合は1つに統一
+  result = result.replace(/[。、！？]+/g, (match) => {
+    return match[0]; // 最初の文字のみを残す
+  });
+  
+  // 1行がおおよそ20-25文字を超える場合は句点で改行
+  const lines = result.split('\n');
+  const formattedLines: string[] = [];
+  
   for (const line of lines) {
     if (line === '') {
-      result.push('');
+      formattedLines.push('');
       continue;
     }
-
-    let start = 0;
-    while (start < line.length) {
-      result.push(line.slice(start, start + 15));
-      start += 15;
+    
+    // 句点で分割したフレーズを組み立てる
+    const phrases = line.match(/([^。！？]*[。！？]?)/g)?.filter(p => p.length > 0) || [];
+    let currentLine = '';
+    
+    for (const phrase of phrases) {
+      if ((currentLine + phrase).length <= 22) {
+        // 現在の行に追加可能
+        currentLine += phrase;
+      } else if (currentLine.length > 0) {
+        // 新しい行を開始
+        formattedLines.push(currentLine);
+        currentLine = phrase;
+      } else {
+        // フレーズ自体が長い場合は強制的に追加
+        formattedLines.push(phrase);
+        currentLine = '';
+      }
+    }
+    
+    if (currentLine.length > 0) {
+      formattedLines.push(currentLine);
     }
   }
-
-  return result.join('\n');
+  
+  return formattedLines.join('\n');
 };
 
 /**
@@ -537,25 +563,39 @@ export const generateTikTokScript = (
     result += extension4;
   }
   
-  // ステップ5：最終確認フレーズ
+  // ステップ5：統計・事例データを追加
   if (result.length < minLength) {
-    const extension5 = `\n\nこの内容をもとに、次の行動を考えてみてください。\n\n${theme}における${analysis.secondary || 'あなたの'}アプローチを根本から見直すチャンスです。\n\n成功までの道のりは、小さな気づきと行動の積み重ねから始まります。`;
+    const extension5 = `\n\n実は多くの${audience}がこれに気づきません。\n\n${examples[1]}という事例からも、${theme}の本質が見えてきます。\n\n成功する人の特徴は、常にこの視点を持ち続けることなんです。`;
     result += extension5;
   }
   
-  // ステップ6：最後のCTA
+  // ステップ6：重要な気づきを強調
   if (result.length < minLength) {
-    result += `\n\n覚えておいてください。${audience}が${theme}で成功するために必要なのは、完璧な理論ではなく、正しい理解に基づいた実行です。\n\n今日から試してみてください。`;
+    const extension6 = `\n\nもう一つ、あなたが知っておくべき重要なことがあります。\n\n${triggers.rarity}\n\nこれはほとんどの${audience}が見落としているポイントです。\n\nしかし、これを知ることで${theme}への向き合い方が根本的に変わるんです。`;
+    result += extension6;
+  }
+  
+  // ステップ7：実行の障害を取り除く
+  if (result.length < minLength) {
+    const extension7 = `\n\n最後に、実行する上での障害をお伝えします。\n\n${analysis.expanded[2]}を継続するのが難しいという相談をよく受けます。\n\nしかし、正しい理解があれば、これは自然に続くようになります。`;
+    result += extension7;
+  }
+  
+  // ステップ8：最終確認フレーズ
+  if (result.length < minLength) {
+    const extension8 = `\n\nまとめると、${audience}が${theme}で成功するためには3つのステップが必要です。\n\n1つ目：本質を理解する（${analysis.main}）\n\n2つ目：心理的な側面を認識する（${analysis.expanded[3]}）\n\n3つ目：正しく実行する（${analysis.expanded[0]}）\n\nこれらを実践することが全てです。`;
+    result += extension8;
+  }
+  
+  // ステップ9：行動喚起
+  if (result.length < minLength) {
+    const extension9 = `\n\nそして今、あなたにできることがあります。\n\n${theme}への向き合い方を変えることです。\n\n今日このテキストを読んだことがきっかけになるかもしれません。\n\nぜひ、次の行動に移してみてください。`;
+    result += extension9;
   }
 
   // 指定文字数を超えた場合はトリム
   if (result.length > targetLength) {
     return formatTikTokText(result.slice(0, targetLength).trimEnd());
-  }
-
-  // まだ短い場合は目標文字数まで句点で埋める
-  if (result.length < targetLength) {
-    result = result.padEnd(targetLength, '。');
   }
 
   return formatTikTokText(result);

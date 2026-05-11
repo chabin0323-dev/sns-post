@@ -170,12 +170,6 @@ const getXHashtags = (theme: string) => {
   return uniqueTags(variable, 3);
 };
 
-const getInstagramHashtags = (theme: string) => {
-  const variable = getThemeTags(theme);
-  const support = ['#恋愛', '#恋愛占い', '#恋愛心理', '#本音', '#相性'];
-  return uniqueTags([...variable, ...support], 10);
-};
-
 // ========== 関連テーマ提案 ==========
 
 export function generateRelatedThemes(theme: string): string[] {
@@ -222,7 +216,6 @@ export const generateSNSPostContent = (
   xUrl: string = 'https://lovelab-sns-redirect.vercel.app',
   threadsPhrase: string = '▼無料で試す',
   threadsUrl: string = 'https://lovelab-sns-redirect.vercel.app',
-  igYtPhrase: string = '詳細はプロフィールのリンクから🔗',
   xLength: string = '140文字全角',
   threadsLength: string = '500文字'
 ) => {
@@ -232,8 +225,6 @@ export const generateSNSPostContent = (
   // 改善版の高度な生成関数を使用
   const xPost = Enhanced.generateXPost(theme, profile, variant);
   const threadsPost = Enhanced.generateThreadsPost(theme, profile, variant);
-  const instagramPost = Enhanced.generateInstagramPost(theme, profile, variant);
-  const youtubePost = Enhanced.generateYouTubePost(theme, profile, variant);
   const notePost = Enhanced.generateNotePost(theme, profile, variant);
   const targetLength = parseLengthToNumber(length);
   const capcutScript = Enhanced.generateTikTokScript(theme, profile, variant, targetLength);
@@ -242,7 +233,6 @@ export const generateSNSPostContent = (
   const noteHashtags = getThemeTags(theme);
   const tikTokHashtags = getTikTokHashtags(theme);
   const xHashtags = getXHashtags(theme);
-  const instagramHashtags = getInstagramHashtags(theme);
 
   // テンプレート処理
   const noteBlock = buildTemplateBlock(templateText, templateUrl);
@@ -292,19 +282,6 @@ export const generateSNSPostContent = (
   const threadsText = `${threadsBodyTrimmed}${threadsCtaSuffix}`;
   const threadsTextAdjusted = ensureExactLength(threadsText, threadsTargetLength, '。');
 
-  // Instagram/YouTube: プロフィール誘導
-  const igYtCta = igYtPhrase.trim();
-  const instagramText = appendHashtags(
-    insertBlock(instagramPost, igYtCta, 'end'),
-    instagramHashtags,
-    hashtagMode
-  );
-  const youtubeText = appendHashtags(
-    insertBlock(youtubePost, igYtCta, 'end'),
-    instagramHashtags,
-    hashtagMode
-  );
-
   // Twitch/SHOWROOM用（オプション）
   const twitchText = insertBlock(capcutScript, buildTemplateBlock(templateText, templateUrl), insertPosition);
   const showroomText = insertBlock(capcutScript, buildTemplateBlock(templateText, templateUrl), insertPosition);
@@ -316,8 +293,8 @@ export const generateSNSPostContent = (
     capcutScript: tiktokBody,
     tiktokHashtagText,
     xPost: xTextAdjusted,
-    instagramPost: instagramText,
-    youtubePost: youtubeText,
+    instagramPost: undefined,
+    youtubePost: undefined,
     threadsPost: threadsTextAdjusted,
     twitchPost: twitchText,
     showroomPost: showroomText,
