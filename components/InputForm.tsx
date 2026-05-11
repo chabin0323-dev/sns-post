@@ -955,7 +955,7 @@ export const InputForm: React.FC<InputFormProps> = ({
               placeholder="https://lovelab-sns-redirect.vercel.app"
             />
           </div>
-        }}
+        )}
 
         <div className="space-y-6">
           {!isLoading ? (
