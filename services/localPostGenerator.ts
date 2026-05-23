@@ -5,6 +5,7 @@
  */
 
 import * as Enhanced from './enhancedPostGenerator';
+import type { BuzzScore } from '../types';
 
 // ========== ユーティリティ関数 ==========
 
@@ -21,7 +22,7 @@ const trimToWeightedLength = (text: string, maxWeight: number): string => {
   let result = '';
   for (const c of text) {
     const w = ((c.codePointAt(0) ?? 0) <= 0x10FF) ? 1 : 2;
-    if (n + w > maxWeight) return result.trimEnd();
+    if (n + w > maxWeight) return result.trimEnd() + '…';
     n += w;
     result += c;
   }
@@ -33,33 +34,6 @@ const trimToTwitterLength = (text: string): string => trimToWeightedLength(text,
 const parseLengthToNumber = (lengthString: string): number => {
   const match = lengthString.match(/(\d+)/);
   return match ? parseInt(match[1], 10) : 500;
-};
-
-const parseTwitterWeightedLength = (lengthString: string): number => {
-  const base = parseLengthToNumber(lengthString);
-  return lengthString.includes('全角') ? base * 2 : base;
-};
-
-const ensureExactTwitterWeight = (text: string, targetWeight: number): string => {
-  let result = '';
-  let weight = 0;
-  for (const c of text) {
-    const w = ((c.codePointAt(0) ?? 0) <= 0x10FF) ? 1 : 2;
-    if (weight + w > targetWeight) break;
-    result += c;
-    weight += w;
-  }
-  while (weight < targetWeight) {
-    const needed = targetWeight - weight;
-    if (needed === 1) {
-      result += '.';
-      weight += 1;
-    } else {
-      result += '。';
-      weight += 2;
-    }
-  }
-  return result;
 };
 
 const extendTikTokText = (text: string, minLength: number, theme: string): string => {
@@ -125,16 +99,6 @@ const appendHashtags = (text: string, hashtags: string[], hashtagMode: 'あり' 
   return `${text}\n\n${hashtags.join(' ')}`;
 };
 
-const ensureExactLength = (text: string, targetLength: number, filler: string) => {
-  if (text.length === targetLength) return text;
-  if (text.length > targetLength) return text.slice(0, targetLength);
-  let result = text;
-  while (result.length < targetLength) {
-    result += filler;
-  }
-  return result.slice(0, targetLength);
-};
-
 // ========== ハッシュタグ生成 ==========
 
 const TAG_DB: Record<string, string[]> = {
@@ -170,6 +134,12 @@ const getXHashtags = (theme: string) => {
   return uniqueTags(variable, 3);
 };
 
+const getInstagramHashtags = (theme: string) => {
+  const variable = getThemeTags(theme);
+  const support = ['#恋愛', '#恋愛占い', '#恋愛心理', '#本音', '#相性'];
+  return uniqueTags([...variable, ...support], 10);
+};
+
 // ========== 関連テーマ提案 ==========
 
 export function generateRelatedThemes(theme: string): string[] {
@@ -199,6 +169,43 @@ export function generateRelatedThemes(theme: string): string[] {
   ];
 }
 
+// ========== バズ度スコア計算 ==========
+
+const calculateBuzzScore = (tiktokText: string, noteText: string, theme: string): BuzzScore => {
+  // 冒頭フック力（0〜20）: 最初80字にバズワードがあるか
+  const first80 = tiktokText.slice(0, 80);
+  const hookWords = ['実は', '危険', '知らないと損', '9割', '8割', 'ほとんど', '本音', '勘違い', '冷め', '脈なし', '本命'];
+  const hookPower = Math.min(20, 10 + hookWords.filter(w => first80.includes(w)).length * 3);
+
+  // 保存したくなる度（0〜20）: リスト・特徴系ワード
+  const saveWords = ['3選', '危険サイン', '男性心理', '見抜き', '①', '②', '③', '▼', '特徴', '注意'];
+  const saveRate = Math.min(20, 8 + saveWords.filter(w => tiktokText.includes(w)).length * 2);
+
+  // コメントしたくなる度（0〜20）: コメント誘導ワード
+  const commentWords = ['何個当てはまりました', 'コメント', '教えてください', 'あなたは', 'どう思いました'];
+  const commentRate = Math.min(20, 8 + commentWords.filter(w => tiktokText.includes(w)).length * 5);
+
+  // プロフィール遷移したくなる度（0〜20）: CTA系ワード
+  const profileWords = ['プロフィール', 'プロフ', 'リンク', '詳しくは', '無料で', '👇'];
+  const profileRate = Math.min(20, 8 + profileWords.filter(w => tiktokText.includes(w)).length * 3);
+
+  // SEO評価（0〜20）: キーワード密度・構成
+  const escaped = theme.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const themeCount = (noteText.match(new RegExp(escaped, 'g')) || []).length;
+  const hasStructure = ['とは', '特徴', '対処法', 'まとめ'].filter(w => noteText.includes(w)).length;
+  const seoScore = Math.min(20, 6 + Math.min(themeCount, 4) * 2 + hasStructure);
+
+  const total = hookPower + saveRate + commentRate + profileRate + seoScore;
+
+  let comment: string;
+  if (total >= 90) comment = '🔥 バズ確定！すぐ投稿して！';
+  else if (total >= 75) comment = '✨ 高ポテンシャル！あとひと押しで爆伸び間違いなし';
+  else if (total >= 60) comment = '👍 平均以上！フック強化でさらに伸びます';
+  else comment = '💪 基礎はOK！コメント誘導を追加するとスコアアップ';
+
+  return { hookPower, saveRate, commentRate, profileRate, seoScore, total, comment };
+};
+
 // ========== メイン生成関数 ==========
 
 export const generateSNSPostContent = (
@@ -216,6 +223,7 @@ export const generateSNSPostContent = (
   xUrl: string = 'https://lovelab-sns-redirect.vercel.app',
   threadsPhrase: string = '▼無料で試す',
   threadsUrl: string = 'https://lovelab-sns-redirect.vercel.app',
+  igYtPhrase: string = '詳細はプロフィールのリンクから🔗',
   xLength: string = '140文字全角',
   threadsLength: string = '500文字'
 ) => {
@@ -225,14 +233,16 @@ export const generateSNSPostContent = (
   // 改善版の高度な生成関数を使用
   const xPost = Enhanced.generateXPost(theme, profile, variant);
   const threadsPost = Enhanced.generateThreadsPost(theme, profile, variant);
+  const instagramPost = Enhanced.generateInstagramPost(theme, profile, variant);
+  const youtubePost = Enhanced.generateYouTubePost(theme, profile, variant);
   const notePost = Enhanced.generateNotePost(theme, profile, variant);
-  const targetLength = parseLengthToNumber(length);
-  const capcutScript = Enhanced.generateTikTokScript(theme, profile, variant, targetLength);
+  const capcutScript = Enhanced.generateTikTokScript(theme, profile, variant, 600);
 
   // ハッシュタグ設定
   const noteHashtags = getThemeTags(theme);
   const tikTokHashtags = getTikTokHashtags(theme);
   const xHashtags = getXHashtags(theme);
+  const instagramHashtags = getInstagramHashtags(theme);
 
   // テンプレート処理
   const noteBlock = buildTemplateBlock(templateText, templateUrl);
@@ -244,47 +254,50 @@ export const generateSNSPostContent = (
     noteHashtags,
     hashtagMode
   );
-  const noteTextAdjusted = ensureExactLength(noteText, targetLength, '。');
 
-  // TikTok: 指定された文字数に調整
+  // TikTok: 600文字固定・テンプレートブロック結合
   const tiktokBodyRaw = insertBlockAdvanced(capcutScript, tiktokBlock, tiktokInsertPosition);
-  const minTikTokLength = Math.ceil(targetLength * 0.8);
-  const tiktokBodyExpanded = extendTikTokText(tiktokBodyRaw, minTikTokLength, theme);
-  const tiktokBodyBase = tiktokBodyExpanded.length > targetLength
-    ? trimToWeightedLength(tiktokBodyExpanded, targetLength).trimEnd()
-    : tiktokBodyExpanded;
-  const tiktokBody = ensureExactLength(tiktokBodyBase, targetLength, '。');
+  const tiktokBody = tiktokBodyRaw;
   const tiktokHashtagText = hashtagMode === 'あり' && tikTokHashtags.length > 0
     ? tikTokHashtags.join(' ')
     : '';
 
   // X: CTA処理
-  const xTargetWeight = parseTwitterWeightedLength(xLength);
   const xCta = [xPhrase.trim(), xUrl.trim()].filter(Boolean).join('\n');
   const xCtaSuffix = xCta ? `\n\n${xCta}` : '';
   const xCtaWeight = twitterWeightedLength(xCtaSuffix);
   const xBodyRaw = appendHashtags(xPost, xHashtags, hashtagMode);
-  const xBodyTrimmed = trimToWeightedLength(xBodyRaw, Math.max(0, xTargetWeight - xCtaWeight));
+  const xBodyTrimmed = trimToWeightedLength(xBodyRaw, 280 - xCtaWeight);
   const xText = `${xBodyTrimmed}${xCtaSuffix}`;
-  const xTextAdjusted = ensureExactTwitterWeight(xText, xTargetWeight);
 
   // Threads: CTA処理
-  const threadsTargetLength = parseLengthToNumber(threadsLength);
   const threadsCta = [threadsPhrase.trim(), threadsUrl.trim()].filter(Boolean).join('\n');
   const threadsCtaSuffix = threadsCta ? `\n\n${threadsCta}` : '';
   const threadsBodyRaw = appendHashtags(threadsPost, xHashtags, hashtagMode);
   const threadsCtaWeight = threadsCtaSuffix.length;
-  const threadsBodyMinLength = Math.max(0, threadsTargetLength - threadsCtaWeight);
-  const threadsBodyExpanded = extendTikTokText(threadsBodyRaw, threadsBodyMinLength, theme);
-  const threadsBodyTrimmed = threadsBodyExpanded.length + threadsCtaWeight > threadsTargetLength
-    ? threadsBodyExpanded.slice(0, Math.max(0, threadsTargetLength - threadsCtaWeight)).trimEnd()
-    : threadsBodyExpanded;
+  const threadsBodyTrimmed = threadsBodyRaw.length + threadsCtaWeight > 500
+    ? trimToWeightedLength(threadsBodyRaw, 500 - threadsCtaWeight).trimEnd()
+    : threadsBodyRaw;
   const threadsText = `${threadsBodyTrimmed}${threadsCtaSuffix}`;
-  const threadsTextAdjusted = ensureExactLength(threadsText, threadsTargetLength, '。');
 
-  // Twitch/SHOWROOM用（オプション）
-  const twitchText = insertBlock(capcutScript, buildTemplateBlock(templateText, templateUrl), insertPosition);
+  // Instagram/YouTube: プロフィール誘導
+  const igYtCta = igYtPhrase.trim();
+  const instagramText = appendHashtags(
+    insertBlock(instagramPost, igYtCta, 'end'),
+    instagramHashtags,
+    hashtagMode
+  );
+  const youtubeText = appendHashtags(
+    insertBlock(youtubePost, igYtCta, 'end'),
+    instagramHashtags,
+    hashtagMode
+  );
+
+  // SHOWROOM用（オプション）
   const showroomText = insertBlock(capcutScript, buildTemplateBlock(templateText, templateUrl), insertPosition);
+
+  // バズ度スコア計算
+  const buzzScore = calculateBuzzScore(tiktokBody, noteText, theme);
 
   // 返却データ（既存UIとの互換性を保つ）
   return {
@@ -292,11 +305,10 @@ export const generateSNSPostContent = (
     content: noteText,
     capcutScript: tiktokBody,
     tiktokHashtagText,
-    xPost: xTextAdjusted,
-    instagramPost: undefined,
-    youtubePost: undefined,
-    threadsPost: threadsTextAdjusted,
-    twitchPost: twitchText,
+    xPost: xText,
+    instagramPost: instagramText,
+    youtubePost: youtubeText,
+    threadsPost: threadsText,
     showroomPost: showroomText,
     hashtags: hashtagMode === 'あり'
       ? Array.from(
@@ -307,5 +319,6 @@ export const generateSNSPostContent = (
           ])
         )
       : [],
+    buzzScore,
   };
 };

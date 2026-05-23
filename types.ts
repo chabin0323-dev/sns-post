@@ -2,97 +2,53 @@ export enum LoadingState {
   IDLE = 'IDLE',
   LOADING = 'LOADING',
   SUCCESS = 'SUCCESS',
-  ERROR = 'ERROR'
+  ERROR = 'ERROR',
 }
 
-export interface BuzzScene {
-  id: string;
-  title: string;
-  text: string;
-  englishKeyword: string;
-  durationSec: number;
+export type Theme =
+  | '脈なし' | '脈あり' | '男性心理' | 'LINE' | '片思い' | '復縁'
+  | '運命の人' | '恋愛心理学' | '職場恋愛' | '人間関係' | '婚活'
+  | '年の差恋愛' | '既婚者の恋愛' | 'マッチングアプリ' | '不倫' | 'セフレ友達以上';
+
+export type HookType = '否定系' | '不安系' | '暴露系' | '男性心理系' | '実は系';
+
+export type OutputKey =
+  | 'mainContent'
+  | 'hashtags'
+  | 'threads'
+  | 'x'
+  | 'note'
+  | 'noteUrl'
+  | 'seo'
+  | 'thumbnail';
+
+export interface BuzzScore {
+  hookPower: number;
+  saveRate: number;
+  commentRate: number;
+  profileRate: number;
+  seoScore: number;
+  total: number;
+  comment: string;
 }
 
-export interface BuzzScriptPack {
-  questionTitle: string;
-  hook: string;
-  denial: string;
-  empathyStory: string;
-  shockOrSolution: string;
-  pullLine: string;
-  scenes: BuzzScene[];
-  fullScript: string;
-}
-
-export interface TrendPack {
-  trendKeywords: string[];
-  hookPatterns: string[];
-  structureTemplates: string[];
-  generatedTrendTitle: string;
-}
-
-export interface InfiniteIdeaPack {
-  fortuneSummary: string;
-  loveStory: string;
-  endlessIdeas: string[];
-}
-
-export interface ScheduleItem {
-  id: string;
-  label: string;
-  time: string;
-  outputTitle: string;
-  status: 'draft' | 'ready';
-}
-
-export interface PostPackage {
-  tiktokCaption: string;
-  finalCta: string;
+export interface GeneratedContent {
+  theme: Theme;
+  hookType: HookType;
+  prevTitle: string;
+  mainContent: string;
   hashtags: string[];
-  readyToPostText: string;
-}
-
-export interface BuzzAnalysis {
-  score: number;
-  strengths: string[];
-  weakPoints: string[];
-  optimizationNext: string[];
-  topThemesFromHistory: string[];
-  topHookPatternsFromHistory: string[];
-}
-
-export interface AutoVideoResult {
-  videoDataUrl: string;
-  videoMimeType: string;
-  sceneImages: string[];
-  durationSec: number;
-}
-
-export interface GeneratedPost {
-  title: string;
-  content: string;
-  hashtags: string[];
-  capcutScript: string;
-  tiktokHashtagText?: string;
-  xPost: string;
-  instagramPost: string;
-  youtubePost: string;
+  hashtagText: string;
   threadsPost: string;
-  twitchPost: string;
-  showroomPost: string;
-
-  theme?: string;
-  timestamp?: Date | string;
-  autoCtaEnabled?: boolean;
-  scheduleTimes?: string[];
-  hashtagMode?: 'あり' | 'なし';
-
-  buzzScript?: BuzzScriptPack;
-  trendPack?: TrendPack;
-  ideaPack?: InfiniteIdeaPack;
-  schedulePack?: ScheduleItem[];
-  postPackage?: PostPackage;
-  buzzAnalysis?: BuzzAnalysis;
-
-  autoVideo?: AutoVideoResult | null;
+  xPost: string;
+  noteArticle: string;
+  noteUrl: string;
+  seoSet: {
+    title: string;
+    keywords: string[];
+    description: string;
+  };
+  thumbnailPrompt: string;
+  buzzScore: BuzzScore;
+  timestamp: string;
 }

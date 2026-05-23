@@ -254,10 +254,10 @@ export const generateXPost = (
   const hook = hooks[Math.floor(Math.random() * hooks.length)];
 
   const variations = [
-    `${hook}\n\n①${analysis.expanded[0] || '重要なポイント'}\n②${analysis.expanded[1] || 'もう一つの視点'}\n③${analysis.expanded[2] || '最後の秘訣'}\n\nこれ意識するだけで${theme}の結果が全然変わります\n\n${audience}のあなた、試してみて！`,
-    `${examples[0]}\n\n${audience}が${theme}で失敗する理由はこれです\n\n${triggers.loss}\n\n詳しくはプロフへ👇\n\nマジで知らないと損するよ`,
-    `${triggers.empathy}\n\nそれは${theme}の本質を見落としてるから\n\n実は${Math.random() > 0.5 ? 'シンプル' : '奥が深い'}んです\n\n続きはプロフで\n\nびっくりすると思う！`,
-    `${triggers.rarity}\n\n${audience}で結果を出すために必要な3つ：\n\n・${examples[1] || 'まずは基礎理解'}\n・${analysis.main}\n・${analysis.secondary || '継続する姿勢'}\n\n続きはプロフ👇\n\n今すぐチェックして！`,
+    `${triggers.empathy}\n\n実はこれ、知らない人がめちゃくちゃ多い。\n\n${examples[0]}\n\n${triggers.rarity}\n\n今日から${analysis.main}を1つ変えるだけでいい。\nぜひ試してみて！`,
+    `正直に言う。\n\n${audience}が${theme}で伸び悩む理由は、努力じゃなくて方向性。\n\n${triggers.loss}\n\n${examples[1]}\n\n今日から意識すること→${analysis.main}\n\n試してみて！`,
+    `${hook}\n\n${triggers.curiosity}\n\n実は${Math.random() > 0.5 ? '9割' : '8割'}の人が知らない視点がある。\n\n${examples[0]}\n\nまず今日1つだけやってみて！`,
+    `${audience}へ、大事なことを言う。\n\n${triggers.rarity}\n\n${theme}で結果が変わるポイントは${analysis.main}。\n\nこれだけ。やってる人は少ない。\n\n今日から始めて！`,
   ];
 
   const post = variations[variant % variations.length];
@@ -274,13 +274,14 @@ export const generateThreadsPost = (
 ): string => {
   const analysis = analyzeThemeDeep(theme);
   const triggers = generatePsychologicalTriggers(theme, audience);
+  const examples = generateThemeSpecificExamples(theme);
 
   const variations = [
-    `実は私も同じような悩みがありました。\n\n${theme}について\n${audience}の方ほど\n頑張ってるのに結果が出ないと\n感じてるんじゃないでしょうか\n\n原因は努力不足ではなく\n${analysis.main}の見え方が\nズレてるだけなんです\n\n気づいた時全部変わりました\n\nあなたもきっと大丈夫だよ`,
+    `${audience}のみなさんへ、正直に話します。\n\n${theme}で結果が出ないとき、ほとんどの場合\n原因は「知識不足」じゃないんです。\n\n実は知らない人が多いんですが\n${triggers.rarity}\n\n具体的には：\n${examples[0]}\n\n①${analysis.expanded[0] || 'まず基礎を理解する'}を意識する\n②${analysis.expanded[1] || '小さく行動する'}を実践する\n③${analysis.expanded[2] || '継続して工夫する'}を続ける\n\n今日から1つだけ試してみてください。\n変化を感じたらぜひ教えてください！`,
 
-    `${theme}について\n改めて考えてみました\n\n${triggers.curiosity}\n\n多くの${audience}が\nここを見落としています\n\n①${analysis.expanded[0] || '大事なポイント'}を意識する\n②${analysis.expanded[1] || '次に大切なこと'}を実行する\n③${analysis.expanded[2] || '最後の仕上げ'}を工夫する\n\nこの3つで全部変わる\n\n一緒に試してみませんか？`,
+    `ちょっと聞いてほしいことがあって。\n\n${triggers.empathy}\n\nそれ、すごくわかる気がします。\n\n${triggers.loss}\n\nでも実は\n${triggers.rarity}\n\n${examples[1]}\n\nこの視点を知ってから変わった人をたくさん見てきました。\n\nあなたも今日から変えられます。\nまず1つだけ動いてみませんか？`,
 
-    `${audience}のあなたへ\n\n${triggers.empathy}\n\nその気持ち\nめっちゃ分かります\n\n実は\n${theme}の${analysis.main}\nの部分が違ってるだけ\n\nそこ気づけば全部変わります\n\n応援してるよ！`,
+    `${audience}のあなたに聞きたいんですが。\n\n${theme}って、なんとなくわかってるつもりになってませんか？\n\n${triggers.empathy}\n\nでも${analysis.main}のことを深く知ったとき、全部が変わった。\n\n${examples[0]}\n\nこの事実、知ってましたか？\n\n今日から1つだけ変えてみてください。\n応援してます！`,
   ];
 
   return variations[variant % variations.length];
@@ -331,7 +332,15 @@ export const generateYouTubePost = (
 };
 
 /**
- * note向けの高度な生成 - 読み物としての深掘り
+ * note向けの生成 - SEO最適化版・600文字固定
+ *
+ * SEO対策ルール:
+ * - タイトル: メインキーワード左寄せ・数字あり・悩み解決ワード・32文字前後
+ * - キーワード: 検索需要が高い3〜5個
+ * - メタ: 120文字前後
+ * - 冒頭100文字以内にメインキーワード配置
+ * - 本文にメインキーワード3回以上挿入
+ * - 構成: テーマとは／特徴3選／対処法／まとめ
  */
 export const generateNotePost = (
   theme: string,
@@ -340,262 +349,179 @@ export const generateNotePost = (
 ): string => {
   const analysis = analyzeThemeDeep(theme);
   const examples = generateThemeSpecificExamples(theme);
-  const triggers = generatePsychologicalTriggers(theme, audience);
-  const hooks = generateScrollStoppingHooks(theme);
-  const hook = hooks[Math.floor(Math.random() * hooks.length)];
 
-  const variations = [
-    `# ${hook}
+  // SEOタイトル（32文字前後・数字あり・悩み解決ワード・メインキーワード左寄せ）
+  const titles = [
+    `【${theme}】9割が知らない解決策3選と対処法`,
+    `${theme}の悩みを解消する3つの方法｜知らないと損`,
+    `【保存版】${theme}を解決する3ステップ完全ガイド`,
+    `${theme}で失敗する人の特徴3選｜今すぐ改善できます`,
+  ];
+  const title = titles[variant % titles.length];
 
-## はじめに
+  // SEOキーワード（検索需要が高い3〜5個）
+  const kw = [...new Set([analysis.main, ...analysis.expanded.slice(0, 3)])].slice(0, 4);
 
-${audience}のあなたへ。
+  // メタディスクリプション（120文字前後）
+  const metaBase = `${theme}に悩む${audience}向け。${theme}の特徴・原因・対処法を3ステップで解説。${analysis.main}を理解することで${theme}への向き合い方が根本から変わります。`;
+  const meta = metaBase.slice(0, 120);
 
-${theme}について、本気で学んだことはありますか？
-
-多くの人は表面的な情報だけで判断してしまいます。でも実は、${analysis.main}の部分こそが最も重要なんです。
-
-## 問題提起：なぜ失敗するのか
-
-${triggers.loss}
-
-これは単なる知識不足ではありません。むしろ、間違った理解によるものなのです。
-
-${examples[0] || `${theme}で成功するには、正しい基礎が必須です`}
-
-## 共感：あなたの気持ちはわかります
-
-${triggers.empathy}
-
-その気持ち、とても理解できます。${theme}は簡単ではないからです。
-
-しかし、ここから先が重要です。
-
-## 解決策：本当にやるべきこと
-
-### ステップ1：${analysis.main}を正しく理解する
-
-${analysis.expanded[0] || `${theme}の本質を理解することが第一歩です`}
-
-### ステップ2：具体的に実行する
-
-${examples[1] || `実装なくして成功なし。毎日少しずつ前に進むことが重要です`}
-
-### ステップ3：継続して工夫する
-
-${analysis.expanded[1] || `一度成功したら終わりではなく、常に改善を意識してください`}
-
-## 成功事例
-
-実は${triggers.rarity}
-
-このアプローチで変わった人たちがいます。
-
-- ${audience}が${theme}で成果を出す
-- 3ヶ月継続で目に見える結果
-- 周囲の反応も劇的に変わる
-
-## まとめ：今から始めるべき理由
-
-${theme}であなたが成功するために必要なのは、完璧な理論ではなく、正しい理解に基づいた実行です。
-
-今この瞬間から、行動を変えてみてください。
-
-あなたの${theme}は、今日から変わります。`,
-
-    `# ${hook}
-
-${audience}の多くが${theme}で同じ失敗をしています。
-
-その理由は、シンプルです。
-
-## なぜ失敗するのか
-
-${triggers.loss}
-
-## 本当の原因
-
-${analysis.main}について、深く考えたことはありますか？
-
-ほとんどの人は「何となく」理解しているつもりです。
-
-でも実は、その「何となく」こそが失敗の原因なのです。
-
-## 成功者との決定的な違い
-
-${triggers.rarity}
-
-成功する${audience}は何が違うのか？
-
-- ${analysis.expanded[0] || `${theme}の本質を理解している`}
-- ${analysis.expanded[1] || `小さな改善を続けている`}
-- ${analysis.expanded[2] || `長期的な視点を持っている`}
-
-たったこれだけです。
-
-## 実装ガイド
-
-### 今週やること
-${examples[0] || '基本を確認する'}
-
-### 来週やること
-${examples[1] || '小さく実行してみる'}
-
-### 1ヶ月後の目標
-${examples[2] || '習慣として定着させる'}
-
-## あなたへのメッセージ
-
-${triggers.empathy}
-
-その気持ちを大切にしながら、一歩踏み出してみてください。
-
-${theme}はあなたが思うほど難しくありません。
-
-正しい方法と継続があれば、必ず結果は出ます。
-
-今日から、始めましょう。`,
+  // 本文（冒頭100文字以内にメインキーワード・構成必須・600字目安）
+  const lines = [
+    title,
+    '',
+    `SEOキーワード：${kw.join('・')}`,
+    `メタ説明文：${meta}`,
+    '',
+    '━━━━━━━━━━━━━━',
+    '',
+    `■ ${theme}とは`,
+    '',
+    `${theme}とは、${audience}の多くが直面する悩みのひとつです。`,
+    `${examples[0]}`,
+    '',
+    `■ ${theme}の特徴3選`,
+    '',
+    `① ${analysis.expanded[0] || `${theme}の本質を見誤りやすい`}`,
+    `② ${analysis.expanded[1] || `感情に振り回されやすい`}`,
+    `③ ${examples[1].slice(0, 35)}`,
+    '',
+    `■ ${theme}の対処法`,
+    '',
+    `${theme}を改善するには、まず${analysis.main}を正しく理解することが重要です。`,
+    `${examples[2] || `まず現状を正確に把握し、小さく動き出すことが大切です。`}`,
+    `${analysis.expanded[2] || `継続的な改善`}を意識することで${theme}は必ず変わります。`,
+    '',
+    `■ まとめ`,
+    '',
+    `${theme}は解決できます。`,
+    `${analysis.main}を意識して、今日から1つだけ実践してください。`,
   ];
 
-  return variations[variant % variations.length];
+  return lines.join('\n');
 };
 
 /**
  * テキストを15文字程度で改行
  */
 const formatTikTokText = (text: string): string => {
-  // 句点（。、！？）で分割して自然な改行を作る
-  let result = text;
-  
-  // 複数の句点が続く場合は1つに統一
-  result = result.replace(/[。、！？]+/g, (match) => {
-    return match[0]; // 最初の文字のみを残す
-  });
-  
-  // 1行がおおよそ20-25文字を超える場合は句点で改行
-  const lines = result.split('\n');
-  const formattedLines: string[] = [];
-  
+  const lines = text.split('\n');
+  const result: string[] = [];
+
   for (const line of lines) {
     if (line === '') {
-      formattedLines.push('');
+      result.push('');
       continue;
     }
-    
-    // 句点で分割したフレーズを組み立てる
-    const phrases = line.match(/([^。！？]*[。！？]?)/g)?.filter(p => p.length > 0) || [];
-    let currentLine = '';
-    
-    for (const phrase of phrases) {
-      if ((currentLine + phrase).length <= 22) {
-        // 現在の行に追加可能
-        currentLine += phrase;
-      } else if (currentLine.length > 0) {
-        // 新しい行を開始
-        formattedLines.push(currentLine);
-        currentLine = phrase;
-      } else {
-        // フレーズ自体が長い場合は強制的に追加
-        formattedLines.push(phrase);
-        currentLine = '';
-      }
-    }
-    
-    if (currentLine.length > 0) {
-      formattedLines.push(currentLine);
+
+    let start = 0;
+    while (start < line.length) {
+      result.push(line.slice(start, start + 20));
+      start += 20;
     }
   }
-  
-  return formattedLines.join('\n');
+
+  return result.join('\n');
 };
 
 /**
- * TikTok向けの高度な生成 - トレンド・若者言葉重視
+ * TikTok向けの生成 - アルゴリズム最適化版・600文字固定
+ *
+ * アルゴリズム最適化ルール:
+ * - 冒頭0.5秒で止まる一文（否定・不安・暴露・男性心理・実は系）
+ * - 最初の3行で結論を匂わせる
+ * - 1文を短く・改行多め・テンポ重視
+ * - 保存率UP：特徴3選・危険サイン・男性心理・見抜き方
+ * - コメント誘導を最後に必ず（何個当てはまりました？）
+ * - 締めは「気になる人との相性はプロフィールへ👇」で統一
+ * - バズりやすいワード：実は／危険／知らないと損／9割 etc.
  */
 export const generateTikTokScript = (
   theme: string,
   audience: string,
   variant: number = 0,
-  targetLength: number = 500
+  targetLength: number = 600
 ): string => {
   const analysis = analyzeThemeDeep(theme);
   const examples = generateThemeSpecificExamples(theme);
-  const triggers = generatePsychologicalTriggers(theme, audience);
 
-  const baseVariations = [
-    `${audience}のあなたへ\n\n${theme}について本当に理解していますか？\n\n実は${audience}の多くが${analysis.main}を完全に見落としています。\n\n${triggers.empathy}\n\nその気持ち、めっちゃ分かります。\n\n${analysis.main}の見え方がズレてるだけで全部変わるんです。\n\n具体的な例：${examples[0]}\n\nこれが全ての始まりです。\n\nもう1つの重要ポイント：${analysis.expanded[1]}\n\n${audience}はここを見落とす傾向があります。\n\nしかし成功する人は必ずこれをやってます。\n\nだから結果が大きく変わるんです。\n\n最後のポイント：${analysis.expanded[2]}\n\n今日からこれを意識するだけで、${theme}への向き合い方が変わります。`,
-
-    `ちょっと待ってください。\n\n${theme}について${audience}の多くが大きな勘違いをしています。\n\nどういうことか？\n\n${theme}で失敗する人の共通点。\nそれは${analysis.main}の理解が浅いこと。\n\n${triggers.loss}\n\nそれは本当です。\n\n実は${audience}が${theme}で成功するには3つの要素が必要なんです。\n\n1つ目：${analysis.expanded[0]}を深く理解する\n\n2つ目：${analysis.expanded[1]}を実装する\n\n3つ目：${analysis.expanded[2]}を継続する\n\nこの3つです。\n\n具体的な例がこちら：${examples[1]}\n\nこれが成功する人と失敗する人の決定的な分かれ道なんです。\n\n今日からやってみてください。`,
-
-    `${theme}について知ってますか？\n\n${triggers.curiosity}\n\nほとんどの${audience}は${analysis.main}をミスってます。\n\nでもそれって当たり前なんです。\n\n誰も教えてくれないから。\n\n実は${theme}の本質は${analysis.secondary || '意外とシンプル'}なんです。\n\nではどうするのか？\n\n${examples[2]}\n\nこれが答えです。\n\nさらに深掘りすると${triggers.rarity}\n\n本当のところです。\n\n${audience}で成功する人は全員この視点を持ってます。\n\n心理的なポイント：${analysis.expanded[3]}\n\nこれが無意識に行動を変えさせるんです。\n\n今日から試してみてください。`,
-
-    `${audience}さんへ\n\n${theme}で成功する人と失敗する人。\n\nその差は何だと思いますか？\n\n答えは${analysis.main}へのアプローチの違いなんです。\n\n失敗する人：表面的な情報だけで判断\n\n成功する人：本質を理解した上で行動\n\n${triggers.empathy}\n\nその通りです。\n\nでは本質とは何か？\n\n${examples[0]}に隠されています。\n\nさらに言うと${analysis.expanded[0]}が非常に重要なんです。\n\nこれを知ると${theme}への見方が大きく変わります。\n\nそして実装する際は${analysis.expanded[1]}このポイントを押さえることが大切です。\n\n最後に${analysis.expanded[2]}これを継続することです。\n\nこの3段階で${audience}は必ず成功します。\n\nまずはこのポイントを試してみてください。`,
+  // 冒頭0.5秒フック（否定・不安・暴露・男性心理・実は系）
+  const openers = [
+    `実は${theme}\n9割の人が勘違いしてます`,
+    `知らないと損する\n${theme}の真実があります`,
+    `${theme}で冷めます\nこの行動してませんか？`,
+    `危険⚠️\n${theme}でやってはいけないこと`,
+    `ほとんどの女性が\n${theme}で失敗する理由`,
+    `男性は${theme}のとき\n本命かどうかこう判断してます`,
   ];
+  const opener = openers[variant % openers.length];
 
-  // TikTokスクリプト生成の第1ステップ
-  const baseText = baseVariations[variant % baseVariations.length];
-  const minLength = targetLength;
-  
-  // 指定文字数に達するまで段階的に拡張
-  let result = baseText;
-  
-  // ステップ1：拡張フレーズを追加
-  if (result.length < minLength) {
-    const extension1 = `\n\nこの${theme}のポイントをさらに詳しく説明します。\n\n${examples[0]}の具体的な方法を知ることで、${audience}の${theme}への理解度は劇的に変わります。`;
-    result += extension1;
-  }
-  
-  // ステップ2：根本的な理由を追加
-  if (result.length < minLength) {
-    const extension2 = `\n\n次に、よくある失敗の理由をもう少し掘り下げます。\n\nほとんどの場合、${analysis.main}が正しく理解されていないことが原因です。\n\n${triggers.loss}ということが多いのです。`;
-    result += extension2;
-  }
-  
-  // ステップ3：心理的側面を追加
-  if (result.length < minLength) {
-    const extension3 = `\n\n心理的な観点からも重要なポイントがあります。\n\n${analysis.expanded[3]}この意識が行動を変えるきっかけになるんです。\n\n多くの成功者は無意識にこれを実行しています。`;
-    result += extension3;
-  }
-  
-  // ステップ4：実装ガイドを追加
-  if (result.length < minLength) {
-    const extension4 = `\n\n実際の場面では、この考え方をどう活かすかが重要です。\n\n${analysis.expanded[0]}と${analysis.expanded[1]}を組み合わせることで、さらに理解が深まります。\n\n今からでも遅くありません。実装してみてください。`;
-    result += extension4;
-  }
-  
-  // ステップ5：統計・事例データを追加
-  if (result.length < minLength) {
-    const extension5 = `\n\n実は多くの${audience}がこれに気づきません。\n\n${examples[1]}という事例からも、${theme}の本質が見えてきます。\n\n成功する人の特徴は、常にこの視点を持ち続けることなんです。`;
-    result += extension5;
-  }
-  
-  // ステップ6：重要な気づきを強調
-  if (result.length < minLength) {
-    const extension6 = `\n\nもう一つ、あなたが知っておくべき重要なことがあります。\n\n${triggers.rarity}\n\nこれはほとんどの${audience}が見落としているポイントです。\n\nしかし、これを知ることで${theme}への向き合い方が根本的に変わるんです。`;
-    result += extension6;
-  }
-  
-  // ステップ7：実行の障害を取り除く
-  if (result.length < minLength) {
-    const extension7 = `\n\n最後に、実行する上での障害をお伝えします。\n\n${analysis.expanded[2]}を継続するのが難しいという相談をよく受けます。\n\nしかし、正しい理解があれば、これは自然に続くようになります。`;
-    result += extension7;
-  }
-  
-  // ステップ8：最終確認フレーズ
-  if (result.length < minLength) {
-    const extension8 = `\n\nまとめると、${audience}が${theme}で成功するためには3つのステップが必要です。\n\n1つ目：本質を理解する（${analysis.main}）\n\n2つ目：心理的な側面を認識する（${analysis.expanded[3]}）\n\n3つ目：正しく実行する（${analysis.expanded[0]}）\n\nこれらを実践することが全てです。`;
-    result += extension8;
-  }
-  
-  // ステップ9：行動喚起
-  if (result.length < minLength) {
-    const extension9 = `\n\nそして今、あなたにできることがあります。\n\n${theme}への向き合い方を変えることです。\n\n今日このテキストを読んだことがきっかけになるかもしれません。\n\nぜひ、次の行動に移してみてください。`;
-    result += extension9;
-  }
+  // 最初の3行：結論を匂わせる
+  const hints = [
+    `これ知らなかったら\n一生損するかも\n正直に言います`,
+    `結論から言うと\n${theme}はこれだけで変わります\nちゃんと読んでください`,
+    `${theme}に悩んでる人\n全員に見てほしい\n大事なこと話します`,
+  ];
+  const hint = hints[variant % hints.length];
 
-  // 指定文字数を超えた場合はトリム
-  if (result.length > targetLength) {
-    return formatTikTokText(result.slice(0, targetLength).trimEnd());
+  // 本文（特徴3選・危険サイン・男性心理・見抜き方）
+  const body = [
+    opener,
+    '',
+    hint,
+    '',
+    `▼${theme}の危険サイン3選`,
+    '',
+    `①${analysis.expanded[0] || `本音を隠している`}`,
+    '',
+    `②${examples[0].slice(0, 25)}`,
+    '',
+    `③${analysis.expanded[1] || `距離感がおかしくなる`}`,
+    '',
+    `これ当てはまったら要注意🚨`,
+    '',
+    `▼男性心理から見ると`,
+    '',
+    `実は男性は${theme}のとき`,
+    `${analysis.main}を`,
+    `かなり意識してます`,
+    '',
+    `ほとんどの女性は`,
+    `ここを見落としてます`,
+    '',
+    `▼見抜き方のポイント`,
+    '',
+    `${examples[1].slice(0, 30)}`,
+    '',
+    `この視点を持つだけで`,
+    `${theme}への`,
+    `対応が全然変わります`,
+  ].join('\n');
+
+  // コメント誘導 + 締め（固定）
+  const cta = [
+    '',
+    `何個当てはまりました？`,
+    `コメントで教えてください👇`,
+    '',
+    `気になる人との相性はプロフィールへ👇`,
+  ].join('\n');
+
+  let result = body + cta;
+
+  // 600文字に足りない場合のみ補足
+  if (result.length < targetLength) {
+    result = body +
+      `\n\n${theme}で悩んでいるなら\nまず${analysis.main}を\n意識してみてください` +
+      `\n\nそれだけで結果が変わります` +
+      cta;
+  }
+  if (result.length < targetLength) {
+    result = body +
+      `\n\n${theme}で悩んでいるなら\nまず${analysis.main}を\n意識してみてください` +
+      `\n\nそれだけで結果が変わります` +
+      `\n\n実は${examples[2].slice(0, 20)}\nこれが大切なんです` +
+      cta;
   }
 
   return formatTikTokText(result);

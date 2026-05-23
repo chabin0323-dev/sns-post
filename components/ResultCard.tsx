@@ -1,543 +1,194 @@
-import React, { useMemo, useState } from 'react';
-import {
-  ClipboardDocumentIcon,
-  CheckIcon,
-  XMarkIcon
-} from '@heroicons/react/24/outline';
-import { GeneratedPost, AutoVideoResult } from '../types';
-import { buildAutoVideoFromScenes } from '../services/localVideoBuilder';
-
-type ChannelBlock = {
-  labels: string[];
-  text: string;
-  theme: 'light' | 'dark' | 'sky' | 'pink' | 'red' | 'amber' | 'violet' | 'emerald' | 'purple' | 'orange' | 'rose';
-};
-
-const normalizeText = (text: string) => text.trim();
-
-const groupChannels = (post: GeneratedPost): ChannelBlock[] => {
-  const source = [
-    { label: 'note', text: post.content, theme: 'light' as const },
-    { label: 'TikTok', text: post.capcutScript, theme: 'dark' as const },
-    { label: 'X', text: post.xPost, theme: 'sky' as const },
-    { label: 'Threads', text: post.threadsPost || '', theme: 'purple' as const },
-    { label: 'Twitch', text: post.twitchPost || '', theme: 'violet' as const },
-    { label: 'AIバズ台本', text: post.buzzScript?.fullScript || '', theme: 'amber' as const },
-    {
-      label: 'トレンド取得',
-      text: post.trendPack
-        ? [
-            `トレンド風タイトル：${post.trendPack.generatedTrendTitle}`,
-            `キーワード：${post.trendPack.trendKeywords.join(' / ')}`,
-            `フック：${post.trendPack.hookPatterns.join(' / ')}`,
-            `構成：${post.trendPack.structureTemplates.join(' / ')}`,
-          ].join('\n')
-        : '',
-      theme: 'violet' as const,
-    },
-    {
-      label: 'ネタ無限生成',
-      text: post.ideaPack
-        ? [
-            post.ideaPack.fortuneSummary,
-            '',
-            post.ideaPack.loveStory,
-            '',
-            ...post.ideaPack.endlessIdeas.map((item, index) => `${index + 1}. ${item}`),
-          ].join('\n')
-        : '',
-      theme: 'emerald' as const,
-    },
-    { label: '投稿データ', text: post.postPackage?.readyToPostText || '', theme: 'amber' as const },
-    {
-      label: 'バズ分析',
-      text: post.buzzAnalysis
-        ? [
-            `スコア：${post.buzzAnalysis.score}`,
-            `強み：${post.buzzAnalysis.strengths.join(' / ')}`,
-            `弱点：${post.buzzAnalysis.weakPoints.join(' / ') || 'なし'}`,
-            `最適化：${post.buzzAnalysis.optimizationNext.join(' / ')}`,
-            `履歴テーマ：${post.buzzAnalysis.topThemesFromHistory.join(' / ') || 'なし'}`,
-            `履歴フック：${post.buzzAnalysis.topHookPatternsFromHistory.join(' / ') || 'なし'}`,
-          ].join('\n')
-        : '',
-      theme: 'violet' as const,
-    },
-  ].filter((item) => normalizeText(item.text) !== '');
-
-  const grouped = new Map<string, ChannelBlock>();
-
-  source.forEach((item) => {
-    const key = normalizeText(item.text);
-    if (grouped.has(key)) {
-      grouped.get(key)!.labels.push(item.label);
-    } else {
-      grouped.set(key, {
-        labels: [item.label],
-        text: item.text,
-        theme: item.theme,
-      });
-    }
-  });
-
-  return Array.from(grouped.values());
-};
-
-const themeClassMap = {
-  light: {
-    wrap: 'bg-white border-slate-100',
-    badge: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-    text: 'text-slate-700 bg-slate-50/40 border-slate-100',
-    button: 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200',
-  },
-  dark: {
-    wrap: 'bg-slate-900 border-slate-800',
-    badge: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/20',
-    text: 'text-cyan-50 bg-slate-950/50 border-slate-800',
-    button: 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700',
-  },
-  sky: {
-    wrap: 'bg-sky-50 border-sky-100',
-    badge: 'bg-white text-sky-600 border-sky-100',
-    text: 'text-slate-700 bg-white/70 border-sky-100',
-    button: 'bg-sky-500 hover:bg-sky-600 text-white shadow-sky-200',
-  },
-  pink: {
-    wrap: 'bg-pink-50 border-pink-100',
-    badge: 'bg-white text-pink-600 border-pink-100',
-    text: 'text-slate-700 bg-white/70 border-pink-100',
-    button: 'bg-pink-500 hover:bg-pink-600 text-white shadow-pink-200',
-  },
-  red: {
-    wrap: 'bg-red-50 border-red-100',
-    badge: 'bg-white text-red-600 border-red-100',
-    text: 'text-slate-700 bg-white/70 border-red-100',
-    button: 'bg-red-500 hover:bg-red-600 text-white shadow-red-200',
-  },
-  amber: {
-    wrap: 'bg-amber-50 border-amber-100',
-    badge: 'bg-white text-amber-700 border-amber-100',
-    text: 'text-slate-700 bg-white/70 border-amber-100',
-    button: 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-200',
-  },
-  violet: {
-    wrap: 'bg-violet-50 border-violet-100',
-    badge: 'bg-white text-violet-700 border-violet-100',
-    text: 'text-slate-700 bg-white/70 border-violet-100',
-    button: 'bg-violet-500 hover:bg-violet-600 text-white shadow-violet-200',
-  },
-  emerald: {
-    wrap: 'bg-emerald-50 border-emerald-100',
-    badge: 'bg-white text-emerald-700 border-emerald-100',
-    text: 'text-slate-700 bg-white/70 border-emerald-100',
-    button: 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200',
-  },
-  purple: {
-    wrap: 'bg-purple-50 border-purple-100',
-    badge: 'bg-white text-purple-700 border-purple-100',
-    text: 'text-slate-700 bg-white/70 border-purple-100',
-    button: 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-200',
-  },
-  orange: {
-    wrap: 'bg-orange-50 border-orange-100',
-    badge: 'bg-white text-orange-700 border-orange-100',
-    text: 'text-slate-700 bg-white/70 border-orange-100',
-    button: 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-200',
-  },
-  rose: {
-    wrap: 'bg-rose-50 border-rose-100',
-    badge: 'bg-white text-rose-700 border-rose-100',
-    text: 'text-slate-700 bg-white/70 border-rose-100',
-    button: 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-200',
-  },
-};
+import React, { useState } from 'react';
+import type { GeneratedContent, OutputKey } from '../types';
+import { OUTPUT_KEY_LABELS } from '../services/loveContentGenerator';
 
 interface ResultCardProps {
-  post: GeneratedPost;
-  history?: GeneratedPost[];
-  onSelectHistory?: (post: GeneratedPost) => void;
-  onDeleteHistory?: (post: GeneratedPost, index: number) => void;
-  onClearHistory?: () => void;
-  onBackToTop?: () => void;
+  content: GeneratedContent;
+  enabledKeys: OutputKey[];
 }
 
-export const ResultCard: React.FC<ResultCardProps> = ({
-  post,
-  history = [],
-  onSelectHistory,
-  onDeleteHistory,
-  onClearHistory,
-  onBackToTop,
-}) => {
-  const [copiedKey, setCopiedKey] = useState('');
-  const [videoLoading, setVideoLoading] = useState(false);
-  const [localVideo, setLocalVideo] = useState<AutoVideoResult | null>(post.autoVideo || null);
+const SECTION_COLORS: Record<OutputKey, string> = {
+  mainContent: 'border-[#D4537E] bg-[#FFF0F5]',
+  hashtags: 'border-pink-300 bg-pink-50',
+  threads: 'border-purple-300 bg-purple-50',
+  x: 'border-sky-300 bg-sky-50',
+  note: 'border-emerald-300 bg-emerald-50',
+  noteUrl: 'border-teal-300 bg-teal-50',
+  seo: 'border-amber-300 bg-amber-50',
+  thumbnail: 'border-orange-300 bg-orange-50',
+};
 
-  const groupedBlocks = useMemo(() => groupChannels(post), [post]);
+const SECTION_ICONS: Record<OutputKey, string> = {
+  mainContent: '🎬',
+  hashtags: '#️⃣',
+  threads: '🧵',
+  x: '✕',
+  note: '📝',
+  noteUrl: '🔗',
+  seo: '🔍',
+  thumbnail: '🖼️',
+};
 
-  const handleCopy = async (text: string, key: string) => {
+const CopyButton: React.FC<{ text: string }> = ({ text }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopiedKey(key);
-      setTimeout(() => setCopiedKey(''), 2000);
-    } catch (err) {
-      console.error('Copy failed', err);
-    }
-  };
-
-  const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-  // 加重文字数で280ウェイト以内に切り詰め
-  const trimForShareUrl = (text: string): string => {
-    const MAX = 280;
-    let n = 0; let result = '';
-    for (const c of text) {
-      const w = ((c.codePointAt(0) ?? 0) <= 0x10FF) ? 1 : 2;
-      if (n + w > MAX) return result.trimEnd() + '…';
-      n += w; result += c;
-    }
-    return result;
-  };
-
-  // SNSごとの投稿設定（PC用 web URL ＋ スマホ用 URI スキーム）
-  type PostConfig = { label: string; webUrl: string; appScheme?: string; prefill?: boolean };
-  const getPostConfig = (labels: string[]): PostConfig | null => {
-    const l = labels[0];
-    if (l === 'X')         return { label: 'X に投稿',              webUrl: 'https://x.com/intent/tweet?text=',          appScheme: 'twitter://post?message=',   prefill: true };
-    if (l === 'note')      return { label: 'note に投稿',            webUrl: 'https://note.com/notes/new' };
-    if (l === 'TikTok')    return { label: 'TikTok アプリへ',        webUrl: 'https://www.tiktok.com/',                  appScheme: 'snssdk1128://' };
-    if (l === 'Instagram') return { label: 'Instagram / YouTube へ', webUrl: 'https://www.instagram.com/',               appScheme: 'instagram://app' };
-    if (l === 'Threads')   return { label: 'Threads に投稿',         webUrl: 'https://www.threads.net/intent/post?text=', appScheme: 'threads://', prefill: true };
-    if (l === 'Twitch')    return { label: 'Twitch アプリへ',        webUrl: 'https://dashboard.twitch.tv/',             appScheme: 'twitch://open' };
-    return null;
-  };
-
-  const [postedKey, setPostedKey] = useState('');
-
-  const handlePost = async (text: string, labels: string[], key: string) => {
-    const config = getPostConfig(labels);
-    if (!config) return;
-
-    // テキストをクリップボードにコピー
-    try { await navigator.clipboard.writeText(text); } catch (_) {}
-
-    const mobile = isMobile();
-    const encoded = encodeURIComponent(trimForShareUrl(text));
-
-    if (mobile && config.appScheme) {
-      // スマホ：URI スキームでアプリを直接起動（投稿文はクリップボードから貼り付け）
-      const scheme = config.prefill ? config.appScheme + encoded : config.appScheme;
-      window.open(scheme, '_blank');
-    } else {
-      // PC：ブラウザで開く
-      if (config.prefill) {
-        window.open(config.webUrl + encoded, '_blank');
-      } else {
-        window.open(config.webUrl, '_blank');
-      }
-    }
-    setPostedKey(key);
-    setTimeout(() => setPostedKey(''), 3000);
-  };
-
-  const handleGenerateVideo = async () => {
-    if (!post.buzzScript?.scenes?.length) return;
-
-    setVideoLoading(true);
-    try {
-      const result = await buildAutoVideoFromScenes(post.buzzScript.scenes);
-      if (result) {
-        setLocalVideo(result);
-      }
-    } catch (error) {
-      console.error('Video generation failed', error);
-      alert('動画生成に失敗しました。もう一度お試しください。');
-    } finally {
-      setVideoLoading(false);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 pb-20">
-      {onBackToTop && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={onBackToTop}
-            className="px-4 py-2 rounded-2xl bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 font-black"
-          >
-            🔙 アプリTOPに戻る
-          </button>
-        </div>
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
+      style={{
+        backgroundColor: copied ? '#D4537E' : '#FFE0EC',
+        color: copied ? 'white' : '#72243E',
+      }}
+    >
+      {copied ? (
+        <>
+          <span>✓</span>
+          <span>コピー完了</span>
+        </>
+      ) : (
+        <>
+          <span>📋</span>
+          <span>コピー</span>
+        </>
       )}
-      {groupedBlocks.map((block, index) => {
-        const themeClasses = themeClassMap[block.theme];
-        const copyKey = `${block.labels.join('-')}-${index}`;
+    </button>
+  );
+};
 
-        return (
-          <div
-            key={copyKey}
-            className={`rounded-[40px] shadow-2xl overflow-hidden border ${themeClasses.wrap}`}
-          >
-            <div className="p-8 md:p-10">
-              <div className="flex flex-wrap gap-2 mb-8">
-                <span
-                  className={`text-[10px] font-black px-3 py-1.5 rounded-full border uppercase tracking-wider ${themeClasses.badge}`}
-                >
-                  {block.labels.join('・')}
-                </span>
-                {block.labels.length > 1 && (
-                  <span className="text-[10px] font-black px-3 py-1.5 rounded-full border uppercase tracking-wider bg-emerald-50 text-emerald-600 border-emerald-100">
-                    共通
-                  </span>
-                )}
-              </div>
+const SectionBlock: React.FC<{
+  outputKey: OutputKey;
+  content: string;
+}> = ({ outputKey, content }) => {
+  if (!content) return null;
 
+  return (
+    <div className={`rounded-2xl border-2 p-4 space-y-3 ${SECTION_COLORS[outputKey]}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-base">{SECTION_ICONS[outputKey]}</span>
+          <span className="text-sm font-black text-gray-800">{OUTPUT_KEY_LABELS[outputKey]}</span>
+        </div>
+        <CopyButton text={content} />
+      </div>
+      <pre className="text-sm text-gray-700 whitespace-pre-wrap break-words font-sans leading-relaxed bg-white/60 rounded-xl p-3">
+        {content}
+      </pre>
+    </div>
+  );
+};
+
+const BuzzMeter: React.FC<{ score: GeneratedContent['buzzScore'] }> = ({ score }) => {
+  const bars = [
+    { label: 'フック力', value: score.hookPower, max: 20, color: '#D4537E' },
+    { label: '保存率', value: score.saveRate, max: 20, color: '#e879a0' },
+    { label: 'コメント', value: score.commentRate, max: 20, color: '#c44070' },
+    { label: 'プロフ誘導', value: score.profileRate, max: 20, color: '#b83268' },
+    { label: 'SEO', value: score.seoScore, max: 20, color: '#a02660' },
+  ];
+
+  return (
+    <div className="bg-[#FFF0F5] rounded-2xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-black text-gray-800">バズ度スコア</span>
+        <span className="text-2xl font-black" style={{ color: '#D4537E' }}>{score.total}<span className="text-sm">/100</span></span>
+      </div>
+      <p className="text-xs font-bold" style={{ color: '#D4537E' }}>{score.comment}</p>
+      <div className="space-y-2">
+        {bars.map(bar => (
+          <div key={bar.label} className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-gray-500 w-16 shrink-0">{bar.label}</span>
+            <div className="flex-1 bg-white rounded-full h-2 overflow-hidden">
               <div
-                className={`whitespace-pre-wrap leading-relaxed text-lg mb-10 font-medium rounded-3xl border p-6 ${themeClasses.text}`}
-              >
-                {block.text}
-              </div>
-
-              {/* TikTok/Instagram/YouTube 専用：ハッシュタグ別枠 */}
-              {block.labels[0] === 'TikTok' && post.tiktokHashtagText && (
-                <div className="mb-4 rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
-                  <div className="text-xs font-black text-cyan-600 mb-2">ハッシュタグ（別枠）</div>
-                  <div className="text-sm text-slate-700 font-medium whitespace-pre-wrap mb-3">
-                    {post.tiktokHashtagText}
-                  </div>
-                  <button
-                    onClick={() => handleCopy(post.tiktokHashtagText!, copyKey + '_hashtag')}
-                    className="w-full py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white transition-all active:scale-[0.98]"
-                  >
-                    {copiedKey === copyKey + '_hashtag' ? (
-                      <><CheckIcon className="w-4 h-4" />ハッシュタグ コピー完了！</>
-                    ) : (
-                      <><ClipboardDocumentIcon className="w-4 h-4" />ハッシュタグをコピー</>
-                    )}
-                  </button>
-                </div>
-              )}
-
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={() => handleCopy(block.text, copyKey)}
-                  className={`w-full py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all transform active:scale-[0.98] shadow-lg ${themeClasses.button}`}
-                >
-                  {copiedKey === copyKey ? (
-                    <>
-                      <CheckIcon className="w-6 h-6" />
-                      コピー完了！
-                    </>
-                  ) : (
-                    <>
-                      <ClipboardDocumentIcon className="w-6 h-6" />
-                      {block.labels.join('・')}としてコピー
-                    </>
-                  )}
-                </button>
-
-                {getPostConfig(block.labels) && (() => {
-                  const cfg = getPostConfig(block.labels)!;
-                  const mobile = isMobile();
-                  const hasApp = !!cfg.appScheme;
-                  const btnLabel = mobile && hasApp
-                    ? (cfg.prefill ? `📲 ${cfg.label}（アプリに直接入力）` : `📲 コピー済み → ${cfg.label}（貼り付けてください）`)
-                    : `🚀 ${cfg.label}${cfg.prefill ? '' : '（自動コピー）'}`;
-                  return (
-                    <button
-                      onClick={() => handlePost(block.text, block.labels, copyKey + '_post')}
-                      className="w-full py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 transition-all transform active:scale-[0.98] bg-white border-2 border-current hover:opacity-80"
-                      style={{ color: block.labels[0] === 'X' ? '#000' : block.labels[0] === 'TikTok' ? '#fe2c55' : block.labels[0] === 'Instagram' ? '#e1306c' : block.labels[0] === 'Threads' ? '#7c3aed' : block.labels[0] === 'Twitch' ? '#9146ff' : block.labels[0] === 'SHOWROOM' ? '#f43f5e' : '#41c9b4' }}
-                    >
-                      {postedKey === copyKey + '_post' ? <>✅ 完了！</> : <>{btnLabel}</>}
-                    </button>
-                  );
-                })()}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-
-      {post.buzzScript?.scenes?.length ? (
-        <div className="rounded-[40px] shadow-2xl overflow-hidden border bg-white border-slate-100">
-          <div className="p-8 md:p-10 space-y-6">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div>
-                <div className="text-[11px] font-black tracking-[0.2em] text-slate-400 uppercase">Auto Video</div>
-                <h3 className="text-2xl font-black text-slate-800 mt-2">記事 → 動画 自動変換</h3>
-              </div>
-
-              <div className="flex gap-3 flex-wrap">
-                {!localVideo?.videoDataUrl && (
-                  <button
-                    type="button"
-                    onClick={handleGenerateVideo}
-                    disabled={videoLoading}
-                    className="px-5 py-3 rounded-2xl bg-black text-white font-black disabled:opacity-50"
-                  >
-                    {videoLoading ? '動画生成中…' : '動画を生成'}
-                  </button>
-                )}
-
-                {localVideo?.videoDataUrl && (
-                  <a
-                    href={localVideo.videoDataUrl}
-                    download={`${post.theme || 'tiktok-auto-video'}.webm`}
-                    className="px-5 py-3 rounded-2xl bg-emerald-600 text-white font-black"
-                  >
-                    動画を保存
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {localVideo?.videoDataUrl ? (
-              <video
-                controls
-                className="w-full rounded-3xl bg-black"
-                src={localVideo.videoDataUrl}
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${(bar.value / bar.max) * 100}%`, backgroundColor: bar.color }}
               />
-            ) : (
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 font-bold text-slate-600">
-                動画はまだ生成していません。必要な時だけ「動画を生成」を押してください。
-              </div>
-            )}
-
-            {(localVideo?.sceneImages?.length || post.buzzScript?.scenes?.length) ? (
-              <div className="space-y-4">
-                <div className="text-sm font-black text-slate-700">シーン構成</div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {post.buzzScript.scenes.map((scene) => (
-                    <div
-                      key={scene.id}
-                      className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                    >
-                      <div className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                        {scene.englishKeyword}
-                      </div>
-                      <div className="text-lg font-black text-slate-800 mt-2">
-                        {scene.title}
-                      </div>
-                      <div className="text-sm text-slate-600 mt-2 whitespace-pre-wrap">
-                        {scene.text}
-                      </div>
-                      <div className="text-xs text-slate-400 mt-3">
-                        {scene.durationSec}秒
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {localVideo?.sceneImages?.length ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {localVideo.sceneImages.map((src, index) => (
-                  <img
-                    key={`${src}-${index}`}
-                    src={src}
-                    alt={`scene-${index + 1}`}
-                    className="w-full rounded-2xl border border-slate-200"
-                  />
-                ))}
-              </div>
-            ) : null}
+            </div>
+            <span className="text-[10px] font-bold text-gray-500 w-8 text-right">{bar.value}/{bar.max}</span>
           </div>
-        </div>
-      ) : null}
+        ))}
+      </div>
+    </div>
+  );
+};
 
-      {post.schedulePack?.length ? (
-        <div className="rounded-[40px] shadow-2xl overflow-hidden border bg-white border-slate-100">
-          <div className="p-8 md:p-10 space-y-6">
-            <div>
-              <div className="text-[11px] font-black tracking-[0.2em] text-slate-400 uppercase">Schedule</div>
-              <h3 className="text-2xl font-black text-slate-800 mt-2">投稿スケジュール</h3>
-            </div>
+export const ResultCard: React.FC<ResultCardProps> = ({ content, enabledKeys }) => {
+  const getSeoText = () => {
+    if (!content.seoSet.title) return '';
+    return [
+      `タイトル：${content.seoSet.title}`,
+      `キーワード：${content.seoSet.keywords.join('、')}`,
+      `description：${content.seoSet.description}`,
+    ].join('\n');
+  };
 
-            <div className="space-y-3">
-              {post.schedulePack.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between gap-4"
-                >
-                  <div>
-                    <div className="font-black text-slate-800">{item.label}</div>
-                    <div className="text-sm text-slate-500">{item.time} / {item.outputTitle}</div>
-                  </div>
-                  <div className="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 font-black text-xs">
-                    {item.status}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : null}
+  const sections: { key: OutputKey; text: string }[] = [
+    { key: 'mainContent', text: content.mainContent },
+    { key: 'hashtags', text: content.hashtagText },
+    { key: 'threads', text: content.threadsPost },
+    { key: 'x', text: content.xPost },
+    { key: 'note', text: content.noteArticle },
+    { key: 'noteUrl', text: content.noteUrl },
+    { key: 'seo', text: getSeoText() },
+    { key: 'thumbnail', text: content.thumbnailPrompt },
+  ];
 
-      {history.length > 0 && (
-        <div className="rounded-[40px] shadow-2xl overflow-hidden border bg-white border-slate-100">
-          <div className="p-8 md:p-10 space-y-6">
-            <div>
-              <div className="text-[11px] font-black tracking-[0.2em] text-slate-400 uppercase">History</div>
-              <div className="flex items-center justify-between mt-2">
-                <h3 className="text-2xl font-black text-slate-800">生成履歴</h3>
-                {onClearHistory && (
-                  <button
-                    type="button"
-                    onClick={() => { if (window.confirm('履歴を全て削除しますか？')) onClearHistory(); }}
-                    className="px-4 py-2 rounded-2xl bg-red-50 text-red-500 border border-red-200 font-black text-sm hover:bg-red-100 transition-colors"
-                  >
-                    🗑 全て削除
-                  </button>
-                )}
-              </div>
-            </div>
+  const visibleSections = sections.filter(s => enabledKeys.includes(s.key) && s.text);
 
-            <div className="space-y-4">
-              {history.map((item, index) => (
-                <div
-                  key={`${item.timestamp ?? 'time'}-${index}`}
-                  className="rounded-3xl border border-slate-200 bg-slate-50 p-5"
-                >
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="space-y-2 min-w-0 flex-1">
-                      <div className="text-sm font-black text-slate-800 break-all">
-                        {item.title}
-                      </div>
-                      <div className="text-xs text-slate-500 font-bold">
-                        {item.theme || 'テーマ未設定'}
-                      </div>
-                      <div className="text-xs text-slate-400">
-                        {item.timestamp ? new Date(item.timestamp).toLocaleString('ja-JP') : ''}
-                      </div>
-                    </div>
+  return (
+    <div className="space-y-4">
+      {/* ヘッダー情報 */}
+      <div className="bg-white rounded-2xl p-4 flex flex-wrap gap-2 items-center">
+        <span
+          className="px-3 py-1 rounded-full text-xs font-bold"
+          style={{ backgroundColor: '#FFE0EC', color: '#72243E' }}
+        >
+          {content.theme}
+        </span>
+        <span
+          className="px-3 py-1 rounded-full text-xs font-bold"
+          style={{ backgroundColor: '#FFE0EC', color: '#72243E' }}
+        >
+          {content.hookType}
+        </span>
+        <span className="text-xs text-gray-400 ml-auto">
+          {new Date(content.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}生成
+        </span>
+      </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onSelectHistory?.(item)}
-                        className="px-4 py-2 rounded-2xl bg-indigo-600 text-white font-black text-sm"
-                      >
-                        表示する
-                      </button>
+      {/* バズ度スコア */}
+      <BuzzMeter score={content.buzzScore} />
 
-                      <button
-                        type="button"
-                        onClick={() => onDeleteHistory?.(item, index)}
-                        className="w-10 h-10 rounded-full bg-red-50 text-red-600 border border-red-200 flex items-center justify-center"
-                        aria-label="履歴を削除"
-                        title="履歴を削除"
-                      >
-                        <XMarkIcon className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* 各セクション */}
+      {visibleSections.map(section => (
+        <SectionBlock
+          key={section.key}
+          outputKey={section.key}
+          content={section.text}
+        />
+      ))}
+
+      {visibleSections.length === 0 && (
+        <div className="text-center text-gray-400 text-sm py-8">
+          出力する項目を選択してください
         </div>
       )}
     </div>
