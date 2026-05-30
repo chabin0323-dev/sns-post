@@ -58,7 +58,7 @@ function pickRandom<T>(arr: T[]): T {
 }
 
 // ============================================================
-// メイン生成関数（Gemini API不使用・全ジャンル対応）
+// メイン生成関数
 // ============================================================
 export function generateContent(params: {
   theme: Theme;
@@ -125,3 +125,36 @@ export function generateContent(params: {
     timestamp: new Date().toISOString(),
   };
 }
+
+// ============================================================
+// InputFormで使用する定数のexport
+// ============================================================
+export const ALL_HOOK_TYPES: HookType[] = ['否定系', '不安系', '暴露系', '男性心理系', '実は系'];
+
+export const ALL_OUTPUT_KEYS: OutputKey[] = [
+  'mainContent',
+  'hashtags',
+  'threads',
+  'x',
+  'note',
+  'noteUrl',
+  'seo',
+  'thumbnail',
+];
+
+export const OUTPUT_KEY_LABELS: Record<OutputKey, string> = {
+  mainContent: 'TikTok / YouTube / Instagram 共用台本',
+  hashtags: 'ハッシュタグ',
+  threads: 'Threads投稿文',
+  x: 'X投稿文',
+  note: 'note記事',
+  noteUrl: 'note URL補填',
+  seo: 'SEOセット',
+  thumbnail: 'サムネプロンプト',
+};
+
+export const DEFAULT_ENABLED_KEYS: OutputKey[] = [
+  'mainContent',
+  'hashtags',
+  'threads',
+];
