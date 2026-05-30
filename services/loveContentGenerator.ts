@@ -1,10 +1,10 @@
 // services/loveContentGenerator.ts
-// Gemini API不使用・完全ローカルテンプレート方式
+// Gemini API不使用・完全ローカルテンプレート方式・全ジャンル対応
 
 import type { GeneratedContent, Theme, HookType, OutputKey } from '../types';
 
 // ============================================================
-// フックタイプ別・汎用テンプレート
+// フックタイプ別・汎用テンプレート（{theme}に自由入力が入る）
 // ============================================================
 const HOOK_TEMPLATES: Record<HookType, string[]> = {
   '否定系': [
@@ -35,25 +35,19 @@ const HOOK_TEMPLATES: Record<HookType, string[]> = {
 };
 
 // ============================================================
-// ハッシュタグテンプレート
+// 汎用ハッシュタグ生成（どんなジャンルでも対応）
 // ============================================================
-const HASHTAG_TEMPLATES: Record<Theme, string[]> = {
-  '脈なし': ['#脈なし', '#恋愛心理', '#片思い', '#恋愛相談', '#恋愛TikTok'],
-  '脈あり': ['#脈あり', '#恋愛サイン', '#好き避け', '#恋愛心理', '#恋愛TikTok'],
-  '男性心理': ['#男性心理', '#男心', '#恋愛心理学', '#恋愛相談', '#恋愛TikTok'],
-  'LINE': ['#LINE', '#ライン既読無視', '#恋愛LINE', '#恋愛相談', '#恋愛TikTok'],
-  '片思い': ['#片思い', '#恋愛相談', '#好きな人', '#恋愛心理', '#恋愛TikTok'],
-  '復縁': ['#復縁', '#元彼', '#復縁方法', '#恋愛相談', '#恋愛TikTok'],
-  '運命の人': ['#運命の人', '#ソウルメイト', '#恋愛', '#引き寄せ', '#恋愛TikTok'],
-  '恋愛心理学': ['#恋愛心理学', '#心理学', '#恋愛相談', '#恋愛テクニック', '#恋愛TikTok'],
-  '職場恋愛': ['#職場恋愛', '#社内恋愛', '#恋愛相談', '#恋愛心理', '#恋愛TikTok'],
-  '人間関係': ['#人間関係', '#人間関係の悩み', '#コミュニケーション', '#恋愛相談', '#恋愛TikTok'],
-  '婚活': ['#婚活', '#婚活女子', '#結婚', '#婚活TikTok', '#恋愛TikTok'],
-  '年の差恋愛': ['#年の差恋愛', '#年上彼氏', '#年下彼氏', '#恋愛相談', '#恋愛TikTok'],
-  '既婚者の恋愛': ['#既婚者の恋愛', '#不倫', '#恋愛相談', '#恋愛心理', '#恋愛TikTok'],
-  'マッチングアプリ': ['#マッチングアプリ', '#マッチングアプリ攻略', '#婚活', '#恋愛TikTok', '#出会い'],
-  '不倫': ['#不倫', '#不倫相談', '#恋愛相談', '#恋愛心理', '#恋愛TikTok'],
-  'セフレ友達以上': ['#セフレ', '#友達以上恋人未満', '#恋愛相談', '#恋愛心理', '#恋愛TikTok'],
+const generateHashtags = (theme: string): string[] => {
+  return [
+    `#${theme}`,
+    `#${theme}攻略`,
+    `#${theme}初心者`,
+    `#${theme}tips`,
+    `#知らないと損`,
+    `#TikTok`,
+    `#SNS発信`,
+    `#バズる投稿`,
+  ];
 };
 
 // ============================================================
@@ -64,7 +58,7 @@ function pickRandom<T>(arr: T[]): T {
 }
 
 // ============================================================
-// メイン生成関数（Gemini API不使用）
+// メイン生成関数（Gemini API不使用・全ジャンル対応）
 // ============================================================
 export function generateContent(params: {
   theme: Theme;
@@ -87,7 +81,7 @@ export function generateContent(params: {
 
   const mainContent = mainScriptBase + lengthSuffix;
 
-  const hashtags = HASHTAG_TEMPLATES[theme] ?? ['#恋愛', '#恋愛TikTok', '#恋愛相談'];
+  const hashtags = generateHashtags(theme);
   const hashtagText = hashtags.join(' ');
 
   const threadsPost = `${mainContent}\n\n${hashtagText}`;
@@ -98,11 +92,11 @@ export function generateContent(params: {
 
   const seoSet = {
     title: `${theme}の真実｜知らないと損する3つのこと`,
-    keywords: [theme, '恋愛相談', '恋愛心理学', 'TikTok恋愛', '恋愛tips'],
-    description: `${theme}について、知らないと損する本当のことを解説。恋愛心理学の観点からわかりやすく説明します。`,
+    keywords: [theme, `${theme} 方法`, `${theme} コツ`, `${theme} 初心者`, 'TikTok'],
+    description: `${theme}について、知らないと損する本当のことを解説。わかりやすく説明します。`,
   };
 
-  const thumbnailPrompt = `テーマ「${theme}」のTikTokサムネイル。インパクトのある文字「${mainScriptBase.split('\n')[0]}」をメインに、ピンク系の背景、驚いた表情のイラスト。`;
+  const thumbnailPrompt = `テーマ「${theme}」のTikTokサムネイル。インパクトのある文字「${mainScriptBase.split('\n')[0]}」をメインに、目を引く背景、驚いた表情のイラスト。`;
 
   const buzzScore = {
     hookPower: hookType === '暴露系' ? 90 : hookType === '否定系' ? 85 : 80,
