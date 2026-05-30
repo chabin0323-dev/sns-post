@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { LoadingState } from '../types';
 import type { Theme, HookType, OutputKey } from '../types';
 import {
-  ALL_THEMES,
   ALL_HOOK_TYPES,
   ALL_OUTPUT_KEYS,
   OUTPUT_KEY_LABELS,
@@ -15,6 +14,13 @@ const PROFILE_CTA_OPTIONS = [
   'あなたの運命の人、プロフィールで診断中👇',
   '相性占い無料でできます！詳しくはプロフへ👇',
   '気になる彼との相性、プロフィールで今すぐチェック👇',
+];
+
+// よく使われるジャンルのサジェスト
+const THEME_SUGGESTIONS = [
+  '恋愛', 'お金・節約', '副業', '美容・スキンケア', '筋トレ・ダイエット',
+  '育児', '料理・レシピ', 'メンタル・自己啓発', '転職・キャリア', '投資',
+  '片思い', '復縁', 'マッチングアプリ', '婚活', 'スピリチュアル',
 ];
 
 const TIKTOK_LENGTHS: (300 | 500 | 600)[] = [300, 500, 600];
@@ -39,7 +45,7 @@ export const InputForm: React.FC<InputFormProps> = ({ onGenerate, loadingState }
   const isLoading = loadingState === LoadingState.LOADING;
 
   const [prevTitle, setPrevTitle] = useState('');
-  const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null);
+  const [themeInput, setThemeInput] = useState('');
   const [selectedHook, setSelectedHook] = useState<HookType | null>(null);
   const [enabledKeys, setEnabledKeys] = useState<Set<OutputKey>>(new Set(DEFAULT_ENABLED_KEYS));
   const [tiktokLength, setTiktokLength] = useState<300 | 500 | 600>(500);
@@ -59,12 +65,12 @@ export const InputForm: React.FC<InputFormProps> = ({ onGenerate, loadingState }
     });
   };
 
-  const canGenerate = selectedTheme !== null && selectedHook !== null && !isLoading;
+  const canGenerate = themeInput.trim() !== '' && selectedHook !== null && !isLoading;
 
   const handleSubmit = () => {
-    if (!canGenerate || !selectedTheme || !selectedHook) return;
+    if (!canGenerate || !selectedHook) return;
     onGenerate({
-      theme: selectedTheme,
+      theme: themeInput.trim(),
       hookType: selectedHook,
       prevTitle,
       enabledKeys: Array.from(enabledKeys),
@@ -93,26 +99,33 @@ export const InputForm: React.FC<InputFormProps> = ({ onGenerate, loadingState }
         />
       </div>
 
-      {/* テーマ選択 */}
+      {/* ジャンル・テーマ自由入力 */}
       <div className="space-y-3">
         <label className="block text-sm font-bold text-gray-700">
-          テーマ選択
-          <span className="ml-2 text-xs font-normal text-[#D4537E]">
-            {selectedTheme ? `「${selectedTheme}」選択中` : '未選択'}
-          </span>
+          ジャンル・テーマ
+          <span className="ml-2 text-xs font-normal text-gray-400">（自由に入力できます）</span>
         </label>
+        <input
+          type="text"
+          value={themeInput}
+          onChange={e => setThemeInput(e.target.value)}
+          placeholder="例：恋愛、お金の節約術、筋トレ、育児..."
+          className="w-full px-4 py-3 rounded-2xl border border-gray-200 text-sm outline-none focus:border-[#D4537E] transition-colors"
+          disabled={isLoading}
+        />
+        {/* サジェストチップ */}
         <div className="flex flex-wrap gap-2">
-          {ALL_THEMES.map(theme => (
+          {THEME_SUGGESTIONS.map(suggestion => (
             <button
-              key={theme}
+              key={suggestion}
               type="button"
-              onClick={() => setSelectedTheme(theme === selectedTheme ? null : theme)}
+              onClick={() => setThemeInput(suggestion)}
               disabled={isLoading}
-              className={`px-3 py-1.5 rounded-full text-sm font-bold border transition-all active:scale-95 disabled:opacity-50 ${
-                selectedTheme === theme ? ACTIVE_TAG : INACTIVE_TAG
+              className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all active:scale-95 disabled:opacity-50 ${
+                themeInput === suggestion ? ACTIVE_TAG : INACTIVE_TAG
               }`}
             >
-              {theme}
+              {suggestion}
             </button>
           ))}
         </div>
@@ -245,10 +258,10 @@ export const InputForm: React.FC<InputFormProps> = ({ onGenerate, loadingState }
         )}
       </button>
 
-      {!selectedTheme && (
-        <p className="text-center text-xs text-gray-400">テーマとフックタイプを選択してください</p>
+      {themeInput.trim() === '' && (
+        <p className="text-center text-xs text-gray-400">ジャンル・テーマを入力してください</p>
       )}
-      {selectedTheme && !selectedHook && (
+      {themeInput.trim() !== '' && !selectedHook && (
         <p className="text-center text-xs text-gray-400">フックタイプを選択してください</p>
       )}
     </div>
