@@ -23,9 +23,7 @@ const App: React.FC = () => {
   }) => {
     setLoadingState(LoadingState.LOADING);
     setEnabledKeys(params.enabledKeys);
-
     await new Promise(r => setTimeout(r, 400));
-
     try {
       const result = generateContent(params);
       setCurrentContent(result);
@@ -41,17 +39,16 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FFF0F5' }}>
       <Header />
-
       <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         {/* キャッチコピー */}
         <div className="text-center space-y-1">
           <h2 className="text-2xl font-black text-gray-800">
-            テーマを選ぶだけで
+            ジャンルを入力するだけで
           </h2>
           <p className="text-2xl font-black" style={{ color: '#D4537E' }}>
-            バズる恋愛コンテンツが完成
+            バズるSNSコンテンツが完成
           </p>
-          <p className="text-xs text-gray-500 mt-2">APIキー不要・完全ローカル生成</p>
+          <p className="text-xs text-gray-500 mt-2">恋愛・お金・美容・育児など全ジャンル対応</p>
         </div>
 
         {/* 入力フォーム */}
@@ -66,16 +63,14 @@ const App: React.FC = () => {
             生成に失敗しました。もう一度お試しください。
           </div>
         )}
-
         {loadingState === LoadingState.SUCCESS && currentContent && (
           <div ref={resultRef}>
             <ResultCard content={currentContent} enabledKeys={enabledKeys} />
           </div>
         )}
       </main>
-
       <footer className="text-center py-10 text-xs text-gray-400 select-none">
-        恋愛TikTok台本ジェネレーター
+        SNS投稿ジェネレーター
       </footer>
     </div>
   );
