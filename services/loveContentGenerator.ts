@@ -58,7 +58,7 @@ function adjustLength(text: string, targetLength: number, profileCta: string): s
 
   let result = text;
   for (const extra of extraContents) {
-    const currentLength = (result + suffix).length;
+    const currentLength = (result + suffix).replace(/\n/g, 'X').length;
     if (currentLength >= targetLength) break;
     result += extra;
   }
