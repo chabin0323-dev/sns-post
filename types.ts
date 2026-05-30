@@ -5,10 +5,8 @@ export enum LoadingState {
   ERROR = 'ERROR',
 }
 
-export type Theme =
-  | '脈なし' | '脈あり' | '男性心理' | 'LINE' | '片思い' | '復縁'
-  | '運命の人' | '恋愛心理学' | '職場恋愛' | '人間関係' | '婚活'
-  | '年の差恋愛' | '既婚者の恋愛' | 'マッチングアプリ' | '不倫' | 'セフレ友達以上';
+// テーマを固定リストからstring型に変更（自由入力対応）
+export type Theme = string;
 
 export type HookType = '否定系' | '不安系' | '暴露系' | '男性心理系' | '実は系';
 
