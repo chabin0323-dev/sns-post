@@ -16,7 +16,131 @@ const HOOK_TEMPLATES: Record<HookType, string[]> = {
     `【{theme}のプロが隠していること】\n\n{theme}を長年やってきた人が教えてくれない本音があります。\n\n表では言えないことを今日は正直に話します。\n\n実は知られていない3つの事実：\n\n①一般的に言われていることは古い\n情報は常に更新されています。最新の方法を取り入れることが大切です。\n\n②本当に効果があるのは別の方法\n表に出ている情報だけでは本当の結果は出ません。\n\n③プロが実際にやっていることは違う\n見せている部分と実際にやっていることは別です。\n\nこれを知っているかどうかで結果が全然違ってきます。`,
     `【{theme}の裏側、教えます】\n\n{theme}について一般的に言われていることと実際は全然違います。\n\n現場を知っているからこそ言える本音を話します。\n\n裏側の真実3選：\n\n①表に出ない成功の法則がある\n公開されていない方法こそが本当に効果的なことが多いです。\n\n②失敗する人には共通パターンがある\n同じ失敗を繰り返さないためにパターンを知ることが重要です。\n\n③知っている人だけが得をしている\n情報格差が結果の差を生んでいます。\n\nこの情報をぜひ活用してください。知ることから全てが始まります。`,
     `【誰も教えてくれない{theme}の真実】\n\n{theme}を始める前に知っておくべきことがあります。\n\nきれいごとじゃない、リアルな話をします。\n\n知らないと損する3つの真実：\n\n①最初に躓くポイントは決まっている\n事前に知っておくだけで多くの失敗を防げます。\n\n②うまくいく人には共通点がある\n成功パターンを真似ることが最も効率的な方法です。\n\n③正しい順番で取り組むことが全て\n順番を間違えるとどれだけ努力しても結果が出ません。\n\nこれを知った上で始めると結果が大きく変わります。`,
-  ],
+  ],const generateHashtags = (theme: string): string[] => {
+  return [
+    `#${theme}`,
+    `#${theme}攻略`,
+    `#${theme}初心者`,
+    `#${theme}tips`,
+    `#知らないと損`,
+    `#TikTok`,
+    `#SNS発信`,
+    `#バズる投稿`,
+  ];
+};
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function adjustLength(text: string, targetLength: number, profileCta: string): string {
+  const suffix = `\n\n詳しくはプロフィールのリンクから👆\n\n${profileCta}`;
+  const fillers = [
+    '\n\nこれを知っているだけで結果が大きく変わります。',
+    '\n\n今日から意識するだけで3ヶ月後の自分が変わります。',
+    '\n\n小さな一歩を踏み出すことが全ての始まりです。',
+    '\n\nまず今日1つだけ実践してみてください。',
+    '\n\n知ることから全てが始まります。一緒に成長していきましょう。',
+  ];
+
+  let result = text + suffix;
+  let fillerIndex = 0;
+  while (result.length < targetLength && fillerIndex < fillers.length) {
+    result = text + fillers[fillerIndex] + suffix;
+    fillerIndex++;
+  }
+
+  return result;
+}
+
+export function generateContent(params: {
+  theme: Theme;
+  hookType: HookType;
+  prevTitle: string;
+  enabledKeys: OutputKey[];
+  tiktokLength: 300 | 500 | 600;
+  profileCta: string;
+  postUrl: string;
+}): GeneratedContent {
+  const { theme, hookType, prevTitle, profileCta, postUrl, tiktokLength } = params;
+
+  const templates = HOOK_TEMPLATES[hookType];
+  const rawTemplate = pickRandom(templates);
+  const mainScriptBase = rawTemplate.replace(/\{theme\}/g, theme);
+
+  const mainContent = adjustLength(mainScriptBase, tiktokLength, profileCta);
+
+  const hashtags = generateHashtags(theme);
+  const hashtagText = hashtags.join(' ');
+  const threadsPost = `${mainContent}\n\n${hashtagText}`;
+  const xPost = mainScriptBase.split('\n').slice(0, 4).join('\n') + `\n\n${postUrl}`;
+  const noteArticle = `# ${theme}について知っておくべきこと\n\n${mainContent}\n\n---\n詳しくはこちら: ${postUrl}`;
+
+  const seoSet = {
+    title: `${theme}の真実｜知らないと損する3つのこと`,
+    keywords: [theme, `${theme} 方法`, `${theme} コツ`, `${theme} 初心者`, 'TikTok'],
+    description: `${theme}について、知らないと損する本当のことを解説。わかりやすく説明します。`,
+  };
+
+  const thumbnailPrompt = `テーマ「${theme}」のTikTokサムネイル。インパクトのある文字「${mainScriptBase.split('\n')[0]}」をメインに、目を引く背景、驚いた表情のイラスト。`;
+
+  const buzzScore = {
+    hookPower: hookType === '暴露系' ? 90 : hookType === '否定系' ? 85 : 80,
+    saveRate: 75,
+    commentRate: 70,
+    profileRate: 80,
+    seoScore: 75,
+    total: 78,
+    comment: `${hookType}は反応率が高いフックです。${theme}との相性も良好。`,
+  };
+
+  return {
+    theme,
+    hookType,
+    prevTitle,
+    mainContent,
+    hashtags,
+    hashtagText,
+    threadsPost,
+    xPost,
+    noteArticle,
+    noteUrl: postUrl,
+    seoSet,
+    thumbnailPrompt,
+    buzzScore,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+export const ALL_HOOK_TYPES: HookType[] = ['否定系', '不安系', '暴露系', '男性心理系', '実は系'];
+
+export const ALL_OUTPUT_KEYS: OutputKey[] = [
+  'mainContent',
+  'hashtags',
+  'threads',
+  'x',
+  'note',
+  'noteUrl',
+  'seo',
+  'thumbnail',
+];
+
+export const OUTPUT_KEY_LABELS: Record<OutputKey, string> = {
+  mainContent: 'TikTok / YouTube / Instagram 共用台本',
+  hashtags: 'ハッシュタグ',
+  threads: 'Threads投稿文',
+  x: 'X投稿文',
+  note: 'note記事',
+  noteUrl: 'note URL補填',
+  seo: 'SEOセット',
+  thumbnail: 'サムネプロンプト',
+};
+
+export const DEFAULT_ENABLED_KEYS: OutputKey[] = [
+  'mainContent',
+  'hashtags',
+  'threads',
+];
   '男性心理系': [
     `【{theme}で相手が本当に思っていること】\n\n{theme}について相手は何を考えているのか。\n\n言葉にならない本音を心理学の観点から解説します。\n\n相手の本音3選：\n\n①表面上の言葉と本心は違う\n言葉よりも行動を見ることで本当の気持ちがわかります。\n\n②行動に本当の気持ちが出る\n無意識の行動ほど本音が現れやすいです。\n\n③タイミングと状況が全てを左右する\n同じことでもタイミング次第で全く違う結果になります。\n\n知るだけで、関係が変わります。相手の気持ちを理解することが最初の一歩です。`,
     `【{theme}、実は相手はこう見ています】\n\nあなたの{theme}に対する行動、相手にはどう映っているか知っていますか？\n\n意外な真実を明かします。\n\n相手が実は気にしていること3選：\n\n①細かい言動や態度\n小さなことほど相手の記憶に残りやすいです。\n\n②一貫性があるかどうか\n言動が一致しているかを相手はよく見ています。\n\n③本気度が伝わっているかどうか\nどれだけ本気かが相手の反応を左右します。\n\nこの3つを意識するだけで相手の反応が大きく変わります。ぜひ試してみてください。`,
