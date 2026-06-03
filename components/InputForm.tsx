@@ -21,7 +21,8 @@ const OUTPUT_OPTIONS: { key: OutputKey; label: string; emoji: string }[] = [
   { key: 'x', label: 'X(Twitter)', emoji: '𝕏' },
   { key: 'note', label: 'note記事', emoji: '📝' },
   { key: 'seo', label: 'SEO対策', emoji: '🔍' },
-  { key: 'thumbnail', label: 'サムネイル案', emoji: '🖼️' },
+  { key: 'thumbnailTikTok', label: 'TikTokサムネイル', emoji: '📱' },
+  { key: 'thumbnailNote', label: 'noteサムネイル', emoji: '🖼️' },
 ];
 
 const PROFILE_CTAS = [
@@ -76,198 +77,105 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
 
   return (
     <div className="space-y-5">
-
-      {/* ジャンル選択 */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100">
-        <label className="block text-sm font-bold text-gray-700 mb-3">
-          📂 ジャンルを選択
-        </label>
+        <label className="block text-sm font-bold text-gray-700 mb-3">📂 ジャンルを選択</label>
         <div className="grid grid-cols-2 gap-2">
           {GENRES.map(g => (
-            <button
-              key={g}
-              onClick={() => handleGenreChange(g)}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                genre === g
-                  ? 'text-white shadow-md scale-[1.02]'
-                  : 'bg-pink-50 text-gray-600 hover:bg-pink-100'
-              }`}
-              style={genre === g ? { background: 'linear-gradient(135deg, #F472B6, #EC4899)' } : {}}
-            >
-              <span className="text-base">{GENRE_ICONS[g]}</span>
-              <span>{g}</span>
+            <button key={g} onClick={() => handleGenreChange(g)}
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${genre === g ? 'text-white shadow-md scale-[1.02]' : 'bg-pink-50 text-gray-600 hover:bg-pink-100'}`}
+              style={genre === g ? { background: 'linear-gradient(135deg, #F472B6, #EC4899)' } : {}}>
+              <span className="text-base">{GENRE_ICONS[g]}</span><span>{g}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* テーマ選択 */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100">
-        <label className="block text-sm font-bold text-gray-700 mb-3">
-          🎯 テーマを選択
-        </label>
+        <label className="block text-sm font-bold text-gray-700 mb-3">🎯 テーマを選択</label>
         <div className="grid grid-cols-2 gap-2">
           {themes.map(t => (
-            <button
-              key={t}
-              onClick={() => setTheme(t)}
-              className={`px-3 py-2.5 rounded-xl text-sm font-bold transition-all text-left ${
-                theme === t
-                  ? 'text-white shadow-md'
-                  : 'bg-gray-50 text-gray-600 hover:bg-pink-50'
-              }`}
-              style={theme === t ? { background: 'linear-gradient(135deg, #FB7185, #F43F5E)' } : {}}
-            >
+            <button key={t} onClick={() => setTheme(t)}
+              className={`px-3 py-2.5 rounded-xl text-sm font-bold transition-all text-left ${theme === t ? 'text-white shadow-md' : 'bg-gray-50 text-gray-600 hover:bg-pink-50'}`}
+              style={theme === t ? { background: 'linear-gradient(135deg, #FB7185, #F43F5E)' } : {}}>
               {t}
             </button>
           ))}
         </div>
       </div>
 
-      {/* フック自動選択バッジ */}
-      <div
-        className="rounded-2xl p-4 flex items-center gap-3"
-        style={{ background: 'linear-gradient(135deg, #FDF4FF, #FAE8FF)' }}
-      >
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg, #A855F7, #7C3AED)' }}
-        >
-          ✨
-        </div>
+      <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #FDF4FF, #FAE8FF)' }}>
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: 'linear-gradient(135deg, #A855F7, #7C3AED)' }}>✨</div>
         <div>
           <p className="text-sm font-black text-purple-800">フックタイプ：AIバズお任せ自動選択</p>
-          <p className="text-xs text-purple-500 mt-0.5">
-            ジャンル×テーマから最もバズるフックを自動で選びます
-          </p>
+          <p className="text-xs text-purple-500 mt-0.5">ジャンル×テーマから最もバズるフックを自動で選びます</p>
         </div>
       </div>
 
-      {/* 文字数 */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100">
-        <label className="block text-sm font-bold text-gray-700 mb-3">
-          📏 文字数
-        </label>
+        <label className="block text-sm font-bold text-gray-700 mb-3">📏 文字数</label>
         <div className="flex gap-3">
           {([300, 500, 600] as const).map(len => (
-            <button
-              key={len}
-              onClick={() => setTiktokLength(len)}
-              className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
-                tiktokLength === len
-                  ? 'text-white shadow-md'
-                  : 'bg-gray-50 text-gray-600 hover:bg-pink-50'
-              }`}
-              style={tiktokLength === len ? { background: 'linear-gradient(135deg, #F472B6, #EC4899)' } : {}}
-            >
+            <button key={len} onClick={() => setTiktokLength(len)}
+              className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${tiktokLength === len ? 'text-white shadow-md' : 'bg-gray-50 text-gray-600 hover:bg-pink-50'}`}
+              style={tiktokLength === len ? { background: 'linear-gradient(135deg, #F472B6, #EC4899)' } : {}}>
               {len}文字
             </button>
           ))}
         </div>
       </div>
 
-      {/* 出力項目 */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100">
-        <label className="block text-sm font-bold text-gray-700 mb-3">
-          📦 出力する項目を選択
-        </label>
+        <label className="block text-sm font-bold text-gray-700 mb-3">📦 出力する項目を選択</label>
         <div className="grid grid-cols-2 gap-2">
           {OUTPUT_OPTIONS.map(({ key, label, emoji }) => (
-            <button
-              key={key}
-              onClick={() => toggleKey(key)}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                enabledKeys.includes(key)
-                  ? 'text-white shadow-md'
-                  : 'bg-gray-50 text-gray-500 hover:bg-pink-50'
-              }`}
-              style={enabledKeys.includes(key) ? { background: 'linear-gradient(135deg, #34D399, #10B981)' } : {}}
-            >
-              <span>{emoji}</span>
-              <span>{label}</span>
+            <button key={key} onClick={() => toggleKey(key)}
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${enabledKeys.includes(key) ? 'text-white shadow-md' : 'bg-gray-50 text-gray-500 hover:bg-pink-50'}`}
+              style={enabledKeys.includes(key) ? { background: 'linear-gradient(135deg, #34D399, #10B981)' } : {}}>
+              <span>{emoji}</span><span>{label}</span>
               {enabledKeys.includes(key) && <span className="ml-auto text-white">✓</span>}
             </button>
           ))}
         </div>
       </div>
 
-      {/* プロフィール誘導文 */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100">
-        <label className="block text-sm font-bold text-gray-700 mb-3">
-          👤 プロフィール誘導文
-        </label>
+        <label className="block text-sm font-bold text-gray-700 mb-3">👤 プロフィール誘導文</label>
         <div className="space-y-2">
           {PROFILE_CTAS.map(cta => (
-            <button
-              key={cta}
-              onClick={() => setProfileCta(cta)}
-              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                profileCta === cta
-                  ? 'text-white shadow-md'
-                  : 'bg-gray-50 text-gray-600 hover:bg-pink-50'
-              }`}
-              style={profileCta === cta ? { background: 'linear-gradient(135deg, #F472B6, #EC4899)' } : {}}
-            >
+            <button key={cta} onClick={() => setProfileCta(cta)}
+              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${profileCta === cta ? 'text-white shadow-md' : 'bg-gray-50 text-gray-600 hover:bg-pink-50'}`}
+              style={profileCta === cta ? { background: 'linear-gradient(135deg, #F472B6, #EC4899)' } : {}}>
               {cta}
             </button>
           ))}
-          <input
-            type="text"
-            placeholder="カスタム入力..."
+          <input type="text" placeholder="カスタム入力..."
             value={PROFILE_CTAS.includes(profileCta) ? '' : profileCta}
             onChange={e => setProfileCta(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
-          />
+            className="w-full px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
         </div>
       </div>
 
-      {/* 投稿URL・前回タイトル */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100 space-y-4">
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            🔗 投稿URL（Threads/X等）
-          </label>
-          <input
-            type="text"
-            placeholder="https://threads.net/..."
-            value={postUrl}
+          <label className="block text-sm font-bold text-gray-700 mb-2">🔗 投稿URL（Threads/X等）</label>
+          <input type="text" placeholder="https://threads.net/..." value={postUrl}
             onChange={e => setPostUrl(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
-          />
+            className="w-full px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
         </div>
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            📌 前回の投稿タイトル（任意）
-          </label>
-          <input
-            type="text"
-            placeholder="前回の人気投稿を参考に生成..."
-            value={prevTitle}
+          <label className="block text-sm font-bold text-gray-700 mb-2">📌 前回の投稿タイトル（任意）</label>
+          <input type="text" placeholder="前回の人気投稿を参考に生成..." value={prevTitle}
             onChange={e => setPrevTitle(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
-          />
+            className="w-full px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
         </div>
       </div>
 
-      {/* 生成ボタン */}
-      <button
-        onClick={handleSubmit}
-        disabled={isLoading || enabledKeys.length === 0}
+      <button onClick={handleSubmit} disabled={isLoading || enabledKeys.length === 0}
         className="w-full py-4 rounded-2xl text-white text-base font-black tracking-wide transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-        style={{
-          background: isLoading
-            ? '#ccc'
-            : 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #DB2777 100%)',
-          boxShadow: isLoading ? 'none' : '0 4px 20px rgba(236, 72, 153, 0.4)',
-        }}
-      >
-        {isLoading ? (
-          <span className="flex items-center justify-center gap-2">
-            <span className="animate-spin">⟳</span> 生成中...
-          </span>
-        ) : (
-          '🔥 2026年バズる投稿を生成する'
-        )}
+        style={{ background: isLoading ? '#ccc' : 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #DB2777 100%)', boxShadow: isLoading ? 'none' : '0 4px 20px rgba(236, 72, 153, 0.4)' }}>
+        {isLoading
+          ? <span className="flex items-center justify-center gap-2"><span className="animate-spin">⟳</span> 生成中...</span>
+          : '🔥 2026年バズる投稿を生成する'}
       </button>
     </div>
   );
