@@ -1,32 +1,52 @@
 import React, { useState } from 'react';
+import type { Genre, Theme, HookType, OutputKey } from '../types';
 import { LoadingState } from '../types';
-import type { Theme, HookType, OutputKey } from '../types';
-import {
-  ALL_HOOK_TYPES,
-  ALL_OUTPUT_KEYS,
-  OUTPUT_KEY_LABELS,
-  DEFAULT_ENABLED_KEYS,
-} from '../services/loveContentGenerator';
+import { GENRE_THEMES } from '../services/contentGenerator';
 
-const PROFILE_CTA_OPTIONS = [
-  '気になる人との相性はプロフィールへ👇',
-  '無料で相性診断できます！プロフィールへ👇',
-  'あなたの運命の人、プロフィールで診断中👇',
-  '相性占い無料でできます！詳しくはプロフへ👇',
-  '気になる彼との相性、プロフィールで今すぐチェック👇',
+const GENRES: Genre[] = [
+  '恋愛', 'お金・資産', '副業・稼ぐ', '美容・ダイエット', '育児・子育て',
+  '健康・メンタル', '転職・キャリア', '人間関係', 'ビジネス・起業', 'ライフスタイル',
 ];
 
-// よく使われるジャンルのサジェスト
-const THEME_SUGGESTIONS = [
-  '恋愛', 'お金・節約', '副業', '美容・スキンケア', '筋トレ・ダイエット',
-  '育児', '料理・レシピ', 'メンタル・自己啓発', '転職・キャリア', '投資',
-  '片思い', '復縁', 'マッチングアプリ', '婚活', 'スピリチュアル',
+const GENRE_ICONS: Record<Genre, string> = {
+  '恋愛': '💕', 'お金・資産': '💰', '副業・稼ぐ': '🔥', '美容・ダイエット': '✨',
+  '育児・子育て': '👶', '健康・メンタル': '🌿', '転職・キャリア': '💼',
+  '人間関係': '🤝', 'ビジネス・起業': '🚀', 'ライフスタイル': '🌸',
+};
+
+const HOOK_TYPES: HookType[] = ['否定系', '不安系', '暴露系', '共感系', '実は系', '数字系', '限定系'];
+
+const HOOK_DESCRIPTIONS: Record<HookType, string> = {
+  '否定系': '常識を否定して注目を集める',
+  '不安系': '読者の不安を刺激して引き込む',
+  '暴露系': '秘密・裏側を明かして好奇心を刺激',
+  '共感系': '読者の気持ちに寄り添う',
+  '実は系': '意外な事実を提示して驚かせる',
+  '数字系': '具体的な数字で信頼性を高める',
+  '限定系': '特別感・希少性で行動を促す',
+};
+
+const OUTPUT_OPTIONS: { key: OutputKey; label: string; emoji: string }[] = [
+  { key: 'mainContent', label: 'TikTok台本', emoji: '🎬' },
+  { key: 'hashtags', label: 'ハッシュタグ', emoji: '#️⃣' },
+  { key: 'threads', label: 'Threads投稿', emoji: '🧵' },
+  { key: 'x', label: 'X(Twitter)', emoji: '𝕏' },
+  { key: 'note', label: 'note記事', emoji: '📝' },
+  { key: 'seo', label: 'SEO対策', emoji: '🔍' },
+  { key: 'thumbnail', label: 'サムネイル案', emoji: '🖼️' },
 ];
 
-const TIKTOK_LENGTHS: (300 | 500 | 600)[] = [300, 500, 600];
+const PROFILE_CTAS = [
+  'プロフィールに詳しいリンクあります✨',
+  '続きはプロフィールのnoteで公開中📝',
+  '無料相談はプロフィールのLINEから💌',
+  '詳細はプロフィールから確認してね👇',
+  '保存して後で使ってね📌',
+];
 
-interface InputFormProps {
+interface Props {
   onGenerate: (params: {
+    genre: Genre;
     theme: Theme;
     hookType: HookType;
     prevTitle: string;
@@ -38,165 +58,128 @@ interface InputFormProps {
   loadingState: LoadingState;
 }
 
-const ACTIVE_TAG = 'bg-[#FFE0EC] border-[#D4537E] text-[#72243E]';
-const INACTIVE_TAG = 'bg-white border-gray-200 text-gray-600 hover:border-[#D4537E] hover:text-[#D4537E]';
-
-export const InputForm: React.FC<InputFormProps> = ({ onGenerate, loadingState }) => {
-  const isLoading = loadingState === LoadingState.LOADING;
-
+export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
+  const [genre, setGenre] = useState<Genre>('恋愛');
+  const [theme, setTheme] = useState<Theme>('脈なし');
+  const [hookType, setHookType] = useState<HookType>('否定系');
   const [prevTitle, setPrevTitle] = useState('');
-  const [themeInput, setThemeInput] = useState('');
-  const [selectedHook, setSelectedHook] = useState<HookType | null>(null);
-  const [enabledKeys, setEnabledKeys] = useState<Set<OutputKey>>(new Set(DEFAULT_ENABLED_KEYS));
   const [tiktokLength, setTiktokLength] = useState<300 | 500 | 600>(500);
-  const [profileCta, setProfileCta] = useState(PROFILE_CTA_OPTIONS[0]);
-  const [postUrl, setPostUrl] = useState('https://nexa-lovelab.com/compatibility-free');
+  const [profileCta, setProfileCta] = useState(PROFILE_CTAS[0]);
+  const [postUrl, setPostUrl] = useState('');
+  const [enabledKeys, setEnabledKeys] = useState<OutputKey[]>(['mainContent', 'hashtags', 'threads', 'x']);
+
+  const themes = GENRE_THEMES[genre];
+
+  const handleGenreChange = (g: Genre) => {
+    setGenre(g);
+    setTheme(GENRE_THEMES[g][0]);
+  };
 
   const toggleKey = (key: OutputKey) => {
-    setEnabledKeys(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        if (key === 'mainContent') return prev;
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
+    setEnabledKeys(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
   };
-
-  const canGenerate = themeInput.trim() !== '' && selectedHook !== null && !isLoading;
 
   const handleSubmit = () => {
-    if (!canGenerate || !selectedHook) return;
-    onGenerate({
-      theme: themeInput.trim(),
-      hookType: selectedHook,
-      prevTitle,
-      enabledKeys: Array.from(enabledKeys),
-      tiktokLength,
-      profileCta,
-      postUrl,
-    });
+    if (enabledKeys.length === 0) return;
+    onGenerate({ genre, theme, hookType, prevTitle, enabledKeys, tiktokLength, profileCta, postUrl });
   };
 
+  const isLoading = loadingState === LoadingState.LOADING;
+
   return (
-    <div className="bg-white rounded-3xl shadow-lg p-6 space-y-6">
+    <div className="space-y-5">
 
-      {/* 前回タイトル */}
-      <div className="space-y-2">
-        <label className="block text-sm font-bold text-gray-700">
-          前回のタイトル
-          <span className="ml-2 text-xs font-normal text-gray-400">（入力すると前回と違うバリエーションで生成）</span>
+      {/* ジャンル選択 */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100">
+        <label className="block text-sm font-bold text-gray-700 mb-3">
+          📂 ジャンルを選択
         </label>
-        <input
-          type="text"
-          value={prevTitle}
-          onChange={e => setPrevTitle(e.target.value)}
-          placeholder="例：【脈なし】返信が遅くなったのは〇〇が原因でした"
-          className="w-full px-4 py-3 rounded-2xl border border-gray-200 text-sm outline-none focus:border-[#D4537E] transition-colors"
-          disabled={isLoading}
-        />
-      </div>
-
-      {/* ジャンル・テーマ自由入力 */}
-      <div className="space-y-3">
-        <label className="block text-sm font-bold text-gray-700">
-          ジャンル・テーマ
-          <span className="ml-2 text-xs font-normal text-gray-400">（自由に入力できます）</span>
-        </label>
-        <input
-          type="text"
-          value={themeInput}
-          onChange={e => setThemeInput(e.target.value)}
-          placeholder="例：恋愛、お金の節約術、筋トレ、育児..."
-          className="w-full px-4 py-3 rounded-2xl border border-gray-200 text-sm outline-none focus:border-[#D4537E] transition-colors"
-          disabled={isLoading}
-        />
-        {/* サジェストチップ */}
-        <div className="flex flex-wrap gap-2">
-          {THEME_SUGGESTIONS.map(suggestion => (
+        <div className="grid grid-cols-2 gap-2">
+          {GENRES.map(g => (
             <button
-              key={suggestion}
-              type="button"
-              onClick={() => setThemeInput(suggestion)}
-              disabled={isLoading}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all active:scale-95 disabled:opacity-50 ${
-                themeInput === suggestion ? ACTIVE_TAG : INACTIVE_TAG
+              key={g}
+              onClick={() => handleGenreChange(g)}
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                genre === g
+                  ? 'text-white shadow-md scale-[1.02]'
+                  : 'bg-pink-50 text-gray-600 hover:bg-pink-100'
               }`}
+              style={genre === g ? { background: 'linear-gradient(135deg, #F472B6, #EC4899)' } : {}}
             >
-              {suggestion}
+              <span className="text-base">{GENRE_ICONS[g]}</span>
+              <span>{g}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* フックタイプ選択 */}
-      <div className="space-y-3">
-        <label className="block text-sm font-bold text-gray-700">
-          フックタイプ
-          <span className="ml-2 text-xs font-normal text-[#D4537E]">
-            {selectedHook ? `「${selectedHook}」選択中` : '未選択'}
-          </span>
+      {/* テーマ選択 */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100">
+        <label className="block text-sm font-bold text-gray-700 mb-3">
+          🎯 テーマを選択
         </label>
-        <div className="flex flex-wrap gap-2">
-          {ALL_HOOK_TYPES.map(hook => (
+        <div className="grid grid-cols-2 gap-2">
+          {themes.map(t => (
             <button
-              key={hook}
-              type="button"
-              onClick={() => setSelectedHook(hook === selectedHook ? null : hook)}
-              disabled={isLoading}
-              className={`px-4 py-2 rounded-full text-sm font-bold border transition-all active:scale-95 disabled:opacity-50 ${
-                selectedHook === hook ? ACTIVE_TAG : INACTIVE_TAG
+              key={t}
+              onClick={() => setTheme(t)}
+              className={`px-3 py-2.5 rounded-xl text-sm font-bold transition-all text-left ${
+                theme === t
+                  ? 'text-white shadow-md'
+                  : 'bg-gray-50 text-gray-600 hover:bg-pink-50'
               }`}
+              style={theme === t ? { background: 'linear-gradient(135deg, #FB7185, #F43F5E)' } : {}}
             >
-              {hook}
+              {t}
             </button>
           ))}
         </div>
       </div>
 
-      {/* 出力タグ選択 */}
-      <div className="space-y-3">
-        <label className="block text-sm font-bold text-gray-700">出力する項目</label>
-        <div className="flex flex-wrap gap-2">
-          {ALL_OUTPUT_KEYS.map(key => {
-            const isOn = enabledKeys.has(key);
-            const isRequired = key === 'mainContent';
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => toggleKey(key)}
-                disabled={isLoading || isRequired}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all active:scale-95 disabled:cursor-default ${
-                  isOn ? ACTIVE_TAG : 'bg-gray-100 border-gray-200 text-gray-400'
-                }`}
-              >
-                {isOn ? '✓' : '+'} {OUTPUT_KEY_LABELS[key]}
-                {isRequired && <span className="ml-1 text-[10px]">必須</span>}
-              </button>
-            );
-          })}
+      {/* フックタイプ */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100">
+        <label className="block text-sm font-bold text-gray-700 mb-3">
+          🎣 フックタイプ
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {HOOK_TYPES.map(h => (
+            <button
+              key={h}
+              onClick={() => setHookType(h)}
+              className={`px-3 py-3 rounded-xl text-sm font-bold transition-all text-left ${
+                hookType === h
+                  ? 'text-white shadow-md'
+                  : 'bg-gray-50 text-gray-600 hover:bg-pink-50'
+              }`}
+              style={hookType === h ? { background: 'linear-gradient(135deg, #A855F7, #7C3AED)' } : {}}
+            >
+              <div>{h}</div>
+              <div className={`text-xs mt-0.5 font-normal ${hookType === h ? 'text-purple-100' : 'text-gray-400'}`}>
+                {HOOK_DESCRIPTIONS[h]}
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* 台本文字数選択 */}
-      <div className="space-y-3">
-        <label className="block text-sm font-bold text-gray-700">
-          台本の文字数
-          <span className="ml-2 text-xs font-normal text-[#D4537E]">{tiktokLength}文字</span>
+      {/* 文字数 */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100">
+        <label className="block text-sm font-bold text-gray-700 mb-3">
+          📏 文字数
         </label>
-        <div className="flex gap-2">
-          {TIKTOK_LENGTHS.map(len => (
+        <div className="flex gap-3">
+          {([300, 500, 600] as const).map(len => (
             <button
               key={len}
-              type="button"
               onClick={() => setTiktokLength(len)}
-              disabled={isLoading}
-              className={`px-4 py-2 rounded-full text-sm font-bold border transition-all active:scale-95 disabled:opacity-50 ${
-                tiktokLength === len ? ACTIVE_TAG : INACTIVE_TAG
+              className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+                tiktokLength === len
+                  ? 'text-white shadow-md'
+                  : 'bg-gray-50 text-gray-600 hover:bg-pink-50'
               }`}
+              style={tiktokLength === len ? { background: 'linear-gradient(135deg, #F472B6, #EC4899)' } : {}}
             >
               {len}文字
             </button>
@@ -204,66 +187,109 @@ export const InputForm: React.FC<InputFormProps> = ({ onGenerate, loadingState }
         </div>
       </div>
 
-      {/* プロフィール誘導文選択 */}
-      <div className="space-y-3">
-        <label className="block text-sm font-bold text-gray-700">プロフィール誘導文</label>
-        <div className="flex flex-wrap gap-2">
-          {PROFILE_CTA_OPTIONS.map(cta => (
+      {/* 出力項目 */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100">
+        <label className="block text-sm font-bold text-gray-700 mb-3">
+          📦 出力する項目を選択
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {OUTPUT_OPTIONS.map(({ key, label, emoji }) => (
             <button
-              key={cta}
-              type="button"
-              onClick={() => setProfileCta(cta)}
-              disabled={isLoading}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all active:scale-95 disabled:opacity-50 ${
-                profileCta === cta ? ACTIVE_TAG : INACTIVE_TAG
+              key={key}
+              onClick={() => toggleKey(key)}
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                enabledKeys.includes(key)
+                  ? 'text-white shadow-md'
+                  : 'bg-gray-50 text-gray-500 hover:bg-pink-50'
               }`}
+              style={enabledKeys.includes(key) ? { background: 'linear-gradient(135deg, #34D399, #10B981)' } : {}}
             >
-              {cta}
+              <span>{emoji}</span>
+              <span>{label}</span>
+              {enabledKeys.includes(key) && <span className="ml-auto text-white">✓</span>}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Threads・X URL */}
-      <div className="space-y-2">
-        <label className="block text-sm font-bold text-gray-700">
-          Threads・X 投稿URL
-          <span className="ml-2 text-xs font-normal text-gray-400">（投稿文末尾に自動追加）</span>
+      {/* プロフィール誘導文 */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100">
+        <label className="block text-sm font-bold text-gray-700 mb-3">
+          👤 プロフィール誘導文
         </label>
-        <input
-          type="text"
-          value={postUrl}
-          onChange={e => setPostUrl(e.target.value)}
-          placeholder="https://nexa-lovelab.com/compatibility-free"
-          className="w-full px-4 py-3 rounded-2xl border border-gray-200 text-sm outline-none focus:border-[#D4537E] transition-colors"
-          disabled={isLoading}
-        />
+        <div className="space-y-2">
+          {PROFILE_CTAS.map(cta => (
+            <button
+              key={cta}
+              onClick={() => setProfileCta(cta)}
+              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                profileCta === cta
+                  ? 'text-white shadow-md'
+                  : 'bg-gray-50 text-gray-600 hover:bg-pink-50'
+              }`}
+              style={profileCta === cta ? { background: 'linear-gradient(135deg, #F472B6, #EC4899)' } : {}}
+            >
+              {cta}
+            </button>
+          ))}
+          <input
+            type="text"
+            placeholder="カスタム入力..."
+            value={PROFILE_CTAS.includes(profileCta) ? '' : profileCta}
+            onChange={e => setProfileCta(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+          />
+        </div>
+      </div>
+
+      {/* 前回タイトル・投稿URL */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100 space-y-4">
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            🔗 投稿URL（Threads/X等）
+          </label>
+          <input
+            type="text"
+            placeholder="https://threads.net/..."
+            value={postUrl}
+            onChange={e => setPostUrl(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            📌 前回の投稿タイトル（任意）
+          </label>
+          <input
+            type="text"
+            placeholder="前回の人気投稿を参考に生成..."
+            value={prevTitle}
+            onChange={e => setPrevTitle(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+          />
+        </div>
       </div>
 
       {/* 生成ボタン */}
       <button
-        type="button"
         onClick={handleSubmit}
-        disabled={!canGenerate}
-        className="w-full py-4 rounded-2xl font-black text-white text-base transition-all active:scale-95 disabled:opacity-40"
-        style={{ backgroundColor: canGenerate ? '#D4537E' : '#e9b4c7' }}
+        disabled={isLoading || enabledKeys.length === 0}
+        className="w-full py-4 rounded-2xl text-white text-base font-black tracking-wide transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{
+          background: isLoading
+            ? '#ccc'
+            : 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #DB2777 100%)',
+          boxShadow: isLoading ? 'none' : '0 4px 20px rgba(236, 72, 153, 0.4)',
+        }}
       >
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">
-            <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-            生成中...
+            <span className="animate-spin">⟳</span> 生成中...
           </span>
         ) : (
-          '💕 コンテンツを生成する'
+          '🔥 2026年バズる投稿を生成する'
         )}
       </button>
-
-      {themeInput.trim() === '' && (
-        <p className="text-center text-xs text-gray-400">ジャンル・テーマを入力してください</p>
-      )}
-      {themeInput.trim() !== '' && !selectedHook && (
-        <p className="text-center text-xs text-gray-400">フックタイプを選択してください</p>
-      )}
     </div>
   );
 };
