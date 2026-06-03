@@ -438,6 +438,18 @@ function calcBuzzScore(hookType: HookType, genre: Genre): BuzzScore {
 // メインコンテンツ生成
 // ==========================================
 
+// 20文字ごとに改行を挿入（TikTok台本用）
+function wrapAt20(text: string): string {
+  return text.split('\n').map(line => {
+    if (line.length <= 20) return line;
+    const chunks: string[] = [];
+    for (let i = 0; i < line.length; i += 20) {
+      chunks.push(line.slice(i, i + 20));
+    }
+    return chunks.join('\n');
+  }).join('\n');
+}
+
 function generateMainContent(
   theme: Theme,
   hookType: HookType,
@@ -480,7 +492,7 @@ function generateMainContent(
     content = `${hook}\n\n${trendWord}、${theme}について${buzzWord}伝えます。\nこれを知らないまま過ごしていると、1年後に取り返しのつかない差がついています。\n実際に結果を出している人たちが共通してやっていること、全部話します。\n\n━━━━━━━━━━━━━━\n【ポイント① ${points[0].split('。')[0]}】\n${points[0]}\n\nほとんどの人がここをすっ飛ばして失敗します。\n遠回りに見えても、これが一番の近道です。\n\n【ポイント② ${points[1].split('。')[0]}】\n${points[1]}\n\n${pick(BUZZ_WORDS_2026.authority)}やり方です。\n継続できる仕組みを作ることが鍵になります。\n\n【ポイント③ ${points[2].split('。')[0]}】\n${points[2]}\n\nここまで実践できれば、周りと圧倒的な差がつきます。\n━━━━━━━━━━━━━━\n\n${pick(BUZZ_WORDS_2026.urgency)}という状況だからこそ、今すぐ動くことが大切です。\n「いつかやろう」が一番危険な考え方。\n\nこの投稿が参考になったら保存&シェアしてください🙏\n\n${cta}`;
   }
 
-  return content;
+  return wrapAt20(content);
 }
 
 // ==========================================
