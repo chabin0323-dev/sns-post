@@ -504,48 +504,49 @@ function generateNoteArticle(theme: Theme, genre: Genre, hook: string): string {
   const points = themeDetail?.points[0] ?? DEFAULT_POINTS[genre][0];
   const subtitle = themeDetail?.noteSubtitles[0] ?? `${theme}を完全マスターするためのガイド`;
 
-  return `# ${theme}の真実：${hook.replace(/\n/g, '')}
+  return `${theme}の真実：${hook.replace(/\n/g, '')}
 
-## はじめに
+━━━━━━━━━━━━━━━━━━
+はじめに
+━━━━━━━━━━━━━━━━━━
 
 ${pick(BUZZ_WORDS_2026.curiosity)}と感じている方に向けて、この記事を書きました。
 
-**${theme}**について、多くの情報が出回っていますが、実際に効果のある方法と、よくある誤解を整理してお伝えします。
+「${theme}」について、多くの情報が出回っていますが、実際に効果のある方法と、よくある誤解を整理してお伝えします。
 
----
+━━━━━━━━━━━━━━━━━━
+${subtitle}
+━━━━━━━━━━━━━━━━━━
 
-## ${subtitle}
-
-### ① ${points[0].split('。')[0]}
+【ポイント① ${points[0].split('。')[0]}】
 
 ${points[0]}
 
 これは多くの人が見落としがちなポイントです。意識するだけで、結果に大きな差が生まれます。
 
-### ② ${points[1].split('。')[0]}
+【ポイント② ${points[1].split('。')[0]}】
 
 ${points[1]}
 
 特に2026年の現状では、このアプローチが最も効果的と言えます。
 
-### ③ ${points[2].split('。')[0]}
+【ポイント③ ${points[2].split('。')[0]}】
 
 ${points[2]}
 
 この3つ目のポイントを実践している人の成功率は、そうでない人と比べて格段に高いです。
 
----
+━━━━━━━━━━━━━━━━━━
+まとめ
+━━━━━━━━━━━━━━━━━━
 
-## まとめ
-
-${theme}で結果を出すために大切なのは、**正しい知識**と**継続的な実践**です。
+「${theme}」で結果を出すために大切なのは、正しい知識と継続的な実践です。
 
 今日からできることを1つ選んで、まず試してみてください。
 
 少しでも参考になれば、♡スキ をしていただけると励みになります。
 
----
-*この記事が役に立ったらシェアしてください 🙏*`;
+この記事が役に立ったらシェアしてください🙏`;
 }
 
 // ==========================================
@@ -624,18 +625,23 @@ export function generateContent(params: {
   const urlLine = postUrl ? `\n\n🔗 ${postUrl}` : '';
   const threadsPost = `${hook}\n\n✅ ${theme}について、今日から使えるポイントを解説中\n\n保存して後で読み返してね📌${urlLine}\n\n${hashtagText}`;
 
-  // X投稿
-  const xPost = `${hook}\n\n${theme}の攻略法スレッド🧵\n\n①〜③は本文で公開中👇${urlLine}\n\n${pickN(allTags.map(t => `#${t}`), 5).join(' ')}`;
+  // テーマのポイント取得（X投稿用）
+  const themePoints = (THEME_DETAILS[theme]?.points[0]) ?? DEFAULT_POINTS[genre][0];
 
-  // note記事
+  // X投稿（テーマに合った内容で生成）
+  const xHashtags = pickN(allTags.map(t => `#${t}`), 5).join(' ');
+  const xPost = `${hook}\n\n${theme}について3つのポイントをまとめました👇\n\n① ${themePoints[0].slice(0, 25)}...\n② ${themePoints[1].slice(0, 25)}...\n③ ${themePoints[2].slice(0, 25)}...\n\n保存して後で使ってね📌${urlLine}\n\n${xHashtags}`;
+
+  // note記事（Markdownなしのプレーンテキスト）
   const noteArticle = generateNoteArticle(theme, genre, hook);
 
   // SEO
   const seoSet = generateSEO(theme, genre);
 
-  // サムネイル
+  // サムネイル（TikTokサイズ＋noteサイズの2パターン）
   const thumbnailConcept = pick(genreData.thumbnailConcepts ?? ['インパクトのある背景×大きなテキスト']);
-  const thumbnailPrompt = `【サムネイルデザイン案】\n背景：${thumbnailConcept}\nメインテキスト：「${hook.slice(0, 20)}...」\nサブテキスト：「${theme}完全攻略」\nアクセントカラー：${genre === '恋愛' ? 'ピンク系' : genre === 'お金・資産' ? 'ゴールド系' : genre === '美容・ダイエット' ? 'サーモン系' : genre === '副業・稼ぐ' ? 'オレンジ系' : 'アクアブルー系'}\nフォント：インパクト重視のゴシック体\nアイコン：${theme}に関連するアイコンを右下に配置`;
+  const accentColor = genre === '恋愛' ? 'ピンク系' : genre === 'お金・資産' ? 'ゴールド系' : genre === '美容・ダイエット' ? 'サーモン系' : genre === '副業・稼ぐ' ? 'オレンジ系' : 'アクアブルー系';
+  const thumbnailPrompt = `■ TikTokサムネイル（縦型）\nサイズ：1080×1920px（9:16）\n背景：${thumbnailConcept}\nメインテキスト：「${hook.slice(0, 20)}」\nサブテキスト：「${theme}完全攻略」\nアクセントカラー：${accentColor}\nフォント：インパクト重視の太ゴシック体\n配置：テキストを画面中央〜上部に大きく\nアイコン：${theme}関連を右下に配置\n\n■ noteサムネイル（横型）\nサイズ：1280×670px（16:9）\n背景：${thumbnailConcept}\nメインテキスト：「${hook.slice(0, 28)}」\nサブテキスト：「${genre} | ${theme}」\nアクセントカラー：${accentColor}\nフォント：読みやすい明朝体orゴシック体\n配置：左寄せ＋右側にイラストorアイコン\n雰囲気：落ち着いた上品なデザイン`;
 
   // バズスコア
   const buzzScore = calcBuzzScore(hookType, genre);
