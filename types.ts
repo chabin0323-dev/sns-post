@@ -53,7 +53,7 @@ export interface BuzzScore {
 export interface GeneratedContent {
   genre: Genre;
   theme: Theme;
-  hookType: HookType;
+  hookType?: HookType;
   prevTitle: string;
   mainContent: string;
   hashtags: string[];
