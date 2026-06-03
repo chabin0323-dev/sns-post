@@ -4,7 +4,7 @@ import { InputForm } from './components/InputForm';
 import { ResultCard } from './components/ResultCard';
 import { LoadingState } from './types';
 import type { GeneratedContent, OutputKey, Genre, Theme } from './types';
-import { generateContent } from './services/contentGenerator';
+import { generateContent } from './services/loveContentGenerator';
 
 const App: React.FC = () => {
   const [loadingState, setLoadingState] = useState<LoadingState>(LoadingState.IDLE);
@@ -50,7 +50,6 @@ const App: React.FC = () => {
           </p>
           <p className="text-xs text-gray-500 mt-1">APIキー不要・ローカル生成・完全無料</p>
         </div>
-
         <div className="flex gap-3 justify-center flex-wrap">
           {[
             { icon: '🎯', text: '10ジャンル対応' },
@@ -64,15 +63,12 @@ const App: React.FC = () => {
             </div>
           ))}
         </div>
-
         <InputForm onGenerate={handleGenerate} loadingState={loadingState} />
-
         {loadingState === LoadingState.ERROR && (
           <div className="bg-red-50 border border-red-200 text-red-600 rounded-2xl p-4 text-center text-sm font-bold">
             ⚠️ 生成に失敗しました。もう一度お試しください。
           </div>
         )}
-
         {loadingState === LoadingState.SUCCESS && currentContent && (
           <div ref={resultRef}>
             <ResultCard content={currentContent} enabledKeys={enabledKeys} />
