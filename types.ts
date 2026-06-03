@@ -6,16 +6,8 @@ export enum LoadingState {
 }
 
 export type Genre =
-  | '恋愛'
-  | 'お金・資産'
-  | '副業・稼ぐ'
-  | '美容・ダイエット'
-  | '育児・子育て'
-  | '健康・メンタル'
-  | '転職・キャリア'
-  | '人間関係'
-  | 'ビジネス・起業'
-  | 'ライフスタイル';
+  | '恋愛' | 'お金・資産' | '副業・稼ぐ' | '美容・ダイエット' | '育児・子育て'
+  | '健康・メンタル' | '転職・キャリア' | '人間関係' | 'ビジネス・起業' | 'ライフスタイル';
 
 export type Theme =
   | '脈なし' | '脈あり' | '男性心理' | 'LINE' | '片思い' | '復縁' | '運命の人' | '恋愛心理学' | '職場恋愛' | '婚活' | 'マッチングアプリ'
@@ -32,13 +24,8 @@ export type Theme =
 export type HookType = '否定系' | '不安系' | '暴露系' | '共感系' | '実は系' | '数字系' | '限定系';
 
 export type OutputKey =
-  | 'mainContent'
-  | 'hashtags'
-  | 'threads'
-  | 'x'
-  | 'note'
-  | 'seo'
-  | 'thumbnail';
+  | 'mainContent' | 'hashtags' | 'threads' | 'x'
+  | 'note' | 'seo' | 'thumbnailTikTok' | 'thumbnailNote';
 
 export interface BuzzScore {
   hookPower: number;
@@ -61,12 +48,16 @@ export interface GeneratedContent {
   threadsPost: string;
   xPost: string;
   noteArticle: string;
+  noteUrl?: string;
   seoSet: {
     title: string;
     keywords: string[];
     description: string;
+    howToUse: string;
   };
   thumbnailPrompt: string;
+  thumbnailTikTok: string;
+  thumbnailNote: string;
   buzzScore: BuzzScore;
   timestamp: string;
 }
