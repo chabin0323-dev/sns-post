@@ -5,10 +5,31 @@ export enum LoadingState {
   ERROR = 'ERROR',
 }
 
-// テーマを固定リストからstring型に変更（自由入力対応）
-export type Theme = string;
+export type Genre =
+  | '恋愛'
+  | 'お金・資産'
+  | '副業・稼ぐ'
+  | '美容・ダイエット'
+  | '育児・子育て'
+  | '健康・メンタル'
+  | '転職・キャリア'
+  | '人間関係'
+  | 'ビジネス・起業'
+  | 'ライフスタイル';
 
-export type HookType = '否定系' | '不安系' | '暴露系' | '男性心理系' | '実は系';
+export type Theme =
+  | '脈なし' | '脈あり' | '男性心理' | 'LINE' | '片思い' | '復縁' | '運命の人' | '恋愛心理学' | '職場恋愛' | '婚活' | 'マッチングアプリ'
+  | '節約術' | '投資入門' | 'NISA活用' | '貯金習慣' | '給料アップ' | '保険見直し' | '副収入' | 'クレカ活用' | 'ポイント最大化' | '老後資金'
+  | 'TikTok収益化' | 'Threads攻略' | 'note有料記事' | 'SNS運用' | 'ブログ収益' | '転売・せどり' | 'コンテンツ販売' | 'フリーランス' | 'YouTube運用' | 'X(Twitter)運用'
+  | 'スキンケア' | '痩せる食事' | 'ながら運動' | 'プチプラコスメ' | '髪ケア' | 'むくみ解消' | '睡眠美容' | '体質改善' | 'ファスティング' | 'ボディメイク'
+  | '知育おもちゃ' | '寝かしつけ' | '離乳食' | 'イヤイヤ期' | '保育園選び' | '子どもの習い事' | '夫婦育児分担' | '産後ケア' | '絵本読み聞かせ' | '子どもの褒め方'
+  | '自律神経' | 'ストレス解消' | '腸活' | '良質な睡眠' | 'マインドフルネス' | '疲れない体' | 'うつ予防' | '免疫力アップ' | '血糖値管理' | 'デジタルデトックス'
+  | '転職成功' | '年収アップ' | 'スキルアップ' | '面接対策' | '履歴書・職務経歴書' | 'リモートワーク' | '副業から独立' | 'AI活用仕事術' | '昇進交渉' | 'ワークライフバランス'
+  | '職場いじめ' | '毒親' | '友達付き合い' | 'ママ友' | '義実家問題' | '自己肯定感' | 'コミュ力アップ' | '断り方' | '人たらし術' | 'HSP生き方'
+  | '起業アイデア' | 'SNSマーケ' | '集客術' | '価格設定' | 'Canva活用' | 'ChatGPT活用' | '個人ブランディング' | 'コンテンツマーケ' | 'LINE公式活用' | 'ストーリーズ活用'
+  | 'ミニマリスト' | '朝活' | '読書習慣' | '手帳活用' | '一人暮らし節約' | 'おうち時間' | '旅行ハック' | 'サウナ効果' | 'ペット' | 'インテリア';
+
+export type HookType = '否定系' | '不安系' | '暴露系' | '共感系' | '実は系' | '数字系' | '限定系';
 
 export type OutputKey =
   | 'mainContent'
@@ -16,7 +37,6 @@ export type OutputKey =
   | 'threads'
   | 'x'
   | 'note'
-  | 'noteUrl'
   | 'seo'
   | 'thumbnail';
 
@@ -31,6 +51,7 @@ export interface BuzzScore {
 }
 
 export interface GeneratedContent {
+  genre: Genre;
   theme: Theme;
   hookType: HookType;
   prevTitle: string;
@@ -40,7 +61,6 @@ export interface GeneratedContent {
   threadsPost: string;
   xPost: string;
   noteArticle: string;
-  noteUrl: string;
   seoSet: {
     title: string;
     keywords: string[];
