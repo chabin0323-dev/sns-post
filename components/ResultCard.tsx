@@ -6,16 +6,6 @@ interface Props {
   enabledKeys: OutputKey[];
 }
 
-const SECTION_CONFIG: Record<OutputKey, { label: string; emoji: string; color: string }> = {
-  mainContent: { label: 'TikTok台本', emoji: '🎬', color: '#EC4899' },
-  hashtags: { label: 'ハッシュタグ', emoji: '#️⃣', color: '#8B5CF6' },
-  threads: { label: 'Threads投稿', emoji: '🧵', color: '#000000' },
-  x: { label: 'X(Twitter)投稿', emoji: '𝕏', color: '#1D9BF0' },
-  note: { label: 'note記事', emoji: '📝', color: '#41C9A0' },
-  seo: { label: 'SEO対策セット', emoji: '🔍', color: '#F59E0B' },
-  thumbnail: { label: 'サムネイル案', emoji: '🖼️', color: '#EF4444' },
-};
-
 const CopyButton: React.FC<{ text: string }> = ({ text }) => {
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
@@ -24,11 +14,9 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <button
-      onClick={handleCopy}
+    <button onClick={handleCopy}
       className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-white"
-      style={{ background: copied ? '#10B981' : '#6B7280' }}
-    >
+      style={{ background: copied ? '#10B981' : '#6B7280' }}>
       {copied ? '✓ コピー済み' : 'コピー'}
     </button>
   );
@@ -41,39 +29,33 @@ const BuzzMeter: React.FC<{ value: number; label: string; color: string }> = ({ 
       <span className="font-bold" style={{ color }}>{value}</span>
     </div>
     <div className="w-full bg-gray-100 rounded-full h-2">
-      <div
-        className="h-2 rounded-full transition-all duration-1000"
-        style={{ width: `${value}%`, background: color }}
-      />
+      <div className="h-2 rounded-full transition-all duration-1000" style={{ width: `${value}%`, background: color }} />
     </div>
+  </div>
+);
+
+const Section: React.FC<{ label: string; emoji: string; color: string; children: React.ReactNode; copyText: string }> = ({ label, emoji, color, children, copyText }) => (
+  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="flex items-center justify-between px-5 py-3" style={{ background: `${color}15`, borderBottom: `2px solid ${color}30` }}>
+      <div className="flex items-center gap-2">
+        <span className="text-lg">{emoji}</span>
+        <span className="font-bold text-sm text-gray-800">{label}</span>
+      </div>
+      <CopyButton text={copyText} />
+    </div>
+    <div className="px-5 py-4">{children}</div>
   </div>
 );
 
 export const ResultCard: React.FC<Props> = ({ content, enabledKeys }) => {
   const { buzzScore } = content;
-
   const seoText = `【SEOタイトル】\n${content.seoSet.title}\n\n【キーワード】\n${content.seoSet.keywords.join('、')}\n\n【メタディスクリプション】\n${content.seoSet.description}`;
-
-  const getContent = (key: OutputKey): string => {
-    switch (key) {
-      case 'mainContent': return content.mainContent;
-      case 'hashtags': return content.hashtagText;
-      case 'threads': return content.threadsPost;
-      case 'x': return content.xPost;
-      case 'note': return content.noteArticle;
-      case 'seo': return seoText;
-      case 'thumbnail': return content.thumbnailPrompt;
-    }
-  };
 
   return (
     <div className="space-y-4">
 
-      {/* バズスコアカード */}
-      <div
-        className="rounded-2xl p-5 text-white shadow-lg"
-        style={{ background: 'linear-gradient(135deg, #F472B6, #7C3AED)' }}
-      >
+      {/* バズスコア */}
+      <div className="rounded-2xl p-5 text-white shadow-lg" style={{ background: 'linear-gradient(135deg, #F472B6, #7C3AED)' }}>
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-xs font-bold text-pink-100 uppercase tracking-wider">BUZZ SCORE 2026</p>
@@ -83,15 +65,10 @@ export const ResultCard: React.FC<Props> = ({ content, enabledKeys }) => {
             </div>
           </div>
           <div className="text-right">
-            <div className="text-3xl mb-1">
-              {buzzScore.total >= 85 ? '🔥' : buzzScore.total >= 75 ? '⚡' : buzzScore.total >= 65 ? '✨' : '💡'}
-            </div>
-            <p className="text-xs text-pink-100">
-              {content.genre} × {content.hookType}
-            </p>
+            <div className="text-3xl mb-1">{buzzScore.total >= 85 ? '🔥' : buzzScore.total >= 75 ? '⚡' : '✨'}</div>
+            <p className="text-xs text-pink-100">{content.genre} × {content.hookType}</p>
           </div>
         </div>
-
         <div className="space-y-2 mt-4">
           <BuzzMeter value={buzzScore.hookPower} label="🎣 フック力" color="#FDE68A" />
           <BuzzMeter value={buzzScore.saveRate} label="📌 保存率" color="#A7F3D0" />
@@ -99,95 +76,136 @@ export const ResultCard: React.FC<Props> = ({ content, enabledKeys }) => {
           <BuzzMeter value={buzzScore.profileRate} label="👤 プロフィール遷移" color="#FBCFE8" />
           <BuzzMeter value={buzzScore.seoScore} label="🔍 SEOスコア" color="#FED7AA" />
         </div>
-
-        <div className="mt-4 bg-white/20 rounded-xl px-4 py-2.5 text-sm font-bold text-center">
-          {buzzScore.comment}
-        </div>
-
-        <div className="mt-3 text-xs text-pink-100 text-right">
-          {content.theme} / {content.timestamp}
-        </div>
+        <div className="mt-4 bg-white/20 rounded-xl px-4 py-2.5 text-sm font-bold text-center">{buzzScore.comment}</div>
+        <div className="mt-3 text-xs text-pink-100 text-right">{content.theme} / {content.timestamp}</div>
       </div>
 
-      {/* 各出力セクション */}
-      {(Object.keys(SECTION_CONFIG) as OutputKey[])
-        .filter(key => enabledKeys.includes(key))
-        .map(key => {
-          const cfg = SECTION_CONFIG[key];
-          const text = getContent(key);
+      {/* TikTok台本 */}
+      {enabledKeys.includes('mainContent') && (
+        <Section label="TikTok台本" emoji="🎬" color="#EC4899" copyText={content.mainContent}>
+          <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.mainContent}</pre>
+        </Section>
+      )}
 
-          return (
-            <div key={key} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              {/* ヘッダー */}
-              <div
-                className="flex items-center justify-between px-5 py-3"
-                style={{ background: `${cfg.color}15`, borderBottom: `2px solid ${cfg.color}30` }}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{cfg.emoji}</span>
-                  <span className="font-bold text-sm text-gray-800">{cfg.label}</span>
-                </div>
-                <CopyButton text={text} />
-              </div>
+      {/* ハッシュタグ */}
+      {enabledKeys.includes('hashtags') && (
+        <Section label="ハッシュタグ" emoji="#️⃣" color="#8B5CF6" copyText={content.hashtagText}>
+          <div className="flex flex-wrap gap-2">
+            {content.hashtags.map(tag => (
+              <span key={tag} className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background: '#8B5CF6' }}>#{tag}</span>
+            ))}
+          </div>
+        </Section>
+      )}
 
-              {/* コンテンツ */}
-              <div className="px-5 py-4">
-                {key === 'hashtags' ? (
-                  <div className="flex flex-wrap gap-2">
-                    {content.hashtags.map(tag => (
-                      <span
-                        key={tag}
-                        className="px-3 py-1 rounded-full text-xs font-bold text-white"
-                        style={{ background: cfg.color }}
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                ) : key === 'seo' ? (
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase mb-1">SEOタイトル</p>
-                      <p className="text-sm font-bold text-gray-800">{content.seoSet.title}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase mb-1">キーワード</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {content.seoSet.keywords.map(kw => (
-                          <span key={kw} className="px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg text-xs font-medium text-amber-700">
-                            {kw}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase mb-1">メタディスクリプション</p>
-                      <p className="text-sm text-gray-600 leading-relaxed">{content.seoSet.description}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">
-                    {text}
-                  </pre>
-                )}
+      {/* Threads */}
+      {enabledKeys.includes('threads') && (
+        <Section label="Threads投稿" emoji="🧵" color="#000000" copyText={content.threadsPost}>
+          <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.threadsPost}</pre>
+        </Section>
+      )}
+
+      {/* X */}
+      {enabledKeys.includes('x') && (
+        <Section label="X(Twitter)投稿" emoji="𝕏" color="#1D9BF0" copyText={content.xPost}>
+          <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.xPost}</pre>
+        </Section>
+      )}
+
+      {/* note記事 */}
+      {enabledKeys.includes('note') && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3" style={{ background: '#41C9A015', borderBottom: '2px solid #41C9A030' }}>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">📝</span>
+              <span className="font-bold text-sm text-gray-800">note記事</span>
+            </div>
+            <CopyButton text={content.noteArticle} />
+          </div>
+          <div className="px-5 py-4 space-y-3">
+            <div className="bg-green-50 rounded-xl p-3">
+              <p className="text-xs font-bold text-green-700 mb-1.5">🔗 noteのURL（投稿後に入力すると他SNSに自動反映）</p>
+              <input
+                type="text"
+                placeholder="https://note.com/..."
+                defaultValue={content.noteUrl}
+                className="w-full px-3 py-2 rounded-lg border border-green-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-300"
+                onChange={e => { (content as GeneratedContent).noteUrl = e.target.value; }}
+              />
+            </div>
+            <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.noteArticle}</pre>
+          </div>
+        </div>
+      )}
+
+      {/* SEO対策 */}
+      {enabledKeys.includes('seo') && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3" style={{ background: '#F59E0B15', borderBottom: '2px solid #F59E0B30' }}>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🔍</span>
+              <span className="font-bold text-sm text-gray-800">SEO対策セット</span>
+            </div>
+            <CopyButton text={seoText} />
+          </div>
+          <div className="px-5 py-4 space-y-4">
+            <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-800 space-y-1 leading-relaxed">
+              <p className="font-black text-sm mb-2">📖 SEO対策セットの使い方</p>
+              <p>① <span className="font-bold">SEOタイトル</span> → note・ブログ記事のタイトルにそのまま使用</p>
+              <p>② <span className="font-bold">キーワード</span> → 記事本文に自然に盛り込む。見出しや冒頭100文字以内に入れると効果的</p>
+              <p>③ <span className="font-bold">メタディスクリプション</span> → noteの「つぶやき欄」や記事冒頭に使用。SNSシェア時の説明文になります</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase mb-1">SEOタイトル</p>
+              <p className="text-sm font-bold text-gray-800">{content.seoSet.title}</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase mb-1">キーワード</p>
+              <div className="flex flex-wrap gap-1.5">
+                {content.seoSet.keywords.map(kw => (
+                  <span key={kw} className="px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg text-xs font-medium text-amber-700">{kw}</span>
+                ))}
               </div>
             </div>
-          );
-        })}
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase mb-1">メタディスクリプション</p>
+              <p className="text-sm text-gray-600 leading-relaxed">{content.seoSet.description}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* 全コピーボタン */}
+      {/* TikTokサムネイル */}
+      {enabledKeys.includes('thumbnailTikTok') && (
+        <Section label="TikTokサムネイル（縦型 1080×1920）" emoji="📱" color="#EC4899" copyText={content.thumbnailTikTok}>
+          <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.thumbnailTikTok}</pre>
+        </Section>
+      )}
+
+      {/* noteサムネイル */}
+      {enabledKeys.includes('thumbnailNote') && (
+        <Section label="noteサムネイル（横型 1280×670）" emoji="🖼️" color="#41C9A0" copyText={content.thumbnailNote}>
+          <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.thumbnailNote}</pre>
+        </Section>
+      )}
+
+      {/* 全コピー */}
       <button
         onClick={async () => {
-          const allText = (Object.keys(SECTION_CONFIG) as OutputKey[])
-            .filter(k => enabledKeys.includes(k))
-            .map(k => `【${SECTION_CONFIG[k].label}】\n${getContent(k)}`)
-            .join('\n\n' + '─'.repeat(30) + '\n\n');
-          await navigator.clipboard.writeText(allText);
+          const parts = [];
+          if (enabledKeys.includes('mainContent')) parts.push(`【TikTok台本】\n${content.mainContent}`);
+          if (enabledKeys.includes('hashtags')) parts.push(`【ハッシュタグ】\n${content.hashtagText}`);
+          if (enabledKeys.includes('threads')) parts.push(`【Threads投稿】\n${content.threadsPost}`);
+          if (enabledKeys.includes('x')) parts.push(`【X投稿】\n${content.xPost}`);
+          if (enabledKeys.includes('note')) parts.push(`【note記事】\n${content.noteArticle}`);
+          if (enabledKeys.includes('seo')) parts.push(`【SEO対策】\n${seoText}`);
+          if (enabledKeys.includes('thumbnailTikTok')) parts.push(`【TikTokサムネイル】\n${content.thumbnailTikTok}`);
+          if (enabledKeys.includes('thumbnailNote')) parts.push(`【noteサムネイル】\n${content.thumbnailNote}`);
+          await navigator.clipboard.writeText(parts.join('\n\n' + '─'.repeat(30) + '\n\n'));
           alert('✅ 全コンテンツをコピーしました！');
         }}
         className="w-full py-3.5 rounded-2xl text-white font-black text-sm tracking-wide shadow-md"
-        style={{ background: 'linear-gradient(135deg, #6366F1, #4F46E5)' }}
-      >
+        style={{ background: 'linear-gradient(135deg, #6366F1, #4F46E5)' }}>
         📋 全コンテンツを一括コピー
       </button>
     </div>
