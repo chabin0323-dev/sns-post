@@ -3,8 +3,8 @@ import { Header } from './components/Header';
 import { InputForm } from './components/InputForm';
 import { ResultCard } from './components/ResultCard';
 import { LoadingState } from './types';
-import type { GeneratedContent, OutputKey, Theme, HookType } from './types';
-import { generateContent } from './services/loveContentGenerator';
+import type { GeneratedContent, OutputKey, Genre, Theme, HookType } from './types';
+import { generateContent } from './services/contentGenerator';
 
 const App: React.FC = () => {
   const [loadingState, setLoadingState] = useState<LoadingState>(LoadingState.IDLE);
@@ -13,6 +13,7 @@ const App: React.FC = () => {
   const resultRef = useRef<HTMLDivElement>(null);
 
   const handleGenerate = async (params: {
+    genre: Genre;
     theme: Theme;
     hookType: HookType;
     prevTitle: string;
@@ -23,7 +24,10 @@ const App: React.FC = () => {
   }) => {
     setLoadingState(LoadingState.LOADING);
     setEnabledKeys(params.enabledKeys);
-    await new Promise(r => setTimeout(r, 400));
+
+    // アニメーション用の短い遅延
+    await new Promise(r => setTimeout(r, 500));
+
     try {
       const result = generateContent(params);
       setCurrentContent(result);
@@ -39,16 +43,36 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FFF0F5' }}>
       <Header />
-      <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+
+      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+
         {/* キャッチコピー */}
-        <div className="text-center space-y-1">
+        <div className="text-center space-y-1 py-2">
           <h2 className="text-2xl font-black text-gray-800">
-            ジャンルを入力するだけで
+            10ジャンル・全テーマ対応
           </h2>
-          <p className="text-2xl font-black" style={{ color: '#D4537E' }}>
-            バズるSNSコンテンツが完成
+          <p
+            className="text-2xl font-black"
+            style={{ background: 'linear-gradient(135deg, #F472B6, #7C3AED)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+          >
+            2026年バズる投稿が即完成
           </p>
-          <p className="text-xs text-gray-500 mt-2">恋愛・お金・美容・育児など全ジャンル対応</p>
+          <p className="text-xs text-gray-500 mt-1">APIキー不要・ローカル生成・完全無料</p>
+        </div>
+
+        {/* 統計バッジ */}
+        <div className="flex gap-3 justify-center flex-wrap">
+          {[
+            { icon: '🎯', text: '10ジャンル対応' },
+            { icon: '📝', text: '100+テーマ' },
+            { icon: '🔥', text: '7種フック' },
+            { icon: '⚡', text: '即時生成' },
+          ].map(({ icon, text }) => (
+            <div key={text} className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm border border-pink-100">
+              <span className="text-sm">{icon}</span>
+              <span className="text-xs font-bold text-gray-600">{text}</span>
+            </div>
+          ))}
         </div>
 
         {/* 入力フォーム */}
@@ -57,20 +81,24 @@ const App: React.FC = () => {
           loadingState={loadingState}
         />
 
-        {/* 結果エリア */}
+        {/* エラー表示 */}
         {loadingState === LoadingState.ERROR && (
           <div className="bg-red-50 border border-red-200 text-red-600 rounded-2xl p-4 text-center text-sm font-bold">
-            生成に失敗しました。もう一度お試しください。
+            ⚠️ 生成に失敗しました。もう一度お試しください。
           </div>
         )}
+
+        {/* 生成結果 */}
         {loadingState === LoadingState.SUCCESS && currentContent && (
           <div ref={resultRef}>
             <ResultCard content={currentContent} enabledKeys={enabledKeys} />
           </div>
         )}
       </main>
-      <footer className="text-center py-10 text-xs text-gray-400 select-none">
-        SNS投稿ジェネレーター
+
+      <footer className="text-center py-8 text-xs text-gray-400 select-none space-y-1">
+        <p className="font-bold text-gray-500">SNS投稿ジェネレーター 2026</p>
+        <p>10ジャンル対応 · APIキー不要 · 完全無料</p>
       </footer>
     </div>
   );
