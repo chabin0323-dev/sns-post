@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Genre, Theme, HookType, OutputKey } from '../types';
+import type { Genre, Theme, OutputKey } from '../types';
 import { LoadingState } from '../types';
 import { GENRE_THEMES } from '../services/contentGenerator';
 
@@ -12,18 +12,6 @@ const GENRE_ICONS: Record<Genre, string> = {
   '恋愛': '💕', 'お金・資産': '💰', '副業・稼ぐ': '🔥', '美容・ダイエット': '✨',
   '育児・子育て': '👶', '健康・メンタル': '🌿', '転職・キャリア': '💼',
   '人間関係': '🤝', 'ビジネス・起業': '🚀', 'ライフスタイル': '🌸',
-};
-
-const HOOK_TYPES: HookType[] = ['否定系', '不安系', '暴露系', '共感系', '実は系', '数字系', '限定系'];
-
-const HOOK_DESCRIPTIONS: Record<HookType, string> = {
-  '否定系': '常識を否定して注目を集める',
-  '不安系': '読者の不安を刺激して引き込む',
-  '暴露系': '秘密・裏側を明かして好奇心を刺激',
-  '共感系': '読者の気持ちに寄り添う',
-  '実は系': '意外な事実を提示して驚かせる',
-  '数字系': '具体的な数字で信頼性を高める',
-  '限定系': '特別感・希少性で行動を促す',
 };
 
 const OUTPUT_OPTIONS: { key: OutputKey; label: string; emoji: string }[] = [
@@ -48,7 +36,6 @@ interface Props {
   onGenerate: (params: {
     genre: Genre;
     theme: Theme;
-    hookType: HookType;
     prevTitle: string;
     enabledKeys: OutputKey[];
     tiktokLength: 300 | 500 | 600;
@@ -61,7 +48,6 @@ interface Props {
 export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
   const [genre, setGenre] = useState<Genre>('恋愛');
   const [theme, setTheme] = useState<Theme>('脈なし');
-  const [hookType, setHookType] = useState<HookType>('否定系');
   const [prevTitle, setPrevTitle] = useState('');
   const [tiktokLength, setTiktokLength] = useState<300 | 500 | 600>(500);
   const [profileCta, setProfileCta] = useState(PROFILE_CTAS[0]);
@@ -83,7 +69,7 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
 
   const handleSubmit = () => {
     if (enabledKeys.length === 0) return;
-    onGenerate({ genre, theme, hookType, prevTitle, enabledKeys, tiktokLength, profileCta, postUrl });
+    onGenerate({ genre, theme, prevTitle, enabledKeys, tiktokLength, profileCta, postUrl });
   };
 
   const isLoading = loadingState === LoadingState.LOADING;
@@ -138,29 +124,22 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
         </div>
       </div>
 
-      {/* フックタイプ */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100">
-        <label className="block text-sm font-bold text-gray-700 mb-3">
-          🎣 フックタイプ
-        </label>
-        <div className="grid grid-cols-2 gap-2">
-          {HOOK_TYPES.map(h => (
-            <button
-              key={h}
-              onClick={() => setHookType(h)}
-              className={`px-3 py-3 rounded-xl text-sm font-bold transition-all text-left ${
-                hookType === h
-                  ? 'text-white shadow-md'
-                  : 'bg-gray-50 text-gray-600 hover:bg-pink-50'
-              }`}
-              style={hookType === h ? { background: 'linear-gradient(135deg, #A855F7, #7C3AED)' } : {}}
-            >
-              <div>{h}</div>
-              <div className={`text-xs mt-0.5 font-normal ${hookType === h ? 'text-purple-100' : 'text-gray-400'}`}>
-                {HOOK_DESCRIPTIONS[h]}
-              </div>
-            </button>
-          ))}
+      {/* フック自動選択バッジ */}
+      <div
+        className="rounded-2xl p-4 flex items-center gap-3"
+        style={{ background: 'linear-gradient(135deg, #FDF4FF, #FAE8FF)' }}
+      >
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+          style={{ background: 'linear-gradient(135deg, #A855F7, #7C3AED)' }}
+        >
+          ✨
+        </div>
+        <div>
+          <p className="text-sm font-black text-purple-800">フックタイプ：AIバズお任せ自動選択</p>
+          <p className="text-xs text-purple-500 mt-0.5">
+            ジャンル×テーマから最もバズるフックを自動で選びます
+          </p>
         </div>
       </div>
 
@@ -242,7 +221,7 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
         </div>
       </div>
 
-      {/* 前回タイトル・投稿URL */}
+      {/* 投稿URL・前回タイトル */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100 space-y-4">
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">
