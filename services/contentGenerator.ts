@@ -1,9 +1,5 @@
 import type { GeneratedContent, Genre, Theme, HookType, OutputKey, BuzzScore } from '../types';
 
-// ==========================================
-// 2026年バズキーワード・トレンドフレーズ
-// ==========================================
-
 const BUZZ_WORDS_2026 = {
   impact: ['正直に言う', '知らないとヤバい', 'みんな間違えてる', '99%の人が知らない', '今すぐ確認して', '保存必須', '永久保存版'],
   empathy: ['わかる〜', '同じ経験した', 'これ全員に見てほしい', 'リアルすぎる', '言語化してくれた', 'ずっと思ってた'],
@@ -17,10 +13,6 @@ const TREND_PHRASES_2026 = [
   '2026年確定で流行る', 'SNSで話題沸騰中', 'バズった投稿から学ぶ', 'フォロワー10万人が実践',
 ];
 
-// ==========================================
-// ジャンル別テンプレートデータ
-// ==========================================
-
 type GenreData = {
   hooks: Record<HookType, string[]>;
   mainTemplates: string[];
@@ -31,7 +23,6 @@ type GenreData = {
 };
 
 const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; hooks: Record<HookType, string[]> }> = {
-
   '恋愛': {
     hooks: {
       '否定系': ['好きな人に「好き」って言うのは間違いです', 'LINEを毎日送るのをやめてください', '「どうして好きなの？」って聞くのはNGです'],
@@ -42,9 +33,7 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
       '数字系': ['男性が本命に送るLINE、5つの特徴', '復縁成功率が3倍になる連絡タイミング', '好きな人の心を掴む会話術、7ステップ'],
       '限定系': ['マッチングアプリで奇跡の出会いをした人だけが知ること', '職場の片思いを成功させた人が絶対やってたこと'],
     },
-    mainTemplates: [
-      `【本題】\n{hook}\n\n{theme}について、多くの人が誤解していることがあります。\n\n✅ポイント①：{point1}\n\n✅ポイント②：{point2}\n\n✅ポイント③：{point3}\n\n{cta}`,
-    ],
+    mainTemplates: [`【本題】\n{hook}\n\n{theme}について。\n\n✅ポイント①：{point1}\n\n✅ポイント②：{point2}\n\n✅ポイント③：{point3}\n\n{cta}`],
     hashtagGroups: [
       ['恋愛', '片思い', '恋愛相談', '恋愛心理学', '恋バナ', '恋愛成就', 'TikTok恋愛', '恋愛アドバイス', '婚活', 'マッチングアプリ'],
       ['恋愛tips', '恋愛豆知識', '男性心理', '女性心理', '好きな人', '両想い', '脈あり', '復縁', '恋愛成功', 'sns恋愛'],
@@ -53,7 +42,6 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
     thumbnailConcepts: ['ピンク背景×白テキスト×ハートアイコン', 'カップルシルエット×夜景×感情的フォント'],
     ctaVariants: ['プロフィールに恋愛相談のリンクあります💕', 'もっと詳しく知りたい方はプロフィールへ！', '続きはnoteで公開中📝'],
   },
-
   'お金・資産': {
     hooks: {
       '否定系': ['貯金だけしてる人は正直、損してます', '銀行にお金を預けるだけでは豊かになれません', 'NISA始めてない人、もう手遅れとは言いません。でも…'],
@@ -64,9 +52,7 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
       '数字系': ['月5000円から始める資産形成、3ステップ', '年収400万でも10年で1000万貯めた人の習慣5選', '保険料を年間12万削減した方法'],
       '限定系': ['FPに相談した人だけが知る「保険の真実」', 'お金持ちが絶対やらないこと、6選'],
     },
-    mainTemplates: [
-      `【{theme}の真実】\n\n{hook}\n\n多くの人がやってしまっている間違いと、正しいアプローチを解説します。\n\n💰ステップ①：{point1}\n\n💰ステップ②：{point2}\n\n💰ステップ③：{point3}\n\n{cta}`,
-    ],
+    mainTemplates: [`【{theme}の真実】\n\n{hook}\n\n💰ステップ①：{point1}\n\n💰ステップ②：{point2}\n\n💰ステップ③：{point3}\n\n{cta}`],
     hashtagGroups: [
       ['お金', '節約', '貯金', '投資', 'NISA', '資産形成', 'FP', 'マネーリテラシー', '家計管理', 'お金の勉強'],
       ['節約術', '貯金術', '投資初心者', 'インデックス投資', '積立NISA', 'iDeCo', 'お金持ちマインド', '副収入', '資産運用', '財テク'],
@@ -75,7 +61,6 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
     thumbnailConcepts: ['金色背景×通帳イラスト×インパクト数字', 'シンプル白×緑アクセント×グラフ上昇'],
     ctaVariants: ['無料の家計診断はプロフィールから💰', 'お金の教科書、プロフィールのリンクで公開中！', '資産形成の相談はDMまで📩'],
   },
-
   '副業・稼ぐ': {
     hooks: {
       '否定系': ['副業でブログを選ぶのは2026年では正直キツい', '「とりあえず転売」は初心者が一番やらかす選択です', 'SNS運用代行、実は稼げない人の方が多い現実'],
@@ -86,9 +71,7 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
       '数字系': ['スキマ時間で月3万稼ぐ副業ベスト5【2026年版】', '初期投資ゼロで始められる副業、7選', '副業収入を3倍にした投稿頻度の秘密'],
       '限定系': ['副業で月10万超えた人が最初にやったこと', 'SNS副業成功者が絶対に話さない「選定基準」'],
     },
-    mainTemplates: [
-      `【2026年最新】{theme}で稼ぐ完全攻略\n\n{hook}\n\nこれを知らずに副業を始めると、時間とお金を無駄にします。\n\n🔥ポイント①：{point1}\n\n🔥ポイント②：{point2}\n\n🔥ポイント③：{point3}\n\n{cta}`,
-    ],
+    mainTemplates: [`【2026年最新】{theme}で稼ぐ完全攻略\n\n{hook}\n\n🔥ポイント①：{point1}\n\n🔥ポイント②：{point2}\n\n🔥ポイント③：{point3}\n\n{cta}`],
     hashtagGroups: [
       ['副業', '稼ぐ', 'SNS副業', 'TikTok副業', 'note副業', 'コンテンツ販売', 'フリーランス', '在宅ワーク', 'サラリーマン副業', '副業初心者'],
       ['副業収入', '月収アップ', 'SNS収益化', '情報発信', 'ブログ収益', '転売', 'アフィリエイト', 'Webライター', 'SNSマーケ', '個人ビジネス'],
@@ -97,7 +80,6 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
     thumbnailConcepts: ['黒背景×黄テキスト×お金アイコン×数字インパクト', 'スマホ画面×通知×収益グラフ'],
     ctaVariants: ['副業相談はプロフィールのLINEから📲', '無料レポート配布中！プロフィールへ✨', '稼ぎたい人はDMください💸'],
   },
-
   '美容・ダイエット': {
     hooks: {
       '否定系': ['運動しながらお菓子食べるのは意味がないです', '糖質制限だけで痩せようとするのは逆効果です', '高いスキンケアより先にやることがあります'],
@@ -108,9 +90,7 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
       '数字系': ['2週間で肌がもちもちになったスキンケア4ステップ', '運動ゼロで-3kgした食事法3選', '毛穴レス肌になった人のルーティン、7選'],
       '限定系': ['皮膚科に通い続けた人だけが気づく肌ケアの真実', 'リバウンドしない人が絶対やってること'],
     },
-    mainTemplates: [
-      `【{theme}完全攻略】\n\n{hook}\n\n美容のプロとして正直に伝えます。\n\n✨ポイント①：{point1}\n\n✨ポイント②：{point2}\n\n✨ポイント③：{point3}\n\n{cta}`,
-    ],
+    mainTemplates: [`【{theme}完全攻略】\n\n{hook}\n\n✨ポイント①：{point1}\n\n✨ポイント②：{point2}\n\n✨ポイント③：{point3}\n\n{cta}`],
     hashtagGroups: [
       ['美容', 'ダイエット', 'スキンケア', '痩せる', 'ダイエット記録', '美容オタク', 'コスメ', 'プチプラ', 'デパコス', '美容部員'],
       ['美肌', '毛穴ケア', 'ニキビケア', 'ダイエット食事', '脂肪燃焼', 'ボディメイク', 'スキンケアルーティン', '美容医療', '内側から美しく', 'ゆるダイエット'],
@@ -119,7 +99,6 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
     thumbnailConcepts: ['before/afterイメージ×ピンク×白テキスト', 'クリアスキン×パステル背景×シンプルレイアウト'],
     ctaVariants: ['美容相談はプロフィールから💄', '無料スキンケア診断！プロフィールのリンクへ✨', '詳しいレシピはnoteで公開中📝'],
   },
-
   '育児・子育て': {
     hooks: {
       '否定系': ['子どもを「いい子」にしようとするのは逆効果です', '「早く！早く！」と急かすのをやめてください', 'スマホを制限するだけでは子どもは変わりません'],
@@ -130,9 +109,7 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
       '数字系': ['寝かしつけ時間を30分から10分に短縮した方法3選', 'イヤイヤ期を乗り越えた親が実践した声かけ5パターン', '知育効果が高いおもちゃ選びの基準、4つ'],
       '限定系': ['保育士10年の私が自分の子にだけ教えてた遊び', '子育てで後悔しないために今すぐやめるべきこと'],
     },
-    mainTemplates: [
-      `【{theme}】親御さんに絶対知ってほしい\n\n{hook}\n\n子どもの成長のために、今日からできることをお伝えします。\n\n👶ポイント①：{point1}\n\n👶ポイント②：{point2}\n\n👶ポイント③：{point3}\n\n{cta}`,
-    ],
+    mainTemplates: [`【{theme}】親御さんに絶対知ってほしい\n\n{hook}\n\n👶ポイント①：{point1}\n\n👶ポイント②：{point2}\n\n👶ポイント③：{point3}\n\n{cta}`],
     hashtagGroups: [
       ['育児', '子育て', 'ママ', 'パパ育児', '育児記録', '子育てあるある', '保育園', '幼稚園', 'イヤイヤ期', '乳幼児'],
       ['知育', '子育てヒント', '育児疲れ', '子育て支援', 'ワーママ', '専業主婦', '産後ケア', '育休', '子どもの発達', '絵本好きな子'],
@@ -141,7 +118,6 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
     thumbnailConcepts: ['暖色系×子どもイラスト×手書き風フォント', 'パステル×赤ちゃんアイコン×温かみのあるデザイン'],
     ctaVariants: ['育児相談はプロフィールから👶', '子育てのヒント、noteで毎週更新中！', '無料育児相談DM受付中💌'],
   },
-
   '健康・メンタル': {
     hooks: {
       '否定系': ['「とりあえず早寝」するだけでは睡眠の質は上がりません', 'ストレス発散のためにお酒を飲むのは逆効果です', '「気合いで乗り越える」はメンタルを壊します'],
@@ -152,9 +128,7 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
       '数字系': ['睡眠の質が2倍になった就寝前ルーティン、5選', '自律神経を整える朝の行動、3つ', '医師が推薦する腸活食材ベスト7'],
       '限定系': ['精神科に通った経験者だけが知る「回復のコツ」', 'メンタルが強い人が絶対やらないこと5選'],
     },
-    mainTemplates: [
-      `【{theme}】知らないと一生損する\n\n{hook}\n\n体とメンタルは繋がっています。今日から変えられることを伝えます。\n\n🌿ポイント①：{point1}\n\n🌿ポイント②：{point2}\n\n🌿ポイント③：{point3}\n\n{cta}`,
-    ],
+    mainTemplates: [`【{theme}】知らないと一生損する\n\n{hook}\n\n🌿ポイント①：{point1}\n\n🌿ポイント②：{point2}\n\n🌿ポイント③：{point3}\n\n{cta}`],
     hashtagGroups: [
       ['健康', 'メンタルヘルス', '自律神経', '腸活', '睡眠', 'ストレス解消', 'メンタルケア', '体質改善', '免疫力', '健康習慣'],
       ['マインドフルネス', '瞑想', 'セルフケア', '疲労回復', '冷え性改善', 'デトックス', '発酵食品', '睡眠改善', '心の健康', 'ウェルネス'],
@@ -163,7 +137,6 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
     thumbnailConcepts: ['グリーン背景×リラックスイメージ×落ち着いたフォント', '白×ミントグリーン×ナチュラルテイスト'],
     ctaVariants: ['健康相談はプロフィールから🌿', 'セルフケアの方法、noteで詳しく解説中！', '無料健康チェックDM受付中✉️'],
   },
-
   '転職・キャリア': {
     hooks: {
       '否定系': ['転職エージェントを使うだけでは年収は上がりません', '「とりあえず資格取得」は転職では通用しません', 'LinkedInを整えるだけでは転職は成功しません'],
@@ -174,9 +147,7 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
       '数字系': ['転職成功率を3倍にする準備リスト、5選', '年収交渉で50万アップした人の交渉術3ステップ', '書類通過率90%の職務経歴書の書き方、7つのコツ'],
       '限定系': ['転職で後悔した人が全員言う「やればよかったこと」', 'キャリアアップした人が転職前に必ずやること'],
     },
-    mainTemplates: [
-      `【{theme}完全攻略2026】\n\n{hook}\n\nキャリアアドバイザーとして正直に伝えます。\n\n💼ポイント①：{point1}\n\n💼ポイント②：{point2}\n\n💼ポイント③：{point3}\n\n{cta}`,
-    ],
+    mainTemplates: [`【{theme}完全攻略2026】\n\n{hook}\n\n💼ポイント①：{point1}\n\n💼ポイント②：{point2}\n\n💼ポイント③：{point3}\n\n{cta}`],
     hashtagGroups: [
       ['転職', 'キャリア', '転職活動', '年収アップ', 'スキルアップ', '面接対策', '転職成功', 'キャリアアップ', '第二新卒', '中途採用'],
       ['転職tips', '職務経歴書', '自己分析', 'キャリア相談', 'フリーランス', 'リモートワーク', 'AI時代の仕事', 'ビジネス', '副業から独立', '働き方改革'],
@@ -185,7 +156,6 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
     thumbnailConcepts: ['ネイビー×白テキスト×ビジネスアイコン×数字強調', 'グラデーション背景×上昇グラフ×プロフェッショナルデザイン'],
     ctaVariants: ['転職相談はプロフィールから💼', '無料キャリア診断！プロフィールへ✨', 'LINEで転職相談受付中📲'],
   },
-
   '人間関係': {
     hooks: {
       '否定系': ['「相手を変えよう」とするのが人間関係を壊します', '我慢して付き合い続けるのは優しさじゃありません', '「みんなに好かれよう」とするのは無理があります'],
@@ -196,9 +166,7 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
       '数字系': ['人間関係がラクになる「断り方」5パターン', '職場でなぜか好かれる人の共通点、7つ', '自己肯定感を3ヶ月で上げた行動習慣、4選'],
       '限定系': ['人間関係リセット症候群を克服した人が気づいたこと', '毒親育ちが自由になるための最初の一歩'],
     },
-    mainTemplates: [
-      `【{theme}】もう消耗しないために\n\n{hook}\n\n人間関係の専門家として、根本的な解決策をお伝えします。\n\n🤝ポイント①：{point1}\n\n🤝ポイント②：{point2}\n\n🤝ポイント③：{point3}\n\n{cta}`,
-    ],
+    mainTemplates: [`【{theme}】もう消耗しないために\n\n{hook}\n\n🤝ポイント①：{point1}\n\n🤝ポイント②：{point2}\n\n🤝ポイント③：{point3}\n\n{cta}`],
     hashtagGroups: [
       ['人間関係', '自己肯定感', 'HSP', '毒親', '職場いじめ', '友達', 'コミュニケーション', 'メンタル', '人間関係疲れ', '自分らしく生きる'],
       ['人間関係改善', 'ストレス', '境界線', '自己成長', 'ライフコーチ', '心理学', 'アサーション', '孤独', '自分軸', '生きづらさ'],
@@ -207,7 +175,6 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
     thumbnailConcepts: ['温かみのある橙系×手書きイラスト×共感キャッチコピー', 'ソフトグラデーション×シルエット人物×感情的フォント'],
     ctaVariants: ['人間関係相談はDMへ💌', '心が軽くなる記事、noteで更新中！', 'LINEで無料相談受付中📲'],
   },
-
   'ビジネス・起業': {
     hooks: {
       '否定系': ['起業してすぐに広告を出すのは失敗のもとです', '「好きなことで起業」は最初の一歩を間違えやすいです', 'SNSのフォロワー数を増やすことを最優先にしないでください'],
@@ -218,9 +185,7 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
       '数字系': ['起業1年目で黒字化した人の行動パターン、5選', '個人ビジネスで月50万を達成するまでの3ステップ', 'SNS集客で成約率を2倍にした投稿術、7つ'],
       '限定系': ['起業して成功した人が最初の3ヶ月でやったこと', '億超え起業家が共通してやってた「朝のルーティン」'],
     },
-    mainTemplates: [
-      `【{theme}の真実2026年版】\n\n{hook}\n\nビジネスの本質を理解することが、成功への最短ルートです。\n\n🚀ポイント①：{point1}\n\n🚀ポイント②：{point2}\n\n🚀ポイント③：{point3}\n\n{cta}`,
-    ],
+    mainTemplates: [`【{theme}の真実2026年版】\n\n{hook}\n\n🚀ポイント①：{point1}\n\n🚀ポイント②：{point2}\n\n🚀ポイント③：{point3}\n\n{cta}`],
     hashtagGroups: [
       ['起業', 'ビジネス', '個人ビジネス', 'フリーランス', '集客', 'SNSマーケ', 'コンテンツマーケ', '個人ブランディング', '起業家', 'マーケティング'],
       ['スモールビジネス', 'オンラインビジネス', 'webマーケ', 'SNS集客', 'Canva', 'ChatGPT活用', 'LP制作', '価格設定', '高単価', '起業女性'],
@@ -229,7 +194,6 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
     thumbnailConcepts: ['黒×ゴールド×ラグジュアリーデザイン×数字インパクト', 'ダークネイビー×白テキスト×矢印グラフィック'],
     ctaVariants: ['ビジネス相談はプロフィールから🚀', '無料ビジネス診断！プロフィールのリンクへ✨', 'LINEで起業相談受付中📲'],
   },
-
   'ライフスタイル': {
     hooks: {
       '否定系': ['ミニマリストになるためにモノを捨てるのは間違いです', '朝活は早起きさえすれば成功すると思ってませんか？', '手帳を買うだけでは習慣は変わりません'],
@@ -240,9 +204,7 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
       '数字系': ['人生が変わった朝のルーティン、5選', 'ミニマリストが手放して後悔しなかったもの、7つ', '読書が3倍速くなった方法、4ステップ'],
       '限定系': ['手帳マニアが年間1000時間を生み出した時間管理術', '一人暮らしで月5万節約した人の生活費内訳'],
     },
-    mainTemplates: [
-      `【{theme}】毎日が変わる習慣\n\n{hook}\n\n小さな変化の積み重ねが、1年後の自分を作ります。\n\n✏️ポイント①：{point1}\n\n✏️ポイント②：{point2}\n\n✏️ポイント③：{point3}\n\n{cta}`,
-    ],
+    mainTemplates: [`【{theme}】毎日が変わる習慣\n\n{hook}\n\n✏️ポイント①：{point1}\n\n✏️ポイント②：{point2}\n\n✏️ポイント③：{point3}\n\n{cta}`],
     hashtagGroups: [
       ['ライフスタイル', 'ミニマリスト', '朝活', '読書', '手帳', '習慣化', 'シンプルライフ', '丁寧な暮らし', '一人暮らし', 'おうち時間'],
       ['モーニングルーティン', 'ナイトルーティン', '断捨離', '整理整頓', 'セルフケア', 'ゆる活', '節約生活', 'ポジティブ思考', '自分磨き', '理想の生活'],
@@ -252,10 +214,6 @@ const GENRE_DATA: Record<Genre, Partial<GenreData> & { mainTemplates: string[]; 
     ctaVariants: ['ライフスタイル相談はDMへ📩', '日常を豊かにするヒント、noteで毎週更新！', 'プロフィールのリンクから無料診断✨'],
   },
 };
-
-// ==========================================
-// テーマ別詳細コンテンツデータ
-// ==========================================
 
 type ThemeDetail = {
   points: string[][];
@@ -267,98 +225,61 @@ type ThemeDetail = {
 
 const THEME_DETAILS: Partial<Record<Theme, ThemeDetail>> = {
   '節約術': {
-    points: [
-      ['固定費の見直しから始める（通信費・保険・サブスク）', '「先取り貯金」の自動化で意志力に頼らない仕組みを作る', '食費の無駄を防ぐ「週1まとめ買い＋冷蔵庫管理術」を実践する'],
-    ],
-    tiktokIntros: ['月3万浮かせた節約術を教えます', '固定費を見直すだけで年間36万変わります'],
+    points: [['固定費の見直しから始める（通信費・保険・サブスク）', '「先取り貯金」の自動化で意志力に頼らない仕組みを作る', '食費の無駄を防ぐ「週1まとめ買い＋冷蔵庫管理術」を実践する']],
+    tiktokIntros: ['月3万浮かせた節約術を教えます'],
     noteSubtitles: ['固定費・変動費・貯蓄の三角形を整える方法'],
     seoKeywords: ['節約術 簡単', '固定費 削減', '貯金 増やす', '節約生活 始め方'],
     seoDescription: '固定費の見直しから始める実践的な節約術。通信費・保険・サブスクを整理して、年間数十万円の節約を実現する方法を解説します。',
   },
   'NISA活用': {
-    points: [
-      ['「新NISA」の非課税枠を最大限活用するためにつみたて投資枠から始める', '投資初心者はS&P500や全世界株のインデックスファンド一択でOK', '毎月の積立額は「生活費3ヶ月分の余剰資金」を目安に設定する'],
-    ],
-    tiktokIntros: ['2026年、NISAを最大限使う方法を解説します', '月3万円積立で30年後どうなるか計算してみた'],
+    points: [['「新NISA」の非課税枠を最大限活用するためにつみたて投資枠から始める', '投資初心者はS&P500や全世界株のインデックスファンド一択でOK', '毎月の積立額は「生活費3ヶ月分の余剰資金」を目安に設定する']],
+    tiktokIntros: ['2026年、NISAを最大限使う方法を解説します'],
     noteSubtitles: ['新NISAで資産を増やすための完全スタートガイド'],
     seoKeywords: ['NISA 始め方', '新NISA 2026', 'つみたてNISA おすすめ', 'インデックスファンド 選び方'],
     seoDescription: '2026年最新版。新NISAの仕組みと始め方を初心者にもわかりやすく解説。インデックス投資で資産形成するステップを紹介します。',
   },
   'TikTok収益化': {
-    points: [
-      ['まず「ジャンル特化」で投稿する。雑多な発信はフォロワーが増えない', '1本目から収益を狙わず、最初の100本は「バズる型」を研究してコピーする', '収益化の柱は①Creator Fund ②コンテンツ販売 ③アフィリエイト の3つを並行する'],
-    ],
-    tiktokIntros: ['TikTok副業で月10万稼ぐまでにやったこと', '再生回数100万超えた動画の共通点を分析した'],
+    points: [['まず「ジャンル特化」で投稿する。雑多な発信はフォロワーが増えない', '1本目から収益を狙わず、最初の100本は「バズる型」を研究してコピーする', '収益化の柱は①Creator Fund ②コンテンツ販売 ③アフィリエイト の3つを並行する']],
+    tiktokIntros: ['TikTok副業で月10万稼ぐまでにやったこと'],
     noteSubtitles: ['TikTok収益化ロードマップ：ゼロから月10万円まで'],
     seoKeywords: ['TikTok 収益化', 'TikTok 副業', 'TikTok フォロワー 増やす 2026', 'ショート動画 稼ぐ'],
     seoDescription: 'TikTokで収益化するための実践ロードマップ。ジャンル選定から投稿戦略、収益化の仕組みまで、実際に稼いでいる人が実践しているノウハウを公開。',
   },
   'スキンケア': {
-    points: [
-      ['洗顔は「泡立て」が命。摩擦ゼロで毛穴への負担をなくす', 'スキンケアの順番は「水分→油分」。化粧水→美容液→乳液の順を守る', '週1回の「角質ケア」で化粧品の浸透率を格段に上げる'],
-    ],
-    tiktokIntros: ['皮膚科医が教えるスキンケアの正しい順番', '毛穴レス肌になった人のルーティンを公開します'],
+    points: [['洗顔は「泡立て」が命。摩擦ゼロで毛穴への負担をなくす', 'スキンケアの順番は「水分→油分」。化粧水→美容液→乳液の順を守る', '週1回の「角質ケア」で化粧品の浸透率を格段に上げる']],
+    tiktokIntros: ['皮膚科医が教えるスキンケアの正しい順番'],
     noteSubtitles: ['プロ直伝！一生使えるスキンケアの基本と応用'],
     seoKeywords: ['スキンケア 正しい順番', '毛穴ケア 方法', '美肌 作り方', 'スキンケア 初心者'],
     seoDescription: '皮膚科の先生も実践しているスキンケアの正しい順番と方法。毛穴・ニキビ・乾燥など悩み別のケア方法も詳しく解説します。',
   },
   '自律神経': {
-    points: [
-      ['朝に「15分の散歩」をするだけで副交感神経が整い始める', '食事のタイミングを毎日同じ時間にするだけで体内リズムが安定する', '入浴は就寝90分前に38〜40度のぬるめのお湯で15分が最も効果的'],
-    ],
-    tiktokIntros: ['自律神経を整えるだけで人生変わった話をします', '医師が教える「朝の15分ルーティン」が最強な理由'],
+    points: [['朝に「15分の散歩」をするだけで副交感神経が整い始める', '食事のタイミングを毎日同じ時間にするだけで体内リズムが安定する', '入浴は就寝90分前に38〜40度のぬるめのお湯で15分が最も効果的']],
+    tiktokIntros: ['自律神経を整えるだけで人生変わった話をします'],
     noteSubtitles: ['自律神経を整える生活習慣の完全リスト'],
     seoKeywords: ['自律神経 整え方', '自律神経 乱れ 改善', '副交感神経 高める', '睡眠の質 上げる'],
     seoDescription: '自律神経の乱れが引き起こす症状と、今日から実践できる改善習慣を解説。朝・昼・夜のルーティンで体と心を整える方法を紹介します。',
   },
   '転職成功': {
-    points: [
-      ['転職活動は「在職中」に始めること。焦りが判断を鈍らせる', '応募前に「なぜ転職するのか」を言語化し、ポジティブな理由に変換する', 'エージェント2〜3社を同時活用して、求人の比較と交渉力を高める'],
-    ],
-    tiktokIntros: ['転職で年収100万アップした人の準備期間の過ごし方', '転職エージェントに頼りすぎるのが失敗の原因'],
+    points: [['転職活動は「在職中」に始めること。焦りが判断を鈍らせる', '応募前に「なぜ転職するのか」を言語化し、ポジティブな理由に変換する', 'エージェント2〜3社を同時活用して、求人の比較と交渉力を高める']],
+    tiktokIntros: ['転職で年収100万アップした人の準備期間の過ごし方'],
     noteSubtitles: ['転職成功率を最大化するための完全準備ガイド'],
     seoKeywords: ['転職 成功 方法', '転職 年収アップ', '転職活動 コツ', '転職 タイミング'],
     seoDescription: '転職成功率を上げるための準備から内定獲得まで。在職中の進め方、エージェント活用法、年収交渉のコツまで実体験ベースで解説します。',
   },
 };
 
-// デフォルトのポイント（テーマ詳細がない場合）
 const DEFAULT_POINTS: Record<Genre, string[][]> = {
-  '恋愛': [
-    ['相手の行動パターンを観察し、感情ではなく事実で判断する', '自分の価値を高めることが最も効果的なアプローチになる', '焦らず「タイミング」を待つことで成功率が格段に上がる'],
-  ],
-  'お金・資産': [
-    ['まず「固定費の見直し」から着手することで即効性がある', '収入の10%を先取り貯金し、残りで生活する仕組みを作る', '長期投資でリスクを分散させ、複利の力を最大限活かす'],
-  ],
-  '副業・稼ぐ': [
-    ['まず既存のスキルを棚卸しして「売れるもの」を特定する', 'SNS発信で「信頼資産」を積み上げてから商品化する', '小さく始めて検証し、うまくいったことだけを拡大する'],
-  ],
-  '美容・ダイエット': [
-    ['「何を食べないか」より「何を食べるか」を意識する食事習慣に変える', '日常動作に運動を組み込む「ながら運動」を習慣化する', 'スキンケアは「保湿」と「紫外線対策」の2つを徹底するだけで大きく変わる'],
-  ],
-  '育児・子育て': [
-    ['子どもの「やりたい」という気持ちを最優先に尊重する', '叱るより「なぜそうしたのか」を聞く習慣を作る', '親自身が楽しんでいる姿を見せることが最高の教育になる'],
-  ],
-  '健康・メンタル': [
-    ['まず「睡眠の質」を上げることから始める。他のすべての土台になる', '腸内環境を整えることでメンタルにも好影響が出る', '「完璧にやろうとしない」マインドがメンタルを守る最大の鎧になる'],
-  ],
-  '転職・キャリア': [
-    ['自分の「強み×好き×市場価値」の交差点を見つけることが最初のステップ', '転職活動は「比較検討」を徹底。最低3社の内定を取ってから判断する', '年収交渉は「感謝の気持ち」と「実績データ」をセットで提示すると成功率が上がる'],
-  ],
-  '人間関係': [
-    ['「相手を変えよう」とするのをやめて「自分の反応」を変える練習をする', '境界線（バウンダリー）を設定することで消耗する関係が減っていく', '自己肯定感を上げると「この人は嫌だ」という直感が鋭くなる'],
-  ],
-  'ビジネス・起業': [
-    ['「誰の」「どんな悩みを」解決するかを最初に明確にする', 'まず1人の顧客から深い信頼を得ることが口コミと紹介の起点になる', '価格は「コスト＋利益」ではなく「顧客が得る価値」で設定する'],
-  ],
-  'ライフスタイル': [
-    ['習慣化の鍵は「既存の習慣にくっつけること（habit stacking）」', '理想の生活を「具体的にイメージ」することで行動が自然と変わる', '完璧を目指さず「60点でいい」と決めることで継続できる'],
-  ],
+  '恋愛': [['相手の行動パターンを観察し、感情ではなく事実で判断する', '自分の価値を高めることが最も効果的なアプローチになる', '焦らず「タイミング」を待つことで成功率が格段に上がる']],
+  'お金・資産': [['まず「固定費の見直し」から着手することで即効性がある', '収入の10%を先取り貯金し、残りで生活する仕組みを作る', '長期投資でリスクを分散させ、複利の力を最大限活かす']],
+  '副業・稼ぐ': [['まず既存のスキルを棚卸しして「売れるもの」を特定する', 'SNS発信で「信頼資産」を積み上げてから商品化する', '小さく始めて検証し、うまくいったことだけを拡大する']],
+  '美容・ダイエット': [['「何を食べないか」より「何を食べるか」を意識する食事習慣に変える', '日常動作に運動を組み込む「ながら運動」を習慣化する', 'スキンケアは「保湿」と「紫外線対策」の2つを徹底するだけで大きく変わる']],
+  '育児・子育て': [['子どもの「やりたい」という気持ちを最優先に尊重する', '叱るより「なぜそうしたのか」を聞く習慣を作る', '親自身が楽しんでいる姿を見せることが最高の教育になる']],
+  '健康・メンタル': [['まず「睡眠の質」を上げることから始める。他のすべての土台になる', '腸内環境を整えることでメンタルにも好影響が出る', '「完璧にやろうとしない」マインドがメンタルを守る最大の鎧になる']],
+  '転職・キャリア': [['自分の「強み×好き×市場価値」の交差点を見つけることが最初のステップ', '転職活動は「比較検討」を徹底。最低3社の内定を取ってから判断する', '年収交渉は「感謝の気持ち」と「実績データ」をセットで提示すると成功率が上がる']],
+  '人間関係': [['「相手を変えよう」とするのをやめて「自分の反応」を変える練習をする', '境界線（バウンダリー）を設定することで消耗する関係が減っていく', '自己肯定感を上げると「この人は嫌だ」という直感が鋭くなる']],
+  'ビジネス・起業': [['「誰の」「どんな悩みを」解決するかを最初に明確にする', 'まず1人の顧客から深い信頼を得ることが口コミと紹介の起点になる', '価格は「コスト＋利益」ではなく「顧客が得る価値」で設定する']],
+  'ライフスタイル': [['習慣化の鍵は「既存の習慣にくっつけること（habit stacking）」', '理想の生活を「具体的にイメージ」することで行動が自然と変わる', '完璧を目指さず「60点でいい」と決めることで継続できる']],
 };
-
-// ==========================================
-// ジャンルとテーマのマッピング
-// ==========================================
 
 export const GENRE_THEMES: Record<Genre, Theme[]> = {
   '恋愛': ['脈なし', '脈あり', '男性心理', 'LINE', '片思い', '復縁', '運命の人', '恋愛心理学', '職場恋愛', '婚活', 'マッチングアプリ'],
@@ -373,40 +294,17 @@ export const GENRE_THEMES: Record<Genre, Theme[]> = {
   'ライフスタイル': ['ミニマリスト', '朝活', '読書習慣', '手帳活用', '一人暮らし節約', 'おうち時間', '旅行ハック', 'サウナ効果', 'ペット', 'インテリア'],
 };
 
-// ==========================================
-// ユーティリティ
-// ==========================================
-
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function pickN<T>(arr: T[], n: number): T[] {
-  const shuffled = [...arr].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, n);
+  return [...arr].sort(() => Math.random() - 0.5).slice(0, n);
 }
-
-function getGenreForTheme(theme: Theme): Genre {
-  for (const [genre, themes] of Object.entries(GENRE_THEMES)) {
-    if ((themes as Theme[]).includes(theme)) return genre as Genre;
-  }
-  return 'ライフスタイル';
-}
-
-// ==========================================
-// バズスコア計算
-// ==========================================
 
 function calcBuzzScore(hookType: HookType, genre: Genre): BuzzScore {
-  const hookBonus: Record<HookType, number> = {
-    '否定系': 22, '不安系': 20, '暴露系': 23, '共感系': 18, '実は系': 19, '数字系': 21, '限定系': 24,
-  };
-  const genreBonus: Record<Genre, number> = {
-    '副業・稼ぐ': 5, 'お金・資産': 4, '美容・ダイエット': 4, '恋愛': 3,
-    '転職・キャリア': 3, '健康・メンタル': 2, 'ビジネス・起業': 3,
-    '育児・子育て': 2, '人間関係': 2, 'ライフスタイル': 1,
-  };
-
+  const hookBonus: Record<HookType, number> = { '否定系': 22, '不安系': 20, '暴露系': 23, '共感系': 18, '実は系': 19, '数字系': 21, '限定系': 24 };
+  const genreBonus: Record<Genre, number> = { '副業・稼ぐ': 5, 'お金・資産': 4, '美容・ダイエット': 4, '恋愛': 3, '転職・キャリア': 3, '健康・メンタル': 2, 'ビジネス・起業': 3, '育児・子育て': 2, '人間関係': 2, 'ライフスタイル': 1 };
   const base = hookBonus[hookType] + genreBonus[genre];
   const hookPower = Math.min(100, base * 4 + Math.floor(Math.random() * 10));
   const saveRate = Math.min(100, base * 3 + Math.floor(Math.random() * 15) + 20);
@@ -414,96 +312,45 @@ function calcBuzzScore(hookType: HookType, genre: Genre): BuzzScore {
   const profileRate = Math.min(100, base * 3 + Math.floor(Math.random() * 10) + 18);
   const seoScore = Math.min(100, base * 3 + Math.floor(Math.random() * 8) + 22);
   const total = Math.round((hookPower + saveRate + commentRate + profileRate + seoScore) / 5);
-
-  const comments = [
-    '🔥 超バズ確定！今すぐ投稿すべき最強コンテンツ',
-    '⚡ バズ率最高クラス！シェア・保存が爆増する予感',
-    '✨ 高バズポテンシャル！プロフィール流入が期待できます',
-    '💎 良質コンテンツ！じわじわフォロワーが増えるタイプ',
-    '🚀 2026年トレンドに合致！伸びしろ大の投稿です',
-  ];
-
-  return {
-    hookPower,
-    saveRate,
-    commentRate,
-    profileRate,
-    seoScore,
-    total,
-    comment: total >= 85 ? comments[0] : total >= 78 ? comments[1] : total >= 70 ? comments[2] : total >= 62 ? comments[3] : comments[4],
-  };
+  const comments = ['🔥 超バズ確定！今すぐ投稿すべき最強コンテンツ', '⚡ バズ率最高クラス！シェア・保存が爆増する予感', '✨ 高バズポテンシャル！プロフィール流入が期待できます', '💎 良質コンテンツ！じわじわフォロワーが増えるタイプ', '🚀 2026年トレンドに合致！伸びしろ大の投稿です'];
+  return { hookPower, saveRate, commentRate, profileRate, seoScore, total, comment: total >= 85 ? comments[0] : total >= 78 ? comments[1] : total >= 70 ? comments[2] : total >= 62 ? comments[3] : comments[4] };
 }
 
-// ==========================================
-// メインコンテンツ生成
-// ==========================================
-
-// 20文字ごとに改行を挿入（TikTok台本用）
 function wrapAt20(text: string): string {
   return text.split('\n').map(line => {
     if (line.length <= 20) return line;
     const chunks: string[] = [];
-    for (let i = 0; i < line.length; i += 20) {
-      chunks.push(line.slice(i, i + 20));
-    }
+    for (let i = 0; i < line.length; i += 20) chunks.push(line.slice(i, i + 20));
     return chunks.join('\n');
   }).join('\n');
 }
 
-function generateMainContent(
-  theme: Theme,
-  hookType: HookType,
-  genre: Genre,
-  hook: string,
-  tiktokLength: 300 | 500 | 600,
-  profileCta: string
-): string {
-  const themeDetail = THEME_DETAILS[theme];
-  const points = themeDetail?.points[0] ?? DEFAULT_POINTS[genre][0];
+function generateMainContent(theme: Theme, hookType: HookType, genre: Genre, hook: string, tiktokLength: 300 | 500 | 600, profileCta: string): string {
+  const points = THEME_DETAILS[theme]?.points[0] ?? DEFAULT_POINTS[genre][0];
   const cta = profileCta || pick(GENRE_DATA[genre].ctaVariants ?? ['プロフィールへ✨']);
-
   const trendWord = pick(TREND_PHRASES_2026);
   const buzzWord = pick(BUZZ_WORDS_2026.impact);
-
   let content = '';
 
   if (tiktokLength === 300) {
-    // 目標300文字：フック＋3ポイント＋CTA
     content = `${hook}\n\n${theme}について、知らないと本当に損します。\n\n✅ ${points[0]}\n\n✅ ${points[1]}\n\n✅ ${points[2]}\n\n今日から1つだけ実践してみてください。\n\n${cta}`;
-
-    // 文字数が足りない場合にパディング
-    const current300 = content.replace(/\n/g, '').length;
-    if (current300 < 250) {
+    if (content.replace(/\n/g, '').length < 250) {
       content = `${hook}\n\n${trendWord}、${theme}について正直に話します。\nこれを知らないまま過ごすのは本当にもったいない。\n\n✅ ${points[0]}\n\n✅ ${points[1]}\n\n✅ ${points[2]}\n\nまずは1つだけ今日から試してみてください💡\n\n${cta}`;
     }
-
   } else if (tiktokLength === 500) {
-    // 目標500文字：フック＋導入＋3ポイント詳細＋まとめ＋CTA
     content = `${hook}\n\n${trendWord}、${theme}について正直に話します。\n「なんとなくわかってる」では結果は変わりません。\n具体的に何をすべきか、3つにまとめました。\n\n【① ${points[0].split('。')[0]}】\n${points[0]}\nまずここから始めることが最短ルートです。\n\n【② ${points[1].split('。')[0]}】\n${points[1]}\nこれを意識するだけで結果が変わってきます。\n\n【③ ${points[2].split('。')[0]}】\n${points[2]}\n継続することで確実に差がつきます。\n\n${pick(BUZZ_WORDS_2026.empathy)}という声が多い${theme}。\n完璧じゃなくていい。まず1つだけ動いてみてください🔥\n\n${cta}`;
-
-    // 500文字に足りない場合はさらに肉付け
-    const current500 = content.replace(/\n/g, '').length;
-    if (current500 < 430) {
+    if (content.replace(/\n/g, '').length < 430) {
       content = `${hook}\n\n${trendWord}、${theme}について本音で話します。\n多くの人が「なんとなく知ってる」で止まっていますが、\nそれが結果が出ない一番の原因です。\n今日は具体的に何をすべきか、3つに絞って解説します。\n\n【ポイント① ${points[0].split('。')[0]}】\n${points[0]}\nこれが土台になります。まず最初にやること。\n\n【ポイント② ${points[1].split('。')[0]}】\n${points[1]}\n意外と見落としている人が多いポイントです。\n\n【ポイント③ ${points[2].split('。')[0]}】\n${points[2]}\nここまでできれば、周りと大きな差がつきます。\n\n${pick(BUZZ_WORDS_2026.empathy)}という声が多い${theme}。\n完璧を目指さなくていい。まず1つだけ今日から動いてみてください🔥\n保存して後で読み返してね📌\n\n${cta}`;
     }
-
   } else {
-    // 目標600文字：フック＋背景＋3ポイント詳細＋体験談風＋まとめ＋CTA
     content = `${hook}\n\n${trendWord}、${theme}について${buzzWord}伝えます。\nこれを知らないまま過ごしていると、1年後に取り返しのつかない差がついています。\n実際に結果を出している人たちが共通してやっていること、全部話します。\n\n━━━━━━━━━━━━━━\n【ポイント① ${points[0].split('。')[0]}】\n${points[0]}\n\nほとんどの人がここをすっ飛ばして失敗します。\n遠回りに見えても、これが一番の近道です。\n\n【ポイント② ${points[1].split('。')[0]}】\n${points[1]}\n\n${pick(BUZZ_WORDS_2026.authority)}やり方です。\n継続できる仕組みを作ることが鍵になります。\n\n【ポイント③ ${points[2].split('。')[0]}】\n${points[2]}\n\nここまで実践できれば、周りと圧倒的な差がつきます。\n━━━━━━━━━━━━━━\n\n${pick(BUZZ_WORDS_2026.urgency)}という状況だからこそ、今すぐ動くことが大切です。\n「いつかやろう」が一番危険な考え方。\n\nこの投稿が参考になったら保存&シェアしてください🙏\n\n${cta}`;
   }
-
   return wrapAt20(content);
 }
 
-// ==========================================
-// note記事生成
-// ==========================================
-
 function generateNoteArticle(theme: Theme, genre: Genre, hook: string): string {
-  const themeDetail = THEME_DETAILS[theme];
-  const points = themeDetail?.points[0] ?? DEFAULT_POINTS[genre][0];
-  const subtitle = themeDetail?.noteSubtitles[0] ?? `${theme}を完全マスターするためのガイド`;
-
+  const points = THEME_DETAILS[theme]?.points[0] ?? DEFAULT_POINTS[genre][0];
+  const subtitle = THEME_DETAILS[theme]?.noteSubtitles[0] ?? `${theme}を完全マスターするためのガイド`;
   return `${theme}の真実：${hook.replace(/\n/g, '')}
 
 ━━━━━━━━━━━━━━━━━━
@@ -549,51 +396,29 @@ ${points[2]}
 この記事が役に立ったらシェアしてください🙏`;
 }
 
-// ==========================================
-// SEO情報生成
-// ==========================================
-
 function generateSEO(theme: Theme, genre: Genre) {
   const themeDetail = THEME_DETAILS[theme];
-  const keywords = themeDetail?.seoKeywords ?? [
-    `${theme} 方法`,
-    `${theme} 始め方`,
-    `${theme} コツ 2026`,
-    `${genre} ${theme}`,
-  ];
-  const description = themeDetail?.seoDescription ??
-    `${theme}について、2026年最新の情報をもとに実践的な方法をわかりやすく解説します。${genre}に関心のある方必見の内容です。`;
-
   return {
     title: `【2026年最新】${theme}で結果を出す方法｜${pick(BUZZ_WORDS_2026.impact)}`,
-    keywords,
-    description,
+    keywords: themeDetail?.seoKeywords ?? [`${theme} 方法`, `${theme} 始め方`, `${theme} コツ 2026`, `${genre} ${theme}`],
+    description: themeDetail?.seoDescription ?? `${theme}について、2026年最新の情報をもとに実践的な方法をわかりやすく解説します。${genre}に関心のある方必見の内容です。`,
   };
 }
 
-// ==========================================
-// メイン生成関数
-// ==========================================
-
-// ジャンル×テーマから最もバズるフックタイプを自動選択
-function selectBestHookType(genre: Genre, theme: Theme): HookType {
-  // ジャンル別のバズりやすいフック順位
+function selectBestHookType(genre: Genre, _theme: Theme): HookType {
   const genreHookPriority: Record<Genre, HookType[]> = {
-    '副業・稼ぐ':     ['暴露系', '数字系', '否定系', '限定系', '不安系', '実は系', '共感系'],
-    'お金・資産':     ['数字系', '不安系', '暴露系', '否定系', '限定系', '実は系', '共感系'],
+    '副業・稼ぐ': ['暴露系', '数字系', '否定系', '限定系', '不安系', '実は系', '共感系'],
+    'お金・資産': ['数字系', '不安系', '暴露系', '否定系', '限定系', '実は系', '共感系'],
     'ビジネス・起業': ['暴露系', '否定系', '数字系', '限定系', '実は系', '不安系', '共感系'],
-    '美容・ダイエット':['暴露系', '共感系', '数字系', '実は系', '否定系', '不安系', '限定系'],
-    '恋愛':           ['共感系', '暴露系', '実は系', '数字系', '不安系', '否定系', '限定系'],
-    '育児・子育て':   ['共感系', '暴露系', '数字系', '実は系', '不安系', '否定系', '限定系'],
+    '美容・ダイエット': ['暴露系', '共感系', '数字系', '実は系', '否定系', '不安系', '限定系'],
+    '恋愛': ['共感系', '暴露系', '実は系', '数字系', '不安系', '否定系', '限定系'],
+    '育児・子育て': ['共感系', '暴露系', '数字系', '実は系', '不安系', '否定系', '限定系'],
     '健康・メンタル': ['実は系', '共感系', '暴露系', '数字系', '不安系', '否定系', '限定系'],
     '転職・キャリア': ['数字系', '暴露系', '不安系', '限定系', '否定系', '実は系', '共感系'],
-    '人間関係':       ['共感系', '実は系', '暴露系', '否定系', '数字系', '不安系', '限定系'],
+    '人間関係': ['共感系', '実は系', '暴露系', '否定系', '数字系', '不安系', '限定系'],
     'ライフスタイル': ['実は系', '共感系', '数字系', '暴露系', '否定系', '不安系', '限定系'],
   };
-
-  const priority = genreHookPriority[genre];
-  // 上位3つからランダムに選ぶ（毎回同じにならないように）
-  return pick(priority.slice(0, 3));
+  return pick(genreHookPriority[genre].slice(0, 3));
 }
 
 export function generateContent(params: {
@@ -604,61 +429,49 @@ export function generateContent(params: {
   tiktokLength: 300 | 500 | 600;
   profileCta: string;
   postUrl: string;
+  noteUrl?: string;
 }): GeneratedContent {
   const { genre, theme, tiktokLength, profileCta, postUrl } = params;
   const genreData = GENRE_DATA[genre];
-
-  // フックタイプを自動選択
   const hookType = selectBestHookType(genre, theme);
   const hooks = genreData.hooks[hookType];
   const hook = hooks ? pick(hooks) : `${theme}について、知らないとヤバい話をします`;
-
   const mainContent = generateMainContent(theme, hookType, genre, hook, tiktokLength, profileCta);
 
-  // ハッシュタグ
   const hashtagGroup = pick(genreData.hashtagGroups ?? [['SNS', '投稿', 'バズる']]);
   const extraTags = pickN(['バズる', 'TikTok', 'Threads', '2026', 'SNS投稿', 'フォロー歓迎', '保存推奨', '拡散希望'], 4);
   const allTags = [...new Set([...hashtagGroup, ...extraTags])];
   const hashtagText = allTags.map(t => `#${t}`).join(' ');
 
-  // Threads投稿
+  const themePoints = THEME_DETAILS[theme]?.points[0] ?? DEFAULT_POINTS[genre][0];
   const urlLine = postUrl ? `\n\n🔗 ${postUrl}` : '';
-  const threadsPost = `${hook}\n\n✅ ${theme}について、今日から使えるポイントを解説中\n\n保存して後で読み返してね📌${urlLine}\n\n${hashtagText}`;
 
-  // テーマのポイント取得（X投稿用）
-  const themePoints = (THEME_DETAILS[theme]?.points[0]) ?? DEFAULT_POINTS[genre][0];
+  const threadsPost = `${hook}\n\n${theme}について、知らないと本当に損することを話します。\n\n✅ ${themePoints[0]}\n\n✅ ${themePoints[1]}\n\n✅ ${themePoints[2]}\n\n${pick(BUZZ_WORDS_2026.empathy)}という人がとても多い${theme}。\nまず1つだけ今日から試してみてください🔥\n\n保存して後で読み返してね📌${urlLine}\n\n${hashtagText}`;
 
-  // X投稿（テーマに合った内容で生成）
   const xHashtags = pickN(allTags.map(t => `#${t}`), 5).join(' ');
-  const xPost = `${hook}\n\n${theme}について3つのポイントをまとめました👇\n\n① ${themePoints[0].slice(0, 25)}...\n② ${themePoints[1].slice(0, 25)}...\n③ ${themePoints[2].slice(0, 25)}...\n\n保存して後で使ってね📌${urlLine}\n\n${xHashtags}`;
+  const xPost = `${hook}\n\n${theme}について3つのポイントをまとめました👇\n\n① ${themePoints[0].length > 30 ? themePoints[0].slice(0, 30) + '…' : themePoints[0]}\n② ${themePoints[1].length > 30 ? themePoints[1].slice(0, 30) + '…' : themePoints[1]}\n③ ${themePoints[2].length > 30 ? themePoints[2].slice(0, 30) + '…' : themePoints[2]}\n\n詳しくはnoteで解説中📝\n保存して後で使ってね📌${urlLine}\n\n${xHashtags}`;
 
-  // note記事（Markdownなしのプレーンテキスト）
   const noteArticle = generateNoteArticle(theme, genre, hook);
+  const seoSet = {
+    ...generateSEO(theme, genre),
+    howToUse: `【SEO対策セットの使い方】\n\n① SEOタイトル\n　→ note・ブログ記事のタイトルにそのまま使用\n\n② キーワード\n　→ 記事本文に自然に盛り込む。見出しや冒頭100文字以内に入れると効果的\n\n③ メタディスクリプション\n　→ noteの「つぶやき欄」や記事冒頭に使用。SNSシェア時の説明文になります`,
+  };
+  const noteUrl = params.noteUrl ?? '';
 
-  // SEO
-  const seoSet = generateSEO(theme, genre);
-
-  // サムネイル（TikTokサイズ＋noteサイズの2パターン）
   const thumbnailConcept = pick(genreData.thumbnailConcepts ?? ['インパクトのある背景×大きなテキスト']);
   const accentColor = genre === '恋愛' ? 'ピンク系' : genre === 'お金・資産' ? 'ゴールド系' : genre === '美容・ダイエット' ? 'サーモン系' : genre === '副業・稼ぐ' ? 'オレンジ系' : 'アクアブルー系';
-  const thumbnailPrompt = `■ TikTokサムネイル（縦型）\nサイズ：1080×1920px（9:16）\n背景：${thumbnailConcept}\nメインテキスト：「${hook.slice(0, 20)}」\nサブテキスト：「${theme}完全攻略」\nアクセントカラー：${accentColor}\nフォント：インパクト重視の太ゴシック体\n配置：テキストを画面中央〜上部に大きく\nアイコン：${theme}関連を右下に配置\n\n■ noteサムネイル（横型）\nサイズ：1280×670px（16:9）\n背景：${thumbnailConcept}\nメインテキスト：「${hook.slice(0, 28)}」\nサブテキスト：「${genre} | ${theme}」\nアクセントカラー：${accentColor}\nフォント：読みやすい明朝体orゴシック体\n配置：左寄せ＋右側にイラストorアイコン\n雰囲気：落ち着いた上品なデザイン`;
+  const thumbnailTikTok = `サイズ：1080×1920px（縦型9:16）\n背景：${thumbnailConcept}\nメインテキスト：「${hook.slice(0, 20)}」\nサブテキスト：「${theme}完全攻略」\nアクセントカラー：${accentColor}\nフォント：インパクト重視の太ゴシック体\n配置：テキストを画面中央〜上部に大きく配置\nアイコン：${theme}に関連するアイコンを右下に`;
+  const thumbnailNote = `サイズ：1280×670px（横型16:9）\n背景：${thumbnailConcept}\nメインテキスト：「${hook.slice(0, 28)}」\nサブテキスト：「${genre} | ${theme}」\nアクセントカラー：${accentColor}\nフォント：読みやすい明朝体orゴシック体\n配置：左寄せレイアウト＋右側にイラストorアイコン\n雰囲気：noteらしい落ち着いた上品なデザイン`;
+  const thumbnailPrompt = `【TikTok縦型】\n${thumbnailTikTok}\n\n【note横型】\n${thumbnailNote}`;
 
-  // バズスコア
   const buzzScore = calcBuzzScore(hookType, genre);
 
   return {
-    genre,
-    theme,
-    hookType,
+    genre, theme, hookType,
     prevTitle: params.prevTitle,
-    mainContent,
-    hashtags: allTags,
-    hashtagText,
-    threadsPost,
-    xPost,
-    noteArticle,
-    seoSet,
-    thumbnailPrompt,
+    mainContent, hashtags: allTags, hashtagText,
+    threadsPost, xPost, noteArticle, noteUrl,
+    seoSet, thumbnailPrompt, thumbnailTikTok, thumbnailNote,
     buzzScore,
     timestamp: new Date().toLocaleString('ja-JP'),
   };
