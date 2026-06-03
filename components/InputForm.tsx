@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Genre, Theme, OutputKey } from '../types';
 import { LoadingState } from '../types';
-import { GENRE_THEMES } from '../services/contentGenerator';
+import { GENRE_THEMES } from '../services/loveContentGenerator';
 
 const GENRES: Genre[] = [
   '恋愛', 'お金・資産', '副業・稼ぐ', '美容・ダイエット', '育児・子育て',
