@@ -456,11 +456,28 @@ function generateMainContent(
   let content = '';
 
   if (tiktokLength === 300) {
-    content = `${hook}\n\n${trendWord}、${theme}について${buzzWord}話します。\n\n✅${points[0]}\n\n✅${points[1]}\n\n✅${points[2]}\n\n${cta}`;
+    // 目標300文字：フック＋3ポイント＋CTA
+    content = `${hook}\n\n${theme}について、知らないと本当に損します。\n\n✅ ${points[0]}\n\n✅ ${points[1]}\n\n✅ ${points[2]}\n\n今日から1つだけ実践してみてください。\n\n${cta}`;
+
+    // 文字数が足りない場合にパディング
+    const current300 = content.replace(/\n/g, '').length;
+    if (current300 < 250) {
+      content = `${hook}\n\n${trendWord}、${theme}について正直に話します。\nこれを知らないまま過ごすのは本当にもったいない。\n\n✅ ${points[0]}\n\n✅ ${points[1]}\n\n✅ ${points[2]}\n\nまずは1つだけ今日から試してみてください💡\n\n${cta}`;
+    }
+
   } else if (tiktokLength === 500) {
-    content = `${hook}\n\n${trendWord}、${theme}について正直に解説します。\n\n多くの人が見落としているポイントを3つお伝えします。\n\n【ポイント①】\n${points[0]}\n\n【ポイント②】\n${points[1]}\n\n【ポイント③】\n${points[2]}\n\n${pick(BUZZ_WORDS_2026.empathy)}という声が多い${theme}。\nまずは今日から1つだけ実践してみてください。\n\n${cta}`;
+    // 目標500文字：フック＋導入＋3ポイント詳細＋まとめ＋CTA
+    content = `${hook}\n\n${trendWord}、${theme}について正直に話します。\n「なんとなくわかってる」では結果は変わりません。\n具体的に何をすべきか、3つにまとめました。\n\n【① ${points[0].split('。')[0]}】\n${points[0]}\nまずここから始めることが最短ルートです。\n\n【② ${points[1].split('。')[0]}】\n${points[1]}\nこれを意識するだけで結果が変わってきます。\n\n【③ ${points[2].split('。')[0]}】\n${points[2]}\n継続することで確実に差がつきます。\n\n${pick(BUZZ_WORDS_2026.empathy)}という声が多い${theme}。\n完璧じゃなくていい。まず1つだけ動いてみてください🔥\n\n${cta}`;
+
+    // 500文字に足りない場合はさらに肉付け
+    const current500 = content.replace(/\n/g, '').length;
+    if (current500 < 430) {
+      content = `${hook}\n\n${trendWord}、${theme}について本音で話します。\n多くの人が「なんとなく知ってる」で止まっていますが、\nそれが結果が出ない一番の原因です。\n今日は具体的に何をすべきか、3つに絞って解説します。\n\n【ポイント① ${points[0].split('。')[0]}】\n${points[0]}\nこれが土台になります。まず最初にやること。\n\n【ポイント② ${points[1].split('。')[0]}】\n${points[1]}\n意外と見落としている人が多いポイントです。\n\n【ポイント③ ${points[2].split('。')[0]}】\n${points[2]}\nここまでできれば、周りと大きな差がつきます。\n\n${pick(BUZZ_WORDS_2026.empathy)}という声が多い${theme}。\n完璧を目指さなくていい。まず1つだけ今日から動いてみてください🔥\n保存して後で読み返してね📌\n\n${cta}`;
+    }
+
   } else {
-    content = `${hook}\n\n${trendWord}、${theme}について${buzzWord}伝えます。\n\nこれを知らないまま過ごしていると、1年後に大きな差がついています。\n\n━━━━━━━━━━━━━━\n【ポイント①】\n${points[0]}\n\nまずはここから始めることが、最短ルートです。\n\n【ポイント②】\n${points[1]}\n\nこれは${pick(BUZZ_WORDS_2026.authority)}方法です。\n\n【ポイント③】\n${points[2]}\n━━━━━━━━━━━━━━\n\n${pick(BUZZ_WORDS_2026.urgency)}という状況だからこそ、今すぐ動くことが大切です。\n\n最後まで読んでくれてありがとうございます。\nこの投稿が参考になったら保存&シェアしてください🙏\n\n${cta}`;
+    // 目標600文字：フック＋背景＋3ポイント詳細＋体験談風＋まとめ＋CTA
+    content = `${hook}\n\n${trendWord}、${theme}について${buzzWord}伝えます。\nこれを知らないまま過ごしていると、1年後に取り返しのつかない差がついています。\n実際に結果を出している人たちが共通してやっていること、全部話します。\n\n━━━━━━━━━━━━━━\n【ポイント① ${points[0].split('。')[0]}】\n${points[0]}\n\nほとんどの人がここをすっ飛ばして失敗します。\n遠回りに見えても、これが一番の近道です。\n\n【ポイント② ${points[1].split('。')[0]}】\n${points[1]}\n\n${pick(BUZZ_WORDS_2026.authority)}やり方です。\n継続できる仕組みを作ることが鍵になります。\n\n【ポイント③ ${points[2].split('。')[0]}】\n${points[2]}\n\nここまで実践できれば、周りと圧倒的な差がつきます。\n━━━━━━━━━━━━━━\n\n${pick(BUZZ_WORDS_2026.urgency)}という状況だからこそ、今すぐ動くことが大切です。\n「いつかやろう」が一番危険な考え方。\n\nこの投稿が参考になったら保存&シェアしてください🙏\n\n${cta}`;
   }
 
   return content;
