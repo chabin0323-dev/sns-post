@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Genre, Theme, OutputKey } from '../types';
 import { LoadingState } from '../types';
 import { GENRE_THEMES } from '../services/loveContentGenerator';
@@ -42,6 +42,7 @@ interface Props {
     tiktokLength: 300 | 500 | 600;
     profileCta: string;
     postUrl: string;
+    freeTheme?: string;
   }) => void;
   loadingState: LoadingState;
 }
@@ -54,6 +55,40 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
   const [profileCta, setProfileCta] = useState(PROFILE_CTAS[0]);
   const [postUrl, setPostUrl] = useState('');
   const [enabledKeys, setEnabledKeys] = useState<OutputKey[]>(['mainContent', 'hashtags', 'threads', 'x']);
+  // ① テーマ自由入力
+  const [freeTheme, setFreeTheme] = useState('');
+  // 保存済み通知用
+  const [savedField, setSavedField] = useState<string | null>(null);
+
+  // ページ読み込み時にlocalStorageから復元
+  useEffect(() => {
+    const saved = localStorage.getItem('sns_post_saved');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data.prevTitle !== undefined) setPrevTitle(data.prevTitle);
+        if (data.postUrl !== undefined) setPostUrl(data.postUrl);
+        if (data.freeTheme !== undefined) setFreeTheme(data.freeTheme);
+        if (data.profileCta !== undefined) setProfileCta(data.profileCta);
+      } catch {}
+    }
+  }, []);
+
+  const showSaved = (field: string) => {
+    setSavedField(field);
+    setTimeout(() => setSavedField(null), 1500);
+  };
+
+  const saveField = (field: string, value: string) => {
+    const existing = localStorage.getItem('sns_post_saved');
+    let data: Record<string, string> = {};
+    if (existing) {
+      try { data = JSON.parse(existing); } catch {}
+    }
+    data[field] = value;
+    localStorage.setItem('sns_post_saved', JSON.stringify(data));
+    showSaved(field);
+  };
 
   const themes = GENRE_THEMES[genre];
 
@@ -70,10 +105,21 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
 
   const handleSubmit = () => {
     if (enabledKeys.length === 0) return;
-    onGenerate({ genre, theme, prevTitle, enabledKeys, tiktokLength, profileCta, postUrl });
+    onGenerate({ genre, theme, prevTitle, enabledKeys, tiktokLength, profileCta, postUrl, freeTheme });
   };
 
   const isLoading = loadingState === LoadingState.LOADING;
+
+  const SaveButton: React.FC<{ field: string; value: string }> = ({ field, value }) => (
+    <button
+      type="button"
+      onClick={() => saveField(field, value)}
+      className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex-shrink-0"
+      style={{ background: savedField === field ? 'linear-gradient(135deg, #34D399, #10B981)' : 'linear-gradient(135deg, #F472B6, #EC4899)', color: 'white' }}
+    >
+      {savedField === field ? '✓ 保存済' : '保存'}
+    </button>
+  );
 
   return (
     <div className="space-y-5">
@@ -100,6 +146,22 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
               {t}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* ① テーマ自由入力欄 */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100">
+        <label className="block text-sm font-bold text-gray-700 mb-2">✏️ テーマを自由入力（任意）</label>
+        <p className="text-xs text-gray-400 mb-3">例：恋愛・復縁・結婚・転職・人間関係・金運など</p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="自由にテーマを入力..."
+            value={freeTheme}
+            onChange={e => setFreeTheme(e.target.value)}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+          />
+          <SaveButton field="freeTheme" value={freeTheme} />
         </div>
       </div>
 
@@ -148,25 +210,34 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
               {cta}
             </button>
           ))}
-          <input type="text" placeholder="カスタム入力..."
-            value={PROFILE_CTAS.includes(profileCta) ? '' : profileCta}
-            onChange={e => setProfileCta(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
+          <div className="flex gap-2">
+            <input type="text" placeholder="カスタム入力..."
+              value={PROFILE_CTAS.includes(profileCta) ? '' : profileCta}
+              onChange={e => setProfileCta(e.target.value)}
+              className="flex-1 px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
+            <SaveButton field="profileCta" value={profileCta} />
+          </div>
         </div>
       </div>
 
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-pink-100 space-y-4">
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">🔗 投稿URL（Threads/X等）</label>
-          <input type="text" placeholder="https://threads.net/..." value={postUrl}
-            onChange={e => setPostUrl(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
+          <div className="flex gap-2">
+            <input type="text" placeholder="https://threads.net/..." value={postUrl}
+              onChange={e => setPostUrl(e.target.value)}
+              className="flex-1 px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
+            <SaveButton field="postUrl" value={postUrl} />
+          </div>
         </div>
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">📌 前回の投稿タイトル（任意）</label>
-          <input type="text" placeholder="前回の人気投稿を参考に生成..." value={prevTitle}
-            onChange={e => setPrevTitle(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
+          <div className="flex gap-2">
+            <input type="text" placeholder="前回の人気投稿を参考に生成..." value={prevTitle}
+              onChange={e => setPrevTitle(e.target.value)}
+              className="flex-1 px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
+            <SaveButton field="prevTitle" value={prevTitle} />
+          </div>
         </div>
       </div>
 
