@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Header } from './components/Header';
 import { InputForm } from './components/InputForm';
 import { ResultCard } from './components/ResultCard';
@@ -6,11 +6,30 @@ import { LoadingState } from './types';
 import type { GeneratedContent, OutputKey, Genre, Theme } from './types';
 import { generateContent } from './services/loveContentGenerator';
 
+const RESULT_STORAGE_KEY = 'sns_post_last_result_v2';
+
 const App: React.FC = () => {
   const [loadingState, setLoadingState] = useState<LoadingState>(LoadingState.IDLE);
   const [currentContent, setCurrentContent] = useState<GeneratedContent | null>(null);
   const [enabledKeys, setEnabledKeys] = useState<OutputKey[]>([]);
   const resultRef = useRef<HTMLDivElement>(null);
+
+  // 起動時に前回の生成結果を復元
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(RESULT_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as { content: GeneratedContent; enabledKeys: OutputKey[] };
+        if (parsed.content && parsed.enabledKeys) {
+          setCurrentContent(parsed.content);
+          setEnabledKeys(parsed.enabledKeys);
+          setLoadingState(LoadingState.SUCCESS);
+        }
+      }
+    } catch {
+      // 復元失敗時は無視
+    }
+  }, []);
 
   const handleGenerate = async (params: {
     genre: Genre;
@@ -20,6 +39,7 @@ const App: React.FC = () => {
     tiktokLength: 300 | 500 | 600;
     profileCta: string;
     postUrl: string;
+    freeTheme?: string;
   }) => {
     setLoadingState(LoadingState.LOADING);
     setEnabledKeys(params.enabledKeys);
@@ -28,6 +48,15 @@ const App: React.FC = () => {
       const result = generateContent(params);
       setCurrentContent(result);
       setLoadingState(LoadingState.SUCCESS);
+      // 生成結果をlocalStorageに永続保存
+      try {
+        localStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify({
+          content: result,
+          enabledKeys: params.enabledKeys,
+        }));
+      } catch {
+        // 保存失敗時は無視
+      }
       setTimeout(() => {
         resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
@@ -82,5 +111,4 @@ const App: React.FC = () => {
     </div>
   );
 };
-
 export default App;
