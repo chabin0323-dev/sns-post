@@ -11,13 +11,23 @@ const RESULT_STORAGE_KEY = 'sns_post_last_result_v2';
 // localStorage 永続保存ヘルパー
 function _saveResult(data: object): void {
   try {
-    localStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify(data));
-  } catch {}
+    const json = JSON.stringify(data);
+    localStorage.setItem(RESULT_STORAGE_KEY, json);
+    const verify = localStorage.getItem(RESULT_STORAGE_KEY);
+    if (verify !== json) {
+      alert('⚠️記事保存失敗: 書き込み後の読み返し不一致');
+    }
+  } catch(e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    alert('⚠️記事保存エラー: ' + msg);
+  }
 }
 function _loadResult(): string | null {
   try {
     return localStorage.getItem(RESULT_STORAGE_KEY);
-  } catch {
+  } catch(e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    alert('⚠️記事読込エラー: ' + msg);
     return null;
   }
 }
