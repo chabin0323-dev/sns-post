@@ -33,33 +33,57 @@ const PROFILE_CTAS = [
   '保存して後で使ってね📌',
 ];
 
-// ── 永続保存ヘルパー（localStorage のみ・コンポーネント外） ──
+// ── 永続保存ヘルパー（cookie使用・iOS Safari対応） ──
 const _STORAGE_KEY = 'sns_post_saved_v2';
+
+const _setCookie = (name: string, value: string, days: number): void => {
+  const expires = new Date();
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + expires.toUTCString() + ';path=/;SameSite=Lax';
+};
+
+const _getCookie = (name: string): string | null => {
+  const prefix = name + '=';
+  const cookies = document.cookie.split(';');
+  for (let i = 0; i < cookies.length; i++) {
+    const c = cookies[i].trim();
+    if (c.indexOf(prefix) === 0) {
+      return decodeURIComponent(c.substring(prefix.length));
+    }
+  }
+  return null;
+};
+
 const _loadStorage = (): Record<string, string> => {
+  // まずcookieから読む
+  try {
+    const raw = _getCookie(_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed === 'object' && parsed !== null) return parsed as Record<string, string>;
+    }
+  } catch {}
+  // フォールバック: localStorage
   try {
     const raw = localStorage.getItem(_STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, string> : {};
-  } catch(e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    alert('⚠️読込エラー: ' + msg);
-    return {};
-  }
-};
-const _writeStorage = (data: Record<string, string>): void => {
-  try {
-    const json = JSON.stringify(data);
-    localStorage.setItem(_STORAGE_KEY, json);
-    // 書き込み直後に読み返して確認
-    const verify = localStorage.getItem(_STORAGE_KEY);
-    if (verify !== json) {
-      alert('⚠️保存失敗: 書き込み後の読み返し不一致');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed === 'object' && parsed !== null) return parsed as Record<string, string>;
     }
-  } catch(e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    alert('⚠️保存エラー: ' + msg);
-  }
+  } catch {}
+  return {};
+};
+
+const _writeStorage = (data: Record<string, string>): void => {
+  const json = JSON.stringify(data);
+  // cookieに保存（365日間）
+  try {
+    _setCookie(_STORAGE_KEY, json, 365);
+  } catch {}
+  // localStorageにも保存（フォールバック）
+  try {
+    localStorage.setItem(_STORAGE_KEY, json);
+  } catch {}
 };
 
 interface Props {
@@ -112,8 +136,6 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
 
   // アプリ起動時に保存データを復元
   useEffect(() => {
-    const raw = localStorage.getItem('sns_post_saved_v2');
-    alert('起動時localStorage取得: ' + (raw ? raw.slice(0, 80) : 'null（データなし）'));
     const data = _loadStorage();
     if (data.prevTitle) setPrevTitle(data.prevTitle);
     if (data.postUrl) setPostUrl(data.postUrl);
