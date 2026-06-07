@@ -8,6 +8,33 @@ import { generateContent } from './services/loveContentGenerator';
 
 const RESULT_STORAGE_KEY = 'sns_post_last_result_v2';
 
+// window.name + localStorage の二重保存ヘルパー
+// AI Studio等オリジン制約環境でもwindow.nameは維持される
+function _saveResult(data: object): void {
+  const json = JSON.stringify(data);
+  try { localStorage.setItem(RESULT_STORAGE_KEY, json); } catch {}
+  try {
+    // window.nameに既存データがあればマージ、なければ新規
+    let store: Record<string, string> = {};
+    try { store = JSON.parse(window.name || '{}'); } catch {}
+    store[RESULT_STORAGE_KEY] = json;
+    window.name = JSON.stringify(store);
+  } catch {}
+}
+function _loadResult(): string | null {
+  // まずlocalStorageから試みる
+  try {
+    const v = localStorage.getItem(RESULT_STORAGE_KEY);
+    if (v) return v;
+  } catch {}
+  // 次にwindow.nameから試みる
+  try {
+    const store = JSON.parse(window.name || '{}') as Record<string, string>;
+    if (store[RESULT_STORAGE_KEY]) return store[RESULT_STORAGE_KEY];
+  } catch {}
+  return null;
+}
+
 const App: React.FC = () => {
   const [loadingState, setLoadingState] = useState<LoadingState>(LoadingState.IDLE);
   const [currentContent, setCurrentContent] = useState<GeneratedContent | null>(null);
@@ -17,7 +44,7 @@ const App: React.FC = () => {
   // 起動時に前回の生成結果を復元
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(RESULT_STORAGE_KEY);
+      const saved = _loadResult();
       if (saved) {
         const parsed = JSON.parse(saved) as { content: GeneratedContent; enabledKeys: OutputKey[] };
         if (parsed.content && parsed.enabledKeys) {
@@ -48,15 +75,8 @@ const App: React.FC = () => {
       const result = generateContent(params);
       setCurrentContent(result);
       setLoadingState(LoadingState.SUCCESS);
-      // 生成結果をlocalStorageに永続保存
-      try {
-        localStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify({
-          content: result,
-          enabledKeys: params.enabledKeys,
-        }));
-      } catch {
-        // 保存失敗時は無視
-      }
+      // 生成結果を永続保存（localStorage + window.name 二重保存）
+      _saveResult({ content: result, enabledKeys: params.enabledKeys });
       setTimeout(() => {
         resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
