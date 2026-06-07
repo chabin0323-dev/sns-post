@@ -41,14 +41,25 @@ const _loadStorage = (): Record<string, string> => {
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, string> : {};
-  } catch {
+  } catch(e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    alert('⚠️読込エラー: ' + msg);
     return {};
   }
 };
 const _writeStorage = (data: Record<string, string>): void => {
   try {
-    localStorage.setItem(_STORAGE_KEY, JSON.stringify(data));
-  } catch {}
+    const json = JSON.stringify(data);
+    localStorage.setItem(_STORAGE_KEY, json);
+    // 書き込み直後に読み返して確認
+    const verify = localStorage.getItem(_STORAGE_KEY);
+    if (verify !== json) {
+      alert('⚠️保存失敗: 書き込み後の読み返し不一致');
+    }
+  } catch(e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    alert('⚠️保存エラー: ' + msg);
+  }
 };
 
 interface Props {
