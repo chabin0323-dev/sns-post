@@ -8,31 +8,18 @@ import { generateContent } from './services/loveContentGenerator';
 
 const RESULT_STORAGE_KEY = 'sns_post_last_result_v2';
 
-// window.name + localStorage の二重保存ヘルパー
-// AI Studio等オリジン制約環境でもwindow.nameは維持される
+// localStorage 永続保存ヘルパー
 function _saveResult(data: object): void {
-  const json = JSON.stringify(data);
-  try { localStorage.setItem(RESULT_STORAGE_KEY, json); } catch {}
   try {
-    // window.nameに既存データがあればマージ、なければ新規
-    let store: Record<string, string> = {};
-    try { store = JSON.parse(window.name || '{}'); } catch {}
-    store[RESULT_STORAGE_KEY] = json;
-    window.name = JSON.stringify(store);
+    localStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify(data));
   } catch {}
 }
 function _loadResult(): string | null {
-  // まずlocalStorageから試みる
   try {
-    const v = localStorage.getItem(RESULT_STORAGE_KEY);
-    if (v) return v;
-  } catch {}
-  // 次にwindow.nameから試みる
-  try {
-    const store = JSON.parse(window.name || '{}') as Record<string, string>;
-    if (store[RESULT_STORAGE_KEY]) return store[RESULT_STORAGE_KEY];
-  } catch {}
-  return null;
+    return localStorage.getItem(RESULT_STORAGE_KEY);
+  } catch {
+    return null;
+  }
 }
 
 const App: React.FC = () => {
@@ -75,7 +62,7 @@ const App: React.FC = () => {
       const result = generateContent(params);
       setCurrentContent(result);
       setLoadingState(LoadingState.SUCCESS);
-      // 生成結果を永続保存（localStorage + window.name 二重保存）
+      // 生成結果をlocalStorageに永続保存
       _saveResult({ content: result, enabledKeys: params.enabledKeys });
       setTimeout(() => {
         resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
