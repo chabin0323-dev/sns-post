@@ -112,6 +112,8 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
 
   // アプリ起動時に保存データを復元
   useEffect(() => {
+    const raw = localStorage.getItem('sns_post_saved_v2');
+    alert('起動時localStorage取得: ' + (raw ? raw.slice(0, 80) : 'null（データなし）'));
     const data = _loadStorage();
     if (data.prevTitle) setPrevTitle(data.prevTitle);
     if (data.postUrl) setPostUrl(data.postUrl);
