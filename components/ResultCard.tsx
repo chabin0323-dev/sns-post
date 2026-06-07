@@ -1,291 +1,1369 @@
-import React, { useState } from 'react';
-import type { GeneratedContent, OutputKey } from '../types';
+// services/loveContentGenerator.ts
+import type { GeneratedContent, Genre, Theme, HookType, OutputKey } from '../types';
 
-interface Props {
-  content: GeneratedContent;
-  enabledKeys: OutputKey[];
-}
+const TEMPLATES_300: Record<string, string[]> = {
+  '否定系': [
+    `好きな人に毎日LINEを送るのは
+やめてください。
 
-const CopyButton: React.FC<{ text: string }> = ({ text }) => {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <button onClick={handleCopy}
-      className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-white"
-      style={{ background: copied ? '#10B981' : '#6B7280' }}>
-      {copied ? '✓ コピー済み' : 'コピー'}
-    </button>
-  );
+それ、確実に冷められます。
+
+男性が冷める3つの行動：
+
+① 返信を催促する
+相手のペースを無視すると
+「重い」と感じさせてしまいます。
+好きな人ほど追いかけたくなるのは
+わかるけど、逆効果です。
+
+② 感情をそのまま伝える
+不安や寂しさを
+そのままぶつけると
+相手が引いてしまいます。
+
+③ 毎日連絡する
+日常になると特別感がなくなり
+「いて当たり前」になってしまいます。
+
+「焦れば焦るほど遠ざかる」
+
+これが恋愛の現実です。
+
+思い当たることはありましたか？`,
+  ],
+  '不安系': [
+    `急に連絡が減ってきたとき、
+
+「私、何かしたかな」って
+何度もLINEを見返しますよね。
+
+男性が連絡を減らす本当の理由3つ：
+
+① 仕事や別のことで頭がいっぱい
+あなたのことが嫌いになったわけじゃない。
+男性は集中すると他が見えなくなります。
+
+② 関係に慣れてきた
+付き合い始めのテンションが
+落ち着いてくるのは自然なことです。
+
+③ 気持ちが少し変化している
+これが一番不安ですよね。
+でもここで焦って動くのが
+一番やってはいけないことです。
+
+「待てる女性が最終的に選ばれる」
+
+不安なときほど動かないことが大事です。
+
+どれだと思いますか？`,
+  ],
+  '暴露系': [
+    `男性が本命女性にだけする行動を
+話します。
+
+これ、女性にはあまり
+知られていない話です。
+
+本命サイン3つ：
+
+① 返信のスピードが全然違う
+好きな人への返信は
+無意識に早くなります。
+これは意識してコントロールできないので
+本音が出やすいんです。
+
+② 未来の話をしてくる
+「今度〇〇行こう」と
+具体的な約束をしてくる人は
+あなたとの未来を考えています。
+
+③ 弱いところを見せてくる
+本命にしか見せない素の自分があります。
+弱音を吐いてくれるのは信頼の証です。
+
+「言葉より行動を見て」
+
+気になる人、当てはまっていましたか？`,
+  ],
+  '共感系': [
+    `片思いって本当に消耗しますよね。
+
+相手の一挙手一投足が気になって、
+楽しいはずの毎日がなんか疲れる。
+
+スマホを何度も確認して、
+通知が来るたびにドキドキして、
+でも来なかったときのあの落胆する気持ち。
+
+それだけ本気だということです。
+
+本気で人を好きになれる人は
+本当に強いと思います。
+
+本気の恋愛で大事なこと3つ：
+
+① 自分の気持ちを大切にする
+相手のことばかり考えすぎて
+自分を後回しにしていませんか。
+
+② 相手を変えようとしない
+人は簡単には変わりません。
+
+③ 後悔しない選択をする
+動いて傷つくより
+動かないで後悔する方がずっとつらいです。
+
+「恋愛は自分を成長させてくれる」
+
+今、誰かを好きですか？`,
+  ],
+  '実は系': [
+    `実は「優しい男性」ほど
+注意が必要です。
+
+え？と思いますよね。
+
+「優しさ」には2種類あります。
+
+① 誰にでも優しい人
+② あなただけに優しい人
+
+この違いを見抜けないと
+脈なしなのに勘違いして
+ずっと待ち続けることになります。
+
+誰にでも優しい男性は
+決して悪い人じゃないです。
+でも「優しくしてもらえる＝好き」
+ではありません。
+
+見分け方3つ：
+
+① 他の女性への態度と比べる
+② 特別扱いがあるかを確認する
+③ 行動が一貫しているかを見る
+
+「好きな人の優しさを疑うのも愛」
+
+思い当たりますか？`,
+  ],
+  '数字系': [
+    `男性が本命女性にだけする行動5つ、
+全部話します。
+
+① 翌日以降の約束を自分から作る
+「今度〇〇行こう」と
+具体的な日程を提案してきます。
+
+② 体調をさりげなく気にかける
+「最近忙しそうだけど大丈夫？」
+こういう一言、友達には言わないです。
+
+③ 弱音を吐いてくる
+本命にしか見せない顔があります。
+
+④ 他の女性の話をあまりしない
+意識している人の前では
+他の女性を話題にしたくない
+心理が働きます。
+
+⑤ あなたの小さな変化にすぐ気づく
+好きな人のことはよく見ています。
+
+「言葉より行動、行動より習慣を見て」
+
+何個当てはまりましたか？
+コメントで教えてください。`,
+  ],
+  '限定系': [
+    `本命彼女になれた人が全員やっていた
+たった1つのことを話します。
+
+それは「追わないこと」です。
+
+でもこれが一番難しくて
+一番効果があります。
+
+なぜかというと
+男性は追いかけるのが好きだからです。
+
+追われるとだんだん逃げたくなる。
+これは心理学的にも証明されています。
+
+追わないためにやること3つ：
+
+① 自分の好きなことに時間を使う
+充実している自分が一番魅力的です。
+
+② 相手からの連絡を待てるようになる
+「来なくても大丈夫」という
+心の余裕を持つことが大事です。
+
+③ 自分の機嫌を自分でとれるようになる
+感情が安定している人は
+一緒にいて心地よいと感じさせます。
+
+「追われる女性より輝く女性になること」
+
+あなたはどちらのタイプ？`,
+  ],
 };
 
-const BuzzMeter: React.FC<{ value: number; label: string; color: string }> = ({ value, label, color }) => (
-  <div className="space-y-1">
-    <div className="flex justify-between text-xs text-gray-500">
-      <span>{label}</span>
-      <span className="font-bold" style={{ color }}>{value}</span>
-    </div>
-    <div className="w-full bg-gray-100 rounded-full h-2">
-      <div className="h-2 rounded-full transition-all duration-1000" style={{ width: `${value}%`, background: color }} />
-    </div>
-  </div>
-);
+const TEMPLATES_500: Record<string, string[]> = {
+  '否定系': [
+    `ちょっと待ってください。
 
-const Section: React.FC<{ label: string; emoji: string; color: string; children: React.ReactNode; copyText: string }> = ({ label, emoji, color, children, copyText }) => (
-  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-    <div className="flex items-center justify-between px-5 py-3" style={{ background: `${color}15`, borderBottom: `2px solid ${color}30` }}>
-      <div className="flex items-center gap-2">
-        <span className="text-lg">{emoji}</span>
-        <span className="font-bold text-sm text-gray-800">{label}</span>
-      </div>
-      <CopyButton text={copyText} />
-    </div>
-    <div className="px-5 py-4">{children}</div>
-  </div>
-);
+その「好き」という気持ち、
+相手に全部バレていますよ。
 
-// TikTokサムネイル用・画像生成プロンプトを自動生成する関数
-function generateImagePrompt(content: GeneratedContent): string {
-  const { genre, theme, mainContent } = content;
-  const firstLine = mainContent.split('\n')[0] ?? theme;
+好きな人に好意を出しすぎると
+確実に冷められます。
 
-  let styleGuide = '';
-  let emotionGuide = '';
-  let subjectGuide = '';
+これは感情論じゃなくて
+男性心理から見たリアルな話です。
 
+30代の恋愛で一番やってはいけない
+3つのことを正直に話します。
+
+① 毎日LINEを送る
+最初は嬉しくても
+だんだん「重い」と感じてきます。
+男性は自分のペースをとても大切にする生き物です。
+毎日連絡すると「この人がいて当たり前」になって
+特別感がなくなってしまいます。
+返信が来なくて催促するのはさらに逆効果です。
+好きだからこそ我慢することも
+大事な愛情の形です。
+
+② 相手の予定に合わせすぎる
+自分のスケジュールを全部後回しにして
+相手優先で動いていませんか。
+最初は「優しい子だな」と思っても
+だんだん「都合のいい人」という
+ポジションになってしまいます。
+自分の生活を大切にしている人の方が
+ずっと魅力的に見えます。
+自分軸を持つことが大事です。
+
+③ 感情をそのままぶつける
+不安なとき、寂しいとき、
+すぐに相手に伝えていませんか。
+気持ちを全部さらけ出すと
+相手が引いてしまうことがあります。
+特に付き合う前は
+感情のコントロールがとても大事です。
+伝えたい気持ちはわかるけど
+タイミングと量を考えてみてください。
+
+「焦れば焦るほど遠ざかる」
+
+これが恋愛の残酷な現実です。
+
+感情的になりたい気持ち、すごくわかります。
+でもそこをぐっと我慢できた人が
+最終的に選ばれています。
+
+あなたはどれか当てはまっていましたか？
+コメントで教えてください。`,
+  ],
+  '不安系': [
+    `急に連絡が減ってきたとき、
+
+「私、何かしたかな」
+「嫌われたかな」
+って何度もLINEを見返してしまう…
+
+その不安、すごくわかります。
+
+眠れない夜、スマホを何度も確認する夜、
+誰でも経験しますよね。
+
+でも実は、その連絡減少には
+明確な理由があって
+知っているかどうかで対応が全然変わります。
+
+男性が連絡を減らすときの本当の理由3つ：
+
+① 仕事や別のことで頭がいっぱい
+男性は何かに集中すると
+他のことが完全に後回しになります。
+これは女性とは脳の構造が違うからで
+あなたのことが嫌いになったわけじゃないです。
+忙しそうなときは少し待ってあげることが
+相手への思いやりになります。
+責めるのではなく待てる女性が強いです。
+
+② 関係に慣れてきた
+付き合い始めや好きになったばかりの
+テンションがずっと続くわけではないです。
+だんだん落ち着いてくるのは自然なことで
+これを「冷めた」と勘違いして
+焦って動くと逆効果になります。
+安定期に入ったと前向きに捉えることも大切です。
+
+③ 気持ちに変化が起きている
+これが一番不安な原因ですよね。
+でもここで焦って「どう思ってる？」
+と聞くのが一番やってはいけないことです。
+追い詰められた感じがして
+余計に離れていく可能性があります。
+自分の生活を充実させながら
+どっしり構えていられる女性が
+一番魅力的に見えます。
+
+「待てる女性が最終的に選ばれる」
+
+不安なときほど動かないことが大事です。
+
+あなたはどれだと思いますか？
+コメントで教えてください。`,
+  ],
+  '暴露系': [
+    `男性が絶対に口では言わない本音を
+今日は話します。
+
+「好きだけど言えない」
+
+そのときに出るサインがあるんです。
+
+これを知っておくだけで
+恋愛の見え方が全然変わります。
+
+言葉じゃなくて行動を見てください。
+
+脈ありサイン3つ：
+
+① あなたのSNSにすぐ反応してくる
+他の人には数時間かかる返信が
+あなただけ数分以内に来ることありませんか。
+これは無意識の行動なので
+意識的にコントロールできません。
+つまり本音が出やすいんです。
+投稿した直後にいいねが来るのも同じ心理です。
+自分でも気づかないうちに
+好きな人を優先しています。
+
+② 二人きりのときとグループのときで
+態度が違う
+グループでは普通にしているのに
+二人になると急に優しくなったり
+話しかけてくる頻度が増える人は
+意識している証拠です。
+好きな人の前では無意識に
+特別な行動が出てきます。
+この変化に気づいたら要チェックです。
+
+③ 何気ない話をちゃんと覚えている
+前に話したことをさりげなく覚えていてくれる。
+「そういえばあのとき言ってた〇〇って…」
+好きな人の話は無意識に記憶に残るので
+こういう言葉が自然に出てきます。
+覚えていてくれることへの感謝を
+伝えてみるのもいいかもしれません。
+
+「行動は嘘をつかない」
+
+どんなに口では「好きじゃない」と言っても
+行動に本音が出ます。
+言葉よりも行動を見てください。
+
+思い当たる人いますか？
+コメントで教えてください。`,
+  ],
+  '共感系': [
+    `好きな人ができると
+急にLINEが怖くなりますよね。
+
+既読スルーされたらどうしよう、
+返信が遅かったら嫌われてる？
+
+そんなことをグルグル考えて
+眠れない夜がありますよね。
+
+スマホを何度も確認して、
+通知が来るたびにドキドキして、
+でも来なかったときのあの落胆する気持ち。
+
+30代の恋愛って10代のころより
+ずっと慎重になります。
+
+傷つくのが怖いから。
+また同じことを繰り返したくないから。
+時間を無駄にしたくないから。
+
+いろんな経験をしたからこそ
+慎重になってしまうんですよね。
+
+でもその慎重さって
+それだけ真剣だということです。
+
+本気で人を好きになれる人は
+本当に強いと思います。
+
+本気の恋愛で大事なこと3つ：
+
+① 自分の気持ちを大切にする
+相手のことばかり考えすぎて
+自分の感情を後回しにしていませんか。
+自分を大切にできる人が
+相手にも大切にされます。
+あなたの気持ちも同じくらい大事です。
+
+② 相手を変えようとしない
+「もっとこうしてくれたら」
+という気持ちはすごくわかります。
+でも人は簡単には変わりません。
+相手に変化を求めるより
+自分がどうするかを考える方が
+結果的にうまくいきます。
+
+③ 後悔しない選択をする
+動いて傷つくより
+動かないで後悔する方がずっとつらいです。
+やってみてダメだったなら次に進める。
+でも何もしないとずっとその場所に留まります。
+
+「恋愛は自分を成長させてくれる」
+
+今誰かを好きですか？
+コメントで教えてください。`,
+  ],
+  '実は系': [
+    `実は復縁できる人とできない人には
+明確な違いがあります。
+
+何が違うのかというと
+「焦っているかどうか」です。
+
+復縁したいとき
+やりがちなこと全部が
+実は逆効果なんです。
+
+復縁できる人がやっていること3つ：
+
+① 別れた原因を正直に向き合う
+「相手が悪かった」ではなく
+自分にも原因があったはずです。
+そこから目を背けると
+同じことを繰り返してしまいます。
+痛くても向き合うことが
+本当の意味での成長につながります。
+自分を責めすぎず、でも正直に。
+
+② 元彼を追わずに自分を磨く
+連絡を我慢して
+自分の生活を充実させることが大事です。
+変わった自分を見せることが
+一番の復縁への近道です。
+新しい趣味を始めたり
+外見を磨いたりすることで
+自信もついてきます。
+その自信が自然と魅力になります。
+
+③ 連絡するタイミングを絶対に急がない
+最低でも1〜3ヶ月は
+距離を置くことが大事です。
+焦って連絡するとほぼ失敗します。
+「久しぶり」の一言が
+重く受け取られないくらいの
+距離感と時間が必要です。
+タイミングを待てる人が
+最終的に復縁を成功させています。
+
+「変わった自分を見せることが
+最強の復縁術」
+
+復縁を目指している人、
+今どの段階ですか？
+コメントで教えてください。`,
+  ],
+  '数字系': [
+    `男性が本命女性にだけする行動5つを
+全部話します。
+
+これ、知っているだけで
+恋愛の見え方が変わります。
+
+言葉は嘘をつけても
+行動は嘘をつきません。
+
+① 翌日以降の約束を自分から作る
+「今度〇〇行こう」と
+具体的な日程を提案してくる。
+その場しのぎで言う「また今度ね」とは
+全然違います。
+実現させようと動いてくれるかどうかが大事で
+本命だからこそ一緒にいたいと思っています。
+
+② 体調をさりげなく気にかけてくる
+「最近忙しそうだけど大丈夫？」
+「ちゃんと寝れてる？」
+こういう一言、友達には言わないです。
+あなたのことが頭にあるから
+自然と出てくる言葉です。
+気にかけてもらえたら素直に喜んでください。
+
+③ 弱音を吐いてくる
+仕事がつらいとか、自信がないとか、
+本命にしか見せない顔があります。
+弱いところを見せてくれるのは
+あなたを信頼している証拠です。
+
+④ 他の女性の話をあまりしない
+意識している人の前では
+他の女性を話題にしたくない
+心理が自然と働きます。
+女性の名前が出てこないのはいい傾向です。
+
+⑤ あなたの小さな変化にすぐ気づく
+「髪切った？」「なんか今日雰囲気違う」
+好きな人のことは無意識によく見ています。
+細かい変化に気づいてくれるのは
+あなたを見ている証拠です。
+
+「言葉より行動、行動より習慣を見て」
+
+何個当てはまりましたか？
+コメントで教えてください。`,
+  ],
+  '限定系': [
+    `本命彼女になれた人が全員やっていた
+たった1つのことを話します。
+
+それは「追わないこと」です。
+
+え、それだけ？と思いますよね。
+
+でもこれが一番難しくて
+一番効果があります。
+
+なぜ追わないことが大事かというと
+男性は追いかけるのが好きだからです。
+
+追われるとだんだん逃げたくなる。
+これは心理学的にも証明されていて
+人間の本能に近い部分です。
+
+追わないためにやること3つ：
+
+① 自分の趣味や好きなことに時間を使う
+相手のことを考える時間を
+意識的に減らすことが大事です。
+自分の生活が充実している人は
+自然と輝いて見えます。
+その輝きが相手を引きつけます。
+充実した毎日を送ることが
+一番の引き寄せになります。
+
+② 相手からの連絡を待てるようになる
+すぐに返信しないという意味ではありません。
+「連絡が来なくても大丈夫」という
+心の余裕を持つことです。
+余裕のある人は魅力的に見えます。
+この余裕が自然と相手を引き寄せます。
+
+③ 自分の機嫌を自分でとれるようになる
+相手の態度によって感情が大きく
+左右されなくなると
+どっしりとした安定感が出てきます。
+感情的にならない人は
+一緒にいて心地よいと感じさせます。
+この安定感が本命になる条件です。
+
+「追われる女性になるより
+輝く女性になること」
+
+これが本命になるための一番の近道です。
+
+あなたはどちらのタイプですか？
+コメントで教えてください。`,
+  ],
+};
+
+const TEMPLATES_600: Record<string, string[]> = {
+  '否定系': [
+    `ちょっと待ってください。
+
+その「好き」という気持ち、
+相手に全部バレていますよ。
+
+好きな人に好意を出しすぎると
+確実に冷められます。
+
+これは感情論じゃなくて
+男性心理から見たリアルな話です。
+
+30代の恋愛で一番やってはいけない
+3つのことを正直に話します。
+
+① 毎日LINEを送る
+最初は嬉しくても
+だんだん「重い」と感じてきます。
+男性は自分のペースをとても大切にする生き物です。
+毎日連絡すると「この人がいて当たり前」になって
+特別感がなくなってしまいます。
+返信が来なくて催促するのはさらに逆効果です。
+好きだからこそ我慢することも
+大事な愛情の形だと覚えておいてください。
+距離感を保てる女性の方が
+長期的に愛されやすいです。
+
+② 相手の予定に合わせすぎる
+自分のスケジュールを全部後回しにして
+相手優先で動いていませんか。
+最初は「優しい子だな」と思っても
+だんだん「都合のいい人」という
+ポジションになってしまいます。
+自分の生活を大切にしている人の方が
+ずっと魅力的に見えます。
+自分軸を持つことで
+相手からも尊重されるようになります。
+
+③ 感情をそのままぶつける
+不安なとき、寂しいとき、
+すぐに相手に伝えていませんか。
+気持ちを全部さらけ出すと
+相手が引いてしまうことがあります。
+特に付き合う前は感情のコントロールがとても大事です。
+伝えたい気持ちはわかるけど
+タイミングと量を考えてみてください。
+感情的にならずに話せる女性は
+一緒にいて心地よいと感じさせます。
+
+「焦れば焦るほど遠ざかる」
+
+これが恋愛の残酷な現実です。
+
+好きな気持ちは大切に、
+でも出し方には気をつけてください。
+
+感情的になりたい気持ち、すごくわかります。
+でもそこをぐっと我慢できた人が
+最終的に選ばれています。
+
+あなたはどれか当てはまっていましたか？
+コメントで教えてください。`,
+  ],
+  '不安系': [
+    `急に連絡が減ってきたとき、
+
+「私、何かしたかな」
+「嫌われたかな」
+って何度もLINEを見返してしまう…
+
+その不安、すごくわかります。
+
+眠れない夜、スマホを何度も確認する夜、
+誰でも経験しますよね。
+
+でも実は、その連絡減少には
+明確な理由があって
+知っているかどうかで対応が全然変わります。
+
+男性が連絡を減らすときの本当の理由3つ：
+
+① 仕事や別のことで頭がいっぱい
+男性は何かに集中すると
+他のことが完全に後回しになります。
+これは女性とは脳の構造が違うからで
+あなたのことが嫌いになったわけじゃないです。
+忙しそうなときは少し待ってあげることが
+相手への思いやりになります。
+責めるのではなく待てる女性が強いです。
+「忙しいんだね、ゆっくりでいいよ」
+この一言が相手の心をほぐすことがあります。
+
+② 関係に慣れてきた
+付き合い始めや好きになったばかりの
+テンションがずっと続くわけではないです。
+だんだん落ち着いてくるのは自然なことで
+これを「冷めた」と勘違いして
+焦って動くと逆効果になります。
+安定期に入ったと前向きに捉えることも大切です。
+この時期にこそ自分磨きに集中してください。
+
+③ 気持ちに変化が起きている
+これが一番不安な原因ですよね。
+でもここで焦って「どう思ってる？」
+と聞くのが一番やってはいけないことです。
+追い詰められた感じがして
+余計に離れていく可能性があります。
+自分の生活を充実させながら
+どっしり構えていられる女性が
+一番魅力的に見えます。
+余裕のある姿が相手を引き戻すことがあります。
+
+「待てる女性が最終的に選ばれる」
+
+不安なときほど動かないことが大事です。
+
+自分の生活を充実させながら
+どっしり構えていられる女性が
+一番魅力的に見えます。
+
+あなたはどれだと思いますか？
+コメントで教えてください。`,
+  ],
+  '暴露系': [
+    `男性が絶対に口では言わない本音を
+今日は話します。
+
+「好きだけど言えない」
+
+そのときに出るサインがあるんです。
+
+これを知っておくだけで
+恋愛の見え方が全然変わります。
+
+言葉じゃなくて行動を見てください。
+
+脈ありサイン3つ：
+
+① あなたのSNSにすぐ反応してくる
+他の人には数時間かかる返信が
+あなただけ数分以内に来ることありませんか。
+これは無意識の行動なので
+意識的にコントロールできません。
+つまり本音が出やすいんです。
+投稿した直後にいいねが来るのも同じ心理です。
+自分でも気づかないうちに
+好きな人を優先しています。
+この「無意識の優先」が本気のサインです。
+
+② 二人きりのときとグループのときで
+態度が違う
+グループでは普通にしているのに
+二人になると急に優しくなったり
+話しかけてくる頻度が増える人は
+意識している証拠です。
+好きな人の前では無意識に
+特別な行動が出てきます。
+この変化に気づいたら要チェックです。
+二人の時間を大切にしてくれるかどうかも
+重要なポイントです。
+
+③ 何気ない話をちゃんと覚えている
+前に話したことをさりげなく覚えていてくれる。
+「そういえばあのとき言ってた〇〇って…」
+好きな人の話は無意識に記憶に残るので
+こういう言葉が自然に出てきます。
+覚えていてくれることへの感謝を
+伝えてみるのもいいかもしれません。
+細かいことを覚えている人は
+あなたに関心を持っている証拠です。
+
+「行動は嘘をつかない」
+
+どんなに口では「好きじゃない」と言っても
+行動に本音が出ます。
+言葉よりも行動を見てください。
+
+思い当たる人いますか？
+コメントで教えてください。`,
+  ],
+  '共感系': [
+    `好きな人ができると
+急にLINEが怖くなりますよね。
+
+既読スルーされたらどうしよう、
+返信が遅かったら嫌われてる？
+
+そんなことをグルグル考えて
+眠れない夜がありますよね。
+
+スマホを何度も確認して、
+通知が来るたびにドキドキして、
+でも来なかったときのあの落胆する気持ち。
+
+30代の恋愛って10代のころより
+ずっと慎重になります。
+
+傷つくのが怖いから。
+また同じことを繰り返したくないから。
+時間を無駄にしたくないから。
+
+いろんな経験をしたからこそ
+慎重になってしまうんですよね。
+
+でもその慎重さって
+それだけ真剣だということです。
+
+本気で人を好きになれる人は
+本当に強いと思います。
+
+本気の恋愛で大事なこと3つ：
+
+① 自分の気持ちを大切にする
+相手のことばかり考えすぎて
+自分の感情を後回しにしていませんか。
+自分を大切にできる人が
+相手にも大切にされます。
+あなたの気持ちも同じくらい大事です。
+自分を後回しにする習慣は
+少しずつ変えていってください。
+
+② 相手を変えようとしない
+「もっとこうしてくれたら」
+という気持ちはすごくわかります。
+でも人は簡単には変わりません。
+相手に変化を求めるより
+自分がどうするかを考える方が
+結果的にうまくいきます。
+相手の良いところを見る練習も大切です。
+
+③ 後悔しない選択をする
+動いて傷つくより
+動かないで後悔する方がずっとつらいです。
+やってみてダメだったなら次に進める。
+でも何もしないとずっとその場所に留まります。
+勇気を出した自分を
+ちゃんと褒めてあげてください。
+
+「恋愛は自分を成長させてくれる」
+
+うまくいってもいかなくても
+恋愛は必ず何かを教えてくれます。
+
+今誰かを好きですか？
+コメントで教えてください。`,
+  ],
+  '実は系': [
+    `実は「優しい男性」ほど
+注意が必要です。
+
+え？と思いますよね。
+
+優しい人が危ないって
+どういうことって。
+
+でもこれ、知らないと
+本当に損をします。
+
+「優しさ」には2種類あります。
+
+① 誰にでも優しい人
+② あなただけに優しい人
+
+この違いを見抜けないと
+脈なしなのに勘違いして
+ずっと待ち続けることになります。
+
+誰にでも優しい男性は
+決して悪い人じゃないです。
+でも「優しくしてもらえる＝好き」
+ではありません。
+
+この勘違いで何ヶ月も無駄にしてしまう
+女性が実はとても多いです。
+
+見分け方3つ：
+
+① 他の女性への態度と比べる
+あなたにだけ特別に優しいのか
+誰にでも同じ態度なのか。
+グループでの行動をよく観察してみてください。
+他の女性への接し方との違いが
+一番わかりやすい判断材料になります。
+
+② 特別扱いがあるかを確認する
+記念日や誕生日を覚えているか、
+あなたのことを気にかける言動があるか。
+本命に対しては自然と特別な行動が出ます。
+「特別扱い」があるかどうかが
+本気度を測る一番の基準です。
+
+③ 行動が一貫しているかを見る
+気分によって態度が変わる人は
+本気じゃない可能性が高いです。
+好きな人への態度はどんな状況でも
+一貫しています。
+機嫌が悪い日でも変わらない優しさが
+本物の証拠です。
+
+「好きな人の優しさを疑うのも愛」
+
+つらいけど冷静に見極めることが大事です。
+
+思い当たる人いますか？
+コメントで教えてください。`,
+  ],
+  '数字系': [
+    `男性が本命女性にだけする行動5つを
+全部話します。
+
+これ、知っているだけで
+恋愛の見え方が変わります。
+
+言葉は嘘をつけても
+行動は嘘をつきません。
+
+① 翌日以降の約束を自分から作る
+「今度〇〇行こう」と
+具体的な日程を提案してくる。
+その場しのぎで言う「また今度ね」とは
+全然違います。
+実現させようと動いてくれるかどうかが大事で
+本命だからこそ一緒にいたいと思っています。
+約束を守る人は信頼できる人です。
+
+② 体調をさりげなく気にかけてくる
+「最近忙しそうだけど大丈夫？」
+「ちゃんと寝れてる？」
+こういう一言、友達には言わないです。
+あなたのことが頭にあるから
+自然と出てくる言葉です。
+気にかけてもらえたら素直に喜んでください。
+
+③ 弱音を吐いてくる
+仕事がつらいとか、自信がないとか、
+本命にしか見せない顔があります。
+弱いところを見せてくれるのは
+あなたを信頼している証拠です。
+この信頼を大切にしてあげてください。
+
+④ 他の女性の話をあまりしない
+意識している人の前では
+他の女性を話題にしたくない
+心理が自然と働きます。
+女性の名前が出てこないのはいい傾向です。
+逆に他の女性の話が多い人は
+あなたを恋愛対象として見ていない可能性があります。
+
+⑤ あなたの小さな変化にすぐ気づく
+「髪切った？」「なんか今日雰囲気違う」
+好きな人のことは無意識によく見ています。
+細かい変化に気づいてくれるのは
+あなたを見ている証拠です。
+気づいてもらえたら嬉しいですよね。
+
+「言葉より行動、行動より習慣を見て」
+
+何個当てはまりましたか？
+コメントで教えてください。`,
+  ],
+  '限定系': [
+    `本命彼女になれた人が全員やっていた
+たった1つのことを話します。
+
+それは「追わないこと」です。
+
+え、それだけ？と思いますよね。
+
+でもこれが一番難しくて
+一番効果があります。
+
+なぜ追わないことが大事かというと
+男性は追いかけるのが好きだからです。
+
+追われるとだんだん逃げたくなる。
+これは心理学的にも証明されていて
+人間の本能に近い部分です。
+
+追わないためにやること3つ：
+
+① 自分の趣味や好きなことに時間を使う
+相手のことを考える時間を
+意識的に減らすことが大事です。
+自分の生活が充実している人は
+自然と輝いて見えます。
+その輝きが相手を引きつけます。
+充実した毎日を送ることが
+一番の引き寄せになります。
+「楽しそうな人」のそばにいたいと
+人は自然と思います。
+
+② 相手からの連絡を待てるようになる
+すぐに返信しないという意味ではありません。
+「連絡が来なくても大丈夫」という
+心の余裕を持つことです。
+余裕のある人は魅力的に見えます。
+この余裕が自然と相手を引き寄せます。
+余裕は作るものではなく
+自分を満たすことで生まれます。
+
+③ 自分の機嫌を自分でとれるようになる
+相手の態度によって感情が大きく
+左右されなくなると
+どっしりとした安定感が出てきます。
+感情的にならない人は
+一緒にいて心地よいと感じさせます。
+この安定感が本命になる条件です。
+自分の感情を自分でコントロールできる人は
+どんな関係でも長続きします。
+
+「追われる女性になるより
+輝く女性になること」
+
+これが本命になるための一番の近道です。
+
+あなたはどちらのタイプですか？
+コメントで教えてください。`,
+  ],
+};
+
+const GENERAL_TEMPLATES: Record<string, string[]> = {
+  '否定系': [
+    `{theme}を頑張っているのに
+結果が出ない人へ。
+
+それ、やり方が
+間違っているかもしれません。
+
+今すぐやめるべき3つのこと：
+
+① 量だけ増やして質を無視している
+少なくても質の高いものの方が
+結果につながります。
+
+② 見た目だけ整えて中身が伴っていない
+表面だけ整えても
+本質が変わらなければ意味がないです。
+
+③ 同じやり方を繰り返している
+うまくいかないときは
+方法を変えることが大事です。
+
+「努力の方向が違うだけかもしれない」
+
+今日から1つだけ変えてみてください。`,
+  ],
+  '不安系': [
+    `{theme}を後回しにしている人、
+
+5年後に絶対後悔します。
+
+放置すると起こること3つ：
+
+① 差がどんどん開いていく
+② 取り返しがつかなくなってしまう
+③ 後悔しても遅くなってしまう
+
+「今この瞬間が一番若い日」
+
+まず今日から一歩だけ動いてみてください。`,
+  ],
+  '暴露系': [
+    `{theme}について表では言えないことを
+今日は正直に話します。
+
+知られていない3つの真実：
+
+① よく言われる方法は
+古くて効果が薄い
+
+② 本当に効くのは
+地味で目立たない方法
+
+③ うまくいっている人は
+見せていない部分がある
+
+「知っているかどうかで結果が変わる」
+
+この話、誰かに教えてあげてください。`,
+  ],
+  '共感系': [
+    `{theme}って頑張っているのに
+結果が出なくて
+
+「自分だけうまくいかない」
+って思いますよね。
+
+でも違います。
+
+やり方を少し変えるだけでいい。
+
+大事なこと3つ：
+
+① 自分を責めすぎない
+② 小さな変化に気づいてあげる
+③ 続けることを一番の目標にする
+
+「転んでも立ち上がれる人が強い」
+
+完璧じゃなくていい。
+一緒に前に進みましょう。`,
+  ],
+  '実は系': [
+    `{theme}についてずっと間違えてました。
+
+最終的に気づいた
+一番大事なことを話します。
+
+それはシンプルさです。
+
+実は大事だった3つ：
+
+① 難しく考えすぎない
+② 基本をとことん丁寧にやる
+③ 継続を何より優先する
+
+「シンプルイズベスト」
+
+地味な基本の積み重ねが一番強いです。
+
+今日から試してみてください。`,
+  ],
+  '数字系': [
+    `{theme}で結果を出す3つのステップ。
+
+ステップ① 現状を正直に把握する
+ステップ② 正しい方法を一つ選んで実践する
+ステップ③ 続けながら少しずつ改善する
+
+「千里の道も一歩から」
+
+この順番を守るだけで変わります。
+
+まずステップ①から今日始めてみてください。`,
+  ],
+  '限定系': [
+    `{theme}で本当に成功した人だけが
+知っていることを話します。
+
+成功者だけがやっていること3つ：
+
+① 周りがやらないことを地道に続けている
+② 失敗から必ず学んでいる
+③ 長期的な目線で取り組んでいる
+
+「急いては事を仕損じる」
+
+焦らず、でも確実に。
+
+今日から実践してみてください。`,
+  ],
+};
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+const generateHashtags = (theme: string, genre: string): string[] => {
   if (genre === '恋愛') {
-    styleGuide = 'warm romantic atmosphere, soft pink and purple bokeh background, intimate and emotional mood';
-    emotionGuide = 'expressive longing or heartfelt emotion on face, slightly teary or deeply in love eyes';
-    subjectGuide = 'young Japanese woman in her 20s-30s, holding smartphone, looking thoughtful or emotional';
-  } else if (genre === '美容・ダイエット') {
-    styleGuide = 'clean bright beauty studio background, high-end cosmetic aesthetic, soft natural lighting';
-    emotionGuide = 'confident glowing expression, fresh and radiant skin, clean beauty look';
-    subjectGuide = 'beautiful Japanese woman in her 20s-30s, flawless skin, minimal makeup or beauty product in hand';
-  } else if (genre === 'ビジネス・起業' || genre === '転職・キャリア' || genre === '副業・稼ぐ') {
-    styleGuide = 'modern office or city background, professional and trustworthy atmosphere, cool tones';
-    emotionGuide = 'confident determined expression, strong eye contact, professional composure';
-    subjectGuide = 'Japanese professional man or woman in their 30s, business casual attire, holding laptop or documents';
-  } else if (genre === 'お金・資産') {
-    styleGuide = 'sleek financial aesthetic, dark premium background with gold accents, luxury atmosphere';
-    emotionGuide = 'motivated and focused expression, sense of achievement and ambition';
-    subjectGuide = 'Japanese man or woman in their 30s, smart casual outfit, looking aspirational and driven';
-  } else if (genre === '健康・メンタル') {
-    styleGuide = 'calm natural background, soft green tones, peaceful and healing atmosphere';
-    emotionGuide = 'serene relieved expression, calm and clear eyes, sense of inner peace';
-    subjectGuide = 'Japanese person in their 20s-40s, casual comfortable clothing, relaxed posture';
-  } else if (genre === '育児・子育て') {
-    styleGuide = 'warm cozy home background, soft pastel tones, heartwarming family atmosphere';
-    emotionGuide = 'warm loving expression, gentle smile, nurturing and caring look';
-    subjectGuide = 'Japanese mother or father in their 30s, casual homewear, caring gesture';
+    return [
+      `#${theme}`,
+      '#恋愛',
+      '#男性心理',
+      '#片思い',
+      '#恋愛相談',
+      '#脈あり脈なし',
+      '#30代恋愛',
+      '#恋愛心理学',
+    ];
+  }
+  return [
+    `#${theme}`,
+    `#${genre}`,
+    `#${theme}攻略`,
+    '#知らないと損',
+    '#TikTok',
+    '#SNS発信',
+    '#バズる投稿',
+    '#2026年',
+  ];
+};
+
+export const GENRE_THEMES: Record<Genre, Theme[]> = {
+  '恋愛': ['脈なし', '脈あり', '男性心理', 'LINE', '片思い', '復縁', '運命の人', '恋愛心理学', '職場恋愛', '婚活', 'マッチングアプリ'],
+  'お金・資産': ['節約術', '投資入門', 'NISA活用', '貯金習慣', '給料アップ', '保険見直し', '副収入', 'クレカ活用', 'ポイント最大化', '老後資金'],
+  '副業・稼ぐ': ['TikTok収益化', 'Threads攻略', 'note有料記事', 'SNS運用', 'ブログ収益', '転売・せどり', 'コンテンツ販売', 'フリーランス', 'YouTube運用', 'X(Twitter)運用'],
+  '美容・ダイエット': ['スキンケア', '痩せる食事', 'ながら運動', 'プチプラコスメ', '髪ケア', 'むくみ解消', '睡眠美容', '体質改善', 'ファスティング', 'ボディメイク'],
+  '育児・子育て': ['知育おもちゃ', '寝かしつけ', '離乳食', 'イヤイヤ期', '保育園選び', '子どもの習い事', '夫婦育児分担', '産後ケア', '絵本読み聞かせ', '子どもの褒め方'],
+  '健康・メンタル': ['自律神経', 'ストレス解消', '腸活', '良質な睡眠', 'マインドフルネス', '疲れない体', 'うつ予防', '免疫力アップ', '血糖値管理', 'デジタルデトックス'],
+  '転職・キャリア': ['転職成功', '年収アップ', 'スキルアップ', '面接対策', '履歴書・職務経歴書', 'リモートワーク', '副業から独立', 'AI活用仕事術', '昇進交渉', 'ワークライフバランス'],
+  '人間関係': ['職場いじめ', '毒親', '友達付き合い', 'ママ友', '義実家問題', '自己肯定感', 'コミュ力アップ', '断り方', '人たらし術', 'HSP生き方'],
+  'ビジネス・起業': ['起業アイデア', 'SNSマーケ', '集客術', '価格設定', 'Canva活用', 'ChatGPT活用', '個人ブランディング', 'コンテンツマーケ', 'LINE公式活用', 'ストーリーズ活用'],
+  'ライフスタイル': ['ミニマリスト', '朝活', '読書習慣', '手帳活用', '一人暮らし節約', 'おうち時間', '旅行ハック', 'サウナ効果', 'ペット', 'インテリア'],
+};
+
+// 次回バズタイトル候補プール（ジャンル×テーマ別）
+const NEXT_TITLES: Record<string, string[]> = {
+  // 恋愛
+  '恋愛_脈なし':     ['実は好きな人ができると無意識にしてしまうこと', '脈なしだと思ったら全部勘違いだった話', '諦めかけたとき急に距離が縮まる理由'],
+  '恋愛_脈あり':     ['本命だけに見せる男性の意外な行動3つ', '好きな人に気づかせる最強の行動とは', '脈ありサインを見落とす女性がやりがちなこと'],
+  '恋愛_男性心理':   ['男性が「この子と付き合いたい」と思う瞬間', '男性が冷める本当の原因を正直に話します', '男性が追いかけたくなる女性の特徴'],
+  '恋愛_LINE':       ['LINEで好かれる女性と嫌われる女性の違い', '既読スルーされても焦らなくていい理由', 'LINEの返信が遅い男性の本音'],
+  '恋愛_片思い':     ['片思いを成就させた人が共通してやっていること', '好きな人に意識させる最初の一歩', '片思いが長引く人の意外な共通点'],
+  '恋愛_復縁':       ['復縁できる人とできない人の決定的な差', '元彼から連絡がくる女性がやっていること', '復縁を諦める前に試してほしいこと'],
+  '恋愛_運命の人':   ['運命の人に出会う前に必ず起こること', '運命の人と普通の人の違いを正直に話します', '出会いがないと感じるときに見直すべきこと'],
+  '恋愛_恋愛心理学': ['好きな人に好かれる心理テクニック3選', '恋愛心理学で証明された最強のモテ行動', '無意識に相手を引き寄せる話し方の法則'],
+  '恋愛_職場恋愛':   ['職場恋愛で失敗する人の共通パターン', '社内で自然に距離を縮める方法', '職場の好きな人に気づかせるさりげない行動'],
+  '恋愛_婚活':       ['婚活で選ばれる女性が絶対にやらないこと', '結婚できる人とできない人の考え方の違い', '婚活疲れを感じたら見直すべき3つのこと'],
+  '恋愛_マッチングアプリ': ['マッチングアプリで会えない人の原因と対策', 'アプリで本命彼氏を作った人がやっていること', 'マッチングアプリのプロフィールで損している人の特徴'],
+  // 美容・ダイエット
+  '美容・ダイエット_スキンケア': ['朝のスキンケアを変えたら肌が激変した話', '美肌の人が絶対にやらないスキンケアNG', 'プチプラで本当に効いたスキンケアアイテム3選'],
+  '美容・ダイエット_痩せる食事': ['食事を変えただけで3kg落ちた方法', '痩せない人がやりがちな食事の落とし穴', '我慢しないで痩せる食事のルール'],
+  '美容・ダイエット_ながら運動': ['テレビ見ながら痩せる習慣を作る方法', '忙しくても続けられる運動習慣3選', '1日5分から始める体型維持のコツ'],
+  '美容・ダイエット_プチプラコスメ': ['1000円以下で買えるコスパ最強コスメ', 'デパコスより優秀なプチプラアイテム', 'プチプラなのに仕上がりが変わらないコスメ'],
+  '美容・ダイエット_髪ケア': ['シャンプー前にやるだけで髪が変わる方法', '髪の毛が傷む原因ほとんどの人が知らない', 'サロン級の髪ケアを自宅でやる方法'],
+  // お金・資産
+  'お金・資産_節約術':   ['節約しているのに貯まらない人の共通点', '月1万円から始める無理なし節約法', '生活費を見直すだけで年間〇万円変わる話'],
+  'お金・資産_投資入門': ['投資を始めて後悔した人がやらなかったこと', '初心者が最初にやるべき投資はこれだけ', 'お金を増やしたいなら最初に知るべき基礎'],
+  'お金・資産_NISA活用':  ['NISAを使っている人と使っていない人の差', '新NISAで失敗しないための基本ルール', 'NISAを始めて1年で感じた変化'],
+  // 副業・稼ぐ
+  '副業・稼ぐ_TikTok収益化': ['TikTok収益化まで私がかかった時間と方法', 'TikTokで稼ぎ始める人が最初にやること', 'フォロワー0から収益化した具体的なステップ'],
+  '副業・稼ぐ_SNS運用':      ['SNS運用を続けても伸びない人の原因', 'フォロワーが増える投稿と増えない投稿の違い', 'SNSで稼ぎ始めるまでの現実を正直に話します'],
+  // 健康・メンタル
+  '健康・メンタル_自律神経': ['自律神経が乱れているサインを見逃していませんか', '毎朝やるだけで自律神経が整う習慣', 'なんとなく不調が続く人が見直すべきこと'],
+  '健康・メンタル_ストレス解消': ['ストレスが消えない人がやりがちな発散法', '本当に効くストレス解消法3選', 'メンタルが強い人がやらないこと'],
+  // 転職・キャリア
+  '転職・キャリア_転職成功': ['転職に失敗した人が後悔している3つのこと', '転職エージェントに頼る前にやること', '転職して年収が上がった人の共通点'],
+  '転職・キャリア_年収アップ': ['年収を上げたいなら今すぐやめるべきこと', '給料交渉で成功する人の話し方', '年収が上がらない人の思考の特徴'],
+  // 人間関係
+  '人間関係_自己肯定感': ['自己肯定感が低い人がやりがちな思考パターン', '自己肯定感を上げるために最初にやること', '自分を好きになれない人へ伝えたいこと'],
+  '人間関係_コミュ力アップ': ['会話が続く人と続かない人の違い', '初対面でも好かれる人がやっていること', '人間関係が楽になる考え方3選'],
+  // ビジネス・起業
+  'ビジネス・起業_起業アイデア': ['副業から起業した人が最初にやったこと', '起業して失敗する人の共通パターン', '0円で始められる起業アイデア3選'],
+  'ビジネス・起業_集客術': ['集客できない人が見落としている基本', 'SNSだけで集客できるようになるまでの話', '新規より大事なリピーター獲得の考え方'],
+  // ライフスタイル
+  'ライフスタイル_朝活': ['朝活を3ヶ月続けたら人生が変わった話', '朝5時起きを習慣にする方法', '夜型から朝型に変わる最初のステップ'],
+  'ライフスタイル_ミニマリスト': ['物を減らしたら増えた3つのもの', 'ミニマリストになって後悔したことはない理由', '捨てて本当によかったものランキング'],
+};
+
+// 汎用タイトルプール（ジャンル別フォールバック）
+const NEXT_TITLES_GENRE: Record<string, string[]> = {
+  '恋愛':           ['恋愛で一番大事なことを正直に話します', '好きな人に選ばれる女性の共通点', '恋愛がうまくいかない本当の理由'],
+  'お金・資産':     ['お金が貯まらない人の思考の特徴', '貯金ゼロから始める資産形成の話', '知らないと損するお金の基本ルール'],
+  '副業・稼ぐ':     ['副業で稼ぎ始めるまでに必要な準備', '会社員が副業で月5万稼ぐまでの道のり', '副業をやめた人が後悔している理由'],
+  '美容・ダイエット': ['美容に投資して本当によかったこと', '肌が変わるまでにやり続けたこと', 'ダイエットを成功させた人の考え方'],
+  '育児・子育て':   ['子育てで一番大変だったことと乗り越え方', '育児中にやめてよかったこと3選', '子どもの自己肯定感を育てる声がけ'],
+  '健康・メンタル': ['体調が悪い日が続くときに見直すこと', 'メンタルを安定させる毎日の習慣', '疲れやすい人が知らない体のサイン'],
+  '転職・キャリア': ['キャリアに迷ったときに考えるべきこと', '仕事を辞める前に必ず確認すること', '転職を決断した人がみんな言うこと'],
+  '人間関係':       ['人間関係をリセットしたくなったときの話', '疲れる人間関係から抜け出す考え方', '一緒にいて疲れる人の特徴'],
+  'ビジネス・起業': ['ビジネスで最初につまずくポイント', '個人で稼ぐために最初に学ぶべきこと', 'SNSで信頼を築くために必要なこと'],
+  'ライフスタイル': ['生活習慣を変えたら人生が変わった話', '毎日の小さな習慣が積み上げるもの', 'やめてよかった習慣ベスト3'],
+};
+
+function generateNextTitles(genre: string, theme: string, currentFirstLine: string): string[] {
+  const key = `${genre}_${theme}`;
+  const pool = NEXT_TITLES[key] ?? NEXT_TITLES_GENRE[genre] ?? [
+    'SNSでバズるコンテンツの作り方',
+    '知らないと損する情報を正直に話します',
+    '続きが気になる投稿の作り方',
+  ];
+  // 現在の記事タイトルと被らないものを最大3件選ぶ
+  const filtered = pool.filter(t => !currentFirstLine.includes(t.slice(0, 8)));
+  // シャッフルして3件返す
+  const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 3);
+}
+
+// SNS別プロフィール誘導文（TikTok・YouTube Shorts・Instagram Reelsのみ）
+const SNS_PROFILE_CTA = `💗恋愛も美容も無料で診断💗
+✔ AI相性占い ✔ 肌年齢診断 ✔ 個人占い
+すべてプロフィールのリンクから無料で利用できます👇✨`;
+
+export function generateContent(params: {
+  genre: Genre;
+  theme: Theme;
+  prevTitle: string;
+  enabledKeys: OutputKey[];
+  tiktokLength: 300 | 500 | 600;
+  profileCta: string;
+  postUrl: string;
+  freeTheme?: string;
+}): GeneratedContent {
+  const { genre, theme, profileCta, postUrl, tiktokLength, freeTheme } = params;
+
+  // freeThemeが入力されていれば生成テーマとして優先使用
+  const effectiveTheme = (freeTheme && freeTheme.trim() !== '') ? freeTheme.trim() : theme;
+
+  const hookTypes = ['否定系', '不安系', '暴露系', '共感系', '実は系', '数字系', '限定系'];
+  const hookType = pickRandom(hookTypes) as HookType;
+
+  let templateMap: Record<string, string[]>;
+  if (genre === '恋愛') {
+    if (tiktokLength === 300) templateMap = TEMPLATES_300;
+    else if (tiktokLength === 500) templateMap = TEMPLATES_500;
+    else templateMap = TEMPLATES_600;
   } else {
-    styleGuide = 'clean modern Japanese lifestyle background, bright and inviting atmosphere';
-    emotionGuide = 'engaged expressive face, relatable and approachable emotion';
-    subjectGuide = 'Japanese man or woman in their 20s-30s, casual everyday outfit';
+    templateMap = GENERAL_TEMPLATES;
   }
 
-  return `[画像生成プロンプト - TikTokサムネイル専用]
+  const templates = templateMap[hookType] ?? templateMap['共感系'] ?? ['内容を生成できませんでした。'];
+  const rawTemplate = pickRandom(templates);
+  const mainScriptBase = rawTemplate.replace(/\{theme\}/g, effectiveTheme);
 
-Vertical 9:16 ratio, 1080x1920px, ultra-high quality photorealistic image.
+  // TikTok・YouTube Shorts・Instagram Reels台本：SNS_PROFILE_CTAを末尾に付与
+  const mainContent = mainScriptBase + `\n\n${SNS_PROFILE_CTA}`;
 
-Subject: ${subjectGuide}.
-Expression & Emotion: ${emotionGuide}.
-Style & Background: ${styleGuide}.
-Composition: close-up to mid-shot, subject positioned slightly off-center, strong visual hierarchy for text overlay.
-Text overlay area: leave upper 20% and lower 20% of image clear for Japanese text.
-Main text to overlay (top area): 「${firstLine}」
-Lighting: cinematic soft lighting, slight rim light on subject.
-Quality: 8K resolution, sharp focus on face, shallow depth of field background blur, professional photography style.
-Mood: emotionally engaging, high click-through rate TikTok thumbnail aesthetic.
-Japanese people only. Realistic, not illustrated or anime style.`;
+  const hashtags = generateHashtags(effectiveTheme, genre);
+  const hashtagText = hashtags.join(' ');
+
+  // Threads：プロフィール誘導文なし・URLを直接掲載
+  const threadsPost = `${mainScriptBase}\n\n${hashtagText}${postUrl ? '\n\n' + postUrl : ''}`;
+
+  // X(Twitter)：プロフィール誘導文なし
+  const xPost = mainScriptBase.split('\n').slice(0, 8).join('\n') + `${postUrl ? '\n\n' + postUrl : ''}`;
+
+  // note：プロフィール誘導文なし・URLを直接掲載
+  const noteArticle = `${effectiveTheme}について知っておくべきこと\n\n${mainScriptBase}${postUrl ? '\n\n' + postUrl : ''}`;
+
+  const seoSet = {
+    title: `【2026年最新】${effectiveTheme}の真実｜知らないと損する3つのこと`,
+    keywords: [effectiveTheme, genre, `${effectiveTheme} 方法`, `${effectiveTheme} コツ`, `${effectiveTheme} 初心者`],
+    description: `${effectiveTheme}について、知らないと損する本当のことを解説。${genre}に関心がある方必見の内容です。`,
+    howToUse: `SEOタイトルをnote記事のタイトルに使用し、キーワードを本文に自然に盛り込んでください。`,
+  };
+
+  const thumbnailTikTok = `サイズ：1080×1920px（縦型9:16）\nテーマ：${effectiveTheme}\nメインテキスト：${mainScriptBase.split('\n')[0]}\nデザイン：インパクト重視・目を引く色使い・太字フォント`;
+  const thumbnailNote = `サイズ：1280×670px（横型）\nテーマ：${effectiveTheme}\nメインテキスト：${mainScriptBase.split('\n')[0]}\nデザイン：シンプル・洗練・読みやすいフォント`;
+  const thumbnailPrompt = `【TikTok用】\n${thumbnailTikTok}\n\n【note用】\n${thumbnailNote}`;
+
+  const buzzScore = {
+    hookPower: hookType === '暴露系' ? 90 : hookType === '否定系' ? 85 : hookType === '限定系' ? 88 : 80,
+    saveRate: genre === '恋愛' ? 88 : 75,
+    commentRate: genre === '恋愛' ? 90 : 70,
+    profileRate: 82,
+    seoScore: 76,
+    total: genre === '恋愛' ? 87 : 78,
+    comment: genre === '恋愛'
+      ? `恋愛ジャンル×${hookType}の組み合わせは拡散力が高いです。コメント誘導も効いています。`
+      : `${hookType}は反応率が高いフックです。${effectiveTheme}との相性も良好。`,
+  };
+
+  const nextTitles = generateNextTitles(genre, effectiveTheme, mainScriptBase.split('\n')[0] ?? '');
+
+  return {
+    genre,
+    theme: effectiveTheme,
+    hookType,
+    prevTitle: params.prevTitle,
+    mainContent,
+    hashtags,
+    hashtagText,
+    threadsPost,
+    xPost,
+    noteArticle,
+    noteUrl: postUrl,
+    seoSet,
+    thumbnailPrompt,
+    thumbnailTikTok,
+    thumbnailNote,
+    buzzScore,
+    timestamp: new Date().toLocaleString('ja-JP'),
+    nextTitles,
+  };
 }
 
-export const ResultCard: React.FC<Props> = ({ content, enabledKeys }) => {
-  const { buzzScore } = content;
-  const seoText = `【SEOタイトル】\n${content.seoSet.title}\n\n【キーワード】\n${content.seoSet.keywords.join('、')}\n\n【メタディスクリプション】\n${content.seoSet.description}`;
-  const imagePrompt = generateImagePrompt(content);
+export const ALL_HOOK_TYPES: HookType[] = ['否定系', '不安系', '暴露系', '共感系', '実は系', '数字系', '限定系'];
 
-  return (
-    <div className="space-y-4">
+export const ALL_OUTPUT_KEYS: OutputKey[] = [
+  'mainContent', 'hashtags', 'threads', 'x', 'note', 'seo', 'thumbnailTikTok', 'thumbnailNote',
+];
 
-      {/* バズスコア */}
-      <div className="rounded-2xl p-5 text-white shadow-lg" style={{ background: 'linear-gradient(135deg, #F472B6, #7C3AED)' }}>
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-xs font-bold text-pink-100 uppercase tracking-wider">BUZZ SCORE 2026</p>
-            <div className="flex items-end gap-2 mt-1">
-              <span className="text-5xl font-black">{buzzScore.total}</span>
-              <span className="text-lg text-pink-100 mb-1">/100</span>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-3xl mb-1">{buzzScore.total >= 85 ? '🔥' : buzzScore.total >= 75 ? '⚡' : '✨'}</div>
-            <p className="text-xs text-pink-100">{content.genre} × {content.hookType}</p>
-          </div>
-        </div>
-        <div className="space-y-2 mt-4">
-          <BuzzMeter value={buzzScore.hookPower} label="🎣 フック力" color="#FDE68A" />
-          <BuzzMeter value={buzzScore.saveRate} label="📌 保存率" color="#A7F3D0" />
-          <BuzzMeter value={buzzScore.commentRate} label="💬 コメント率" color="#BFDBFE" />
-          <BuzzMeter value={buzzScore.profileRate} label="👤 プロフィール遷移" color="#FBCFE8" />
-          <BuzzMeter value={buzzScore.seoScore} label="🔍 SEOスコア" color="#FED7AA" />
-        </div>
-        <div className="mt-4 bg-white/20 rounded-xl px-4 py-2.5 text-sm font-bold text-center">{buzzScore.comment}</div>
-        <div className="mt-3 text-xs text-pink-100 text-right">{content.theme} / {content.timestamp}</div>
-      </div>
-
-      {/* TikTok台本 */}
-      {enabledKeys.includes('mainContent') && (
-        <Section label="TikTok台本" emoji="🎬" color="#EC4899" copyText={content.mainContent}>
-          <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.mainContent}</pre>
-        </Section>
-      )}
-
-      {/* ハッシュタグ */}
-      {enabledKeys.includes('hashtags') && (
-        <Section label="ハッシュタグ" emoji="#️⃣" color="#8B5CF6" copyText={content.hashtagText}>
-          <div className="flex flex-wrap gap-2">
-            {content.hashtags.map(tag => (
-              <span key={tag} className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background: '#8B5CF6' }}>#{tag}</span>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* Threads */}
-      {enabledKeys.includes('threads') && (
-        <Section label="Threads投稿" emoji="🧵" color="#000000" copyText={content.threadsPost}>
-          <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.threadsPost}</pre>
-        </Section>
-      )}
-
-      {/* X */}
-      {enabledKeys.includes('x') && (
-        <Section label="X(Twitter)投稿" emoji="𝕏" color="#1D9BF0" copyText={content.xPost}>
-          <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.xPost}</pre>
-        </Section>
-      )}
-
-      {/* note記事 */}
-      {enabledKeys.includes('note') && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3" style={{ background: '#41C9A015', borderBottom: '2px solid #41C9A030' }}>
-            <div className="flex items-center gap-2">
-              <span className="text-lg">📝</span>
-              <span className="font-bold text-sm text-gray-800">note記事</span>
-            </div>
-            <CopyButton text={content.noteArticle} />
-          </div>
-          <div className="px-5 py-4 space-y-3">
-            <div className="bg-green-50 rounded-xl p-3">
-              <p className="text-xs font-bold text-green-700 mb-1.5">🔗 noteのURL（投稿後に入力すると他SNSに自動反映）</p>
-              <input
-                type="text"
-                placeholder="https://note.com/..."
-                defaultValue={content.noteUrl}
-                className="w-full px-3 py-2 rounded-lg border border-green-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-300"
-                onChange={e => { (content as GeneratedContent).noteUrl = e.target.value; }}
-              />
-            </div>
-            <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.noteArticle}</pre>
-          </div>
-        </div>
-      )}
-
-      {/* SEO対策 */}
-      {enabledKeys.includes('seo') && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3" style={{ background: '#F59E0B15', borderBottom: '2px solid #F59E0B30' }}>
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🔍</span>
-              <span className="font-bold text-sm text-gray-800">SEO対策セット</span>
-            </div>
-            <CopyButton text={seoText} />
-          </div>
-          <div className="px-5 py-4 space-y-4">
-            <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-800 space-y-1 leading-relaxed">
-              <p className="font-black text-sm mb-2">📖 SEO対策セットの使い方</p>
-              <p>① <span className="font-bold">SEOタイトル</span> → note・ブログ記事のタイトルにそのまま使用</p>
-              <p>② <span className="font-bold">キーワード</span> → 記事本文に自然に盛り込む。見出しや冒頭100文字以内に入れると効果的</p>
-              <p>③ <span className="font-bold">メタディスクリプション</span> → noteの「つぶやき欄」や記事冒頭に使用。SNSシェア時の説明文になります</p>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-gray-400 uppercase mb-1">SEOタイトル</p>
-              <p className="text-sm font-bold text-gray-800">{content.seoSet.title}</p>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-gray-400 uppercase mb-1">キーワード</p>
-              <div className="flex flex-wrap gap-1.5">
-                {content.seoSet.keywords.map(kw => (
-                  <span key={kw} className="px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg text-xs font-medium text-amber-700">{kw}</span>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-gray-400 uppercase mb-1">メタディスクリプション</p>
-              <p className="text-sm text-gray-600 leading-relaxed">{content.seoSet.description}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TikTokサムネイル */}
-      {enabledKeys.includes('thumbnailTikTok') && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3" style={{ background: '#EC489915', borderBottom: '2px solid #EC489930' }}>
-            <div className="flex items-center gap-2">
-              <span className="text-lg">📱</span>
-              <span className="font-bold text-sm text-gray-800">TikTokサムネイル（縦型 1080×1920）</span>
-            </div>
-            <CopyButton text={content.thumbnailTikTok} />
-          </div>
-          <div className="px-5 py-4 space-y-4">
-            <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.thumbnailTikTok}</pre>
-            {/* 画像生成プロンプト */}
-            <div className="bg-pink-50 rounded-xl border border-pink-200 overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-2.5" style={{ background: '#EC489920', borderBottom: '1px solid #EC489930' }}>
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🎨</span>
-                  <span className="font-bold text-xs text-gray-800">画像生成プロンプト（Midjourney / DALL-E 等）</span>
-                </div>
-                <CopyButton text={imagePrompt} />
-              </div>
-              <div className="px-4 py-3">
-                <pre className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed font-sans">{imagePrompt}</pre>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* noteサムネイル */}
-      {enabledKeys.includes('thumbnailNote') && (
-        <Section label="noteサムネイル（横型 1280×670）" emoji="🖼️" color="#41C9A0" copyText={content.thumbnailNote}>
-          <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.thumbnailNote}</pre>
-        </Section>
-      )}
-
-      {/* 全コピー */}
-      <button
-        onClick={async () => {
-          const parts = [];
-          if (enabledKeys.includes('mainContent')) parts.push(`【TikTok台本】\n${content.mainContent}`);
-          if (enabledKeys.includes('hashtags')) parts.push(`【ハッシュタグ】\n${content.hashtagText}`);
-          if (enabledKeys.includes('threads')) parts.push(`【Threads投稿】\n${content.threadsPost}`);
-          if (enabledKeys.includes('x')) parts.push(`【X投稿】\n${content.xPost}`);
-          if (enabledKeys.includes('note')) parts.push(`【note記事】\n${content.noteArticle}`);
-          if (enabledKeys.includes('seo')) parts.push(`【SEO対策】\n${seoText}`);
-          if (enabledKeys.includes('thumbnailTikTok')) parts.push(`【TikTokサムネイル】\n${content.thumbnailTikTok}`);
-          if (enabledKeys.includes('thumbnailNote')) parts.push(`【noteサムネイル】\n${content.thumbnailNote}`);
-          await navigator.clipboard.writeText(parts.join('\n\n' + '─'.repeat(30) + '\n\n'));
-          alert('✅ 全コンテンツをコピーしました！');
-        }}
-        className="w-full py-3.5 rounded-2xl text-white font-black text-sm tracking-wide shadow-md"
-        style={{ background: 'linear-gradient(135deg, #6366F1, #4F46E5)' }}>
-        📋 全コンテンツを一括コピー
-      </button>
-    </div>
-  );
+export const OUTPUT_KEY_LABELS: Record<OutputKey, string> = {
+  mainContent: 'TikTok / YouTube / Instagram 共用台本',
+  hashtags: 'ハッシュタグ',
+  threads: 'Threads投稿文',
+  x: 'X投稿文',
+  note: 'note記事',
+  seo: 'SEOセット',
+  thumbnailTikTok: 'TikTokサムネイル',
+  thumbnailNote: 'noteサムネイル',
 };
+
+export const DEFAULT_ENABLED_KEYS: OutputKey[] = [
+  'mainContent', 'hashtags', 'threads',
+];
