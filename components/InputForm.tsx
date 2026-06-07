@@ -33,6 +33,29 @@ const PROFILE_CTAS = [
   '保存して後で使ってね📌',
 ];
 
+// ── 永続保存ヘルパー（コンポーネント外・モジュールスコープ） ──
+const _STORAGE_KEY = 'sns_post_saved_v2';
+const _loadStorage = (): Record<string, string> => {
+  try {
+    const raw = localStorage.getItem(_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, string> : {};
+  } catch {
+    return {};
+  }
+};
+const _writeStorage = (data: Record<string, string>): void => {
+  try {
+    const json = JSON.stringify(data);
+    localStorage.setItem(_STORAGE_KEY, json);
+    const verify = localStorage.getItem(_STORAGE_KEY);
+    if (verify !== json) {
+      localStorage.setItem(_STORAGE_KEY, json);
+    }
+  } catch {}
+};
+
 interface Props {
   onGenerate: (params: {
     genre: Genre;
@@ -60,33 +83,13 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
   // 保存済み通知用
   const [savedField, setSavedField] = useState<string | null>(null);
 
-  const STORAGE_KEY = 'sns_post_saved_v2';
-
-  // localStorageから安全に読み込むヘルパー
-  const loadStorage = (): Record<string, string> => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return {};
-      return JSON.parse(raw) as Record<string, string>;
-    } catch {
-      return {};
-    }
-  };
-
-  // localStorageへ安全に書き込むヘルパー
-  const writeStorage = (data: Record<string, string>) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch {}
-  };
-
   // アプリ起動時に保存データを復元
   useEffect(() => {
-    const data = loadStorage();
-    if (data.prevTitle !== undefined && data.prevTitle !== '') setPrevTitle(data.prevTitle);
-    if (data.postUrl !== undefined && data.postUrl !== '') setPostUrl(data.postUrl);
-    if (data.freeTheme !== undefined && data.freeTheme !== '') setFreeTheme(data.freeTheme);
-    if (data.profileCta !== undefined && data.profileCta !== '') setProfileCta(data.profileCta);
+    const data = _loadStorage();
+    if (data.prevTitle) setPrevTitle(data.prevTitle);
+    if (data.postUrl) setPostUrl(data.postUrl);
+    if (data.freeTheme) setFreeTheme(data.freeTheme);
+    if (data.profileCta) setProfileCta(data.profileCta);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showSaved = (field: string) => {
@@ -95,9 +98,9 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
   };
 
   const saveField = (field: string, value: string) => {
-    const data = loadStorage();
+    const data = _loadStorage();
     data[field] = value;
-    writeStorage(data);
+    _writeStorage(data);
     showSaved(field);
   };
 
