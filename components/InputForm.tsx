@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { Genre, Theme, OutputKey } from '../types';
 import { LoadingState } from '../types';
 import { GENRE_THEMES } from '../services/loveContentGenerator';
@@ -33,7 +33,7 @@ const PROFILE_CTAS = [
   '保存して後で使ってね📌',
 ];
 
-// ── 永続保存ヘルパー（localStorage のみ） ──
+// ── 永続保存ヘルパー（localStorage のみ・コンポーネント外） ──
 const _STORAGE_KEY = 'sns_post_saved_v2';
 const _loadStorage = (): Record<string, string> => {
   try {
@@ -65,6 +65,29 @@ interface Props {
   loadingState: LoadingState;
 }
 
+// ── SaveButton をコンポーネント外のトップレベルで定義 ──
+interface SaveButtonProps {
+  field: string;
+  value: string;
+  savedField: string | null;
+  onSave: (field: string, value: string) => void;
+}
+const SaveButton: React.FC<SaveButtonProps> = ({ field, value, savedField, onSave }) => (
+  <button
+    type="button"
+    onClick={() => onSave(field, value)}
+    className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex-shrink-0"
+    style={{
+      background: savedField === field
+        ? 'linear-gradient(135deg, #34D399, #10B981)'
+        : 'linear-gradient(135deg, #F472B6, #EC4899)',
+      color: 'white',
+    }}
+  >
+    {savedField === field ? '✓ 保存済' : '保存'}
+  </button>
+);
+
 export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
   const [genre, setGenre] = useState<Genre>('恋愛');
   const [theme, setTheme] = useState<Theme>('脈なし');
@@ -73,9 +96,7 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
   const [profileCta, setProfileCta] = useState(PROFILE_CTAS[0]);
   const [postUrl, setPostUrl] = useState('');
   const [enabledKeys, setEnabledKeys] = useState<OutputKey[]>(['mainContent', 'hashtags', 'threads', 'x']);
-  // ① テーマ自由入力
   const [freeTheme, setFreeTheme] = useState('');
-  // 保存済み通知用
   const [savedField, setSavedField] = useState<string | null>(null);
 
   // アプリ起動時に保存データを復元
@@ -87,17 +108,18 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
     if (data.profileCta) setProfileCta(data.profileCta);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const showSaved = (field: string) => {
+  const showSaved = useCallback((field: string) => {
     setSavedField(field);
     setTimeout(() => setSavedField(null), 1500);
-  };
+  }, []);
 
-  const saveField = (field: string, value: string) => {
+  // 保存処理：useCallbackで安定した参照を保持
+  const saveField = useCallback((field: string, value: string) => {
     const data = _loadStorage();
     data[field] = value;
     _writeStorage(data);
     showSaved(field);
-  };
+  }, [showSaved]);
 
   const themes = GENRE_THEMES[genre];
 
@@ -118,17 +140,6 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
   };
 
   const isLoading = loadingState === LoadingState.LOADING;
-
-  const SaveButton: React.FC<{ field: string; value: string }> = ({ field, value }) => (
-    <button
-      type="button"
-      onClick={() => saveField(field, value)}
-      className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex-shrink-0"
-      style={{ background: savedField === field ? 'linear-gradient(135deg, #34D399, #10B981)' : 'linear-gradient(135deg, #F472B6, #EC4899)', color: 'white' }}
-    >
-      {savedField === field ? '✓ 保存済' : '保存'}
-    </button>
-  );
 
   return (
     <div className="space-y-5">
@@ -170,7 +181,7 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
             onChange={e => setFreeTheme(e.target.value)}
             className="flex-1 px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
           />
-          <SaveButton field="freeTheme" value={freeTheme} />
+          <SaveButton field="freeTheme" value={freeTheme} savedField={savedField} onSave={saveField} />
         </div>
       </div>
 
@@ -224,7 +235,7 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
               value={PROFILE_CTAS.includes(profileCta) ? '' : profileCta}
               onChange={e => setProfileCta(e.target.value)}
               className="flex-1 px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
-            <SaveButton field="profileCta" value={profileCta} />
+            <SaveButton field="profileCta" value={profileCta} savedField={savedField} onSave={saveField} />
           </div>
         </div>
       </div>
@@ -236,7 +247,7 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
             <input type="text" placeholder="https://threads.net/..." value={postUrl}
               onChange={e => setPostUrl(e.target.value)}
               className="flex-1 px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
-            <SaveButton field="postUrl" value={postUrl} />
+            <SaveButton field="postUrl" value={postUrl} savedField={savedField} onSave={saveField} />
           </div>
         </div>
         <div>
@@ -245,7 +256,7 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
             <input type="text" placeholder="前回の人気投稿を参考に生成..." value={prevTitle}
               onChange={e => setPrevTitle(e.target.value)}
               className="flex-1 px-4 py-2.5 rounded-xl border border-pink-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
-            <SaveButton field="prevTitle" value={prevTitle} />
+            <SaveButton field="prevTitle" value={prevTitle} savedField={savedField} onSave={saveField} />
           </div>
         </div>
       </div>
