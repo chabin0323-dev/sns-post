@@ -1177,6 +1177,11 @@ export const GENRE_THEMES: Record<Genre, Theme[]> = {
   'ライフスタイル': ['ミニマリスト', '朝活', '読書習慣', '手帳活用', '一人暮らし節約', 'おうち時間', '旅行ハック', 'サウナ効果', 'ペット', 'インテリア'],
 };
 
+// SNS別プロフィール誘導文（TikTok・YouTube Shorts・Instagram Reelsのみ）
+const SNS_PROFILE_CTA = `💗恋愛も美容も無料で診断💗
+✔ AI相性占い ✔ 肌年齢診断 ✔ 個人占い
+すべてプロフィールのリンクから無料で利用できます👇✨`;
+
 export function generateContent(params: {
   genre: Genre;
   theme: Theme;
@@ -1185,8 +1190,12 @@ export function generateContent(params: {
   tiktokLength: 300 | 500 | 600;
   profileCta: string;
   postUrl: string;
+  freeTheme?: string;
 }): GeneratedContent {
-  const { genre, theme, profileCta, postUrl, tiktokLength } = params;
+  const { genre, theme, profileCta, postUrl, tiktokLength, freeTheme } = params;
+
+  // freeThemeが入力されていれば生成テーマとして優先使用
+  const effectiveTheme = (freeTheme && freeTheme.trim() !== '') ? freeTheme.trim() : theme;
 
   const hookTypes = ['否定系', '不安系', '暴露系', '共感系', '実は系', '数字系', '限定系'];
   const hookType = pickRandom(hookTypes) as HookType;
@@ -1202,24 +1211,32 @@ export function generateContent(params: {
 
   const templates = templateMap[hookType] ?? templateMap['共感系'] ?? ['内容を生成できませんでした。'];
   const rawTemplate = pickRandom(templates);
-  const mainScriptBase = rawTemplate.replace(/\{theme\}/g, theme);
-  const mainContent = mainScriptBase + `\n\n${profileCta}`;
+  const mainScriptBase = rawTemplate.replace(/\{theme\}/g, effectiveTheme);
 
-  const hashtags = generateHashtags(theme, genre);
+  // TikTok・YouTube Shorts・Instagram Reels台本：SNS_PROFILE_CTAを末尾に付与
+  const mainContent = mainScriptBase + `\n\n${SNS_PROFILE_CTA}`;
+
+  const hashtags = generateHashtags(effectiveTheme, genre);
   const hashtagText = hashtags.join(' ');
-  const threadsPost = `${mainContent}\n\n${hashtagText}${postUrl ? '\n\n' + postUrl : ''}`;
+
+  // Threads：プロフィール誘導文なし・URLを直接掲載
+  const threadsPost = `${mainScriptBase}\n\n${hashtagText}${postUrl ? '\n\n' + postUrl : ''}`;
+
+  // X(Twitter)：プロフィール誘導文なし
   const xPost = mainScriptBase.split('\n').slice(0, 8).join('\n') + `${postUrl ? '\n\n' + postUrl : ''}`;
-  const noteArticle = `${theme}について知っておくべきこと\n\n${mainContent}`;
+
+  // note：プロフィール誘導文なし・URLを直接掲載
+  const noteArticle = `${effectiveTheme}について知っておくべきこと\n\n${mainScriptBase}${postUrl ? '\n\n' + postUrl : ''}`;
 
   const seoSet = {
-    title: `【2026年最新】${theme}の真実｜知らないと損する3つのこと`,
-    keywords: [theme, genre, `${theme} 方法`, `${theme} コツ`, `${theme} 初心者`],
-    description: `${theme}について、知らないと損する本当のことを解説。${genre}に関心がある方必見の内容です。`,
+    title: `【2026年最新】${effectiveTheme}の真実｜知らないと損する3つのこと`,
+    keywords: [effectiveTheme, genre, `${effectiveTheme} 方法`, `${effectiveTheme} コツ`, `${effectiveTheme} 初心者`],
+    description: `${effectiveTheme}について、知らないと損する本当のことを解説。${genre}に関心がある方必見の内容です。`,
     howToUse: `SEOタイトルをnote記事のタイトルに使用し、キーワードを本文に自然に盛り込んでください。`,
   };
 
-  const thumbnailTikTok = `サイズ：1080×1920px（縦型9:16）\nテーマ：${theme}\nメインテキスト：${mainScriptBase.split('\n')[0]}\nデザイン：インパクト重視・目を引く色使い・太字フォント`;
-  const thumbnailNote = `サイズ：1280×670px（横型）\nテーマ：${theme}\nメインテキスト：${mainScriptBase.split('\n')[0]}\nデザイン：シンプル・洗練・読みやすいフォント`;
+  const thumbnailTikTok = `サイズ：1080×1920px（縦型9:16）\nテーマ：${effectiveTheme}\nメインテキスト：${mainScriptBase.split('\n')[0]}\nデザイン：インパクト重視・目を引く色使い・太字フォント`;
+  const thumbnailNote = `サイズ：1280×670px（横型）\nテーマ：${effectiveTheme}\nメインテキスト：${mainScriptBase.split('\n')[0]}\nデザイン：シンプル・洗練・読みやすいフォント`;
   const thumbnailPrompt = `【TikTok用】\n${thumbnailTikTok}\n\n【note用】\n${thumbnailNote}`;
 
   const buzzScore = {
@@ -1231,12 +1248,12 @@ export function generateContent(params: {
     total: genre === '恋愛' ? 87 : 78,
     comment: genre === '恋愛'
       ? `恋愛ジャンル×${hookType}の組み合わせは拡散力が高いです。コメント誘導も効いています。`
-      : `${hookType}は反応率が高いフックです。${theme}との相性も良好。`,
+      : `${hookType}は反応率が高いフックです。${effectiveTheme}との相性も良好。`,
   };
 
   return {
     genre,
-    theme,
+    theme: effectiveTheme,
     hookType,
     prevTitle: params.prevTitle,
     mainContent,
