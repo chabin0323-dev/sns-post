@@ -33,38 +33,21 @@ const PROFILE_CTAS = [
   '保存して後で使ってね📌',
 ];
 
-// ── 永続保存ヘルパー（localStorage + window.name 二重保存） ──
-// AI Studio等オリジン制約環境でもwindow.nameは維持される
+// ── 永続保存ヘルパー（localStorage のみ） ──
 const _STORAGE_KEY = 'sns_post_saved_v2';
 const _loadStorage = (): Record<string, string> => {
-  // 1) localStorageから試みる
   try {
     const raw = localStorage.getItem(_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (typeof parsed === 'object' && parsed !== null) return parsed as Record<string, string>;
-    }
-  } catch {}
-  // 2) window.nameから試みる
-  try {
-    const store = JSON.parse(window.name || '{}') as Record<string, string>;
-    if (store[_STORAGE_KEY]) {
-      const parsed = JSON.parse(store[_STORAGE_KEY]);
-      if (typeof parsed === 'object' && parsed !== null) return parsed as Record<string, string>;
-    }
-  } catch {}
-  return {};
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, string> : {};
+  } catch {
+    return {};
+  }
 };
 const _writeStorage = (data: Record<string, string>): void => {
-  const json = JSON.stringify(data);
-  // 1) localStorageに保存
-  try { localStorage.setItem(_STORAGE_KEY, json); } catch {}
-  // 2) window.nameにも保存（二重保存）
   try {
-    let store: Record<string, string> = {};
-    try { store = JSON.parse(window.name || '{}'); } catch {}
-    store[_STORAGE_KEY] = json;
-    window.name = JSON.stringify(store);
+    localStorage.setItem(_STORAGE_KEY, JSON.stringify(data));
   } catch {}
 };
 
