@@ -47,9 +47,65 @@ const Section: React.FC<{ label: string; emoji: string; color: string; children:
   </div>
 );
 
+// TikTokサムネイル用・画像生成プロンプトを自動生成する関数
+function generateImagePrompt(content: GeneratedContent): string {
+  const { genre, theme, mainContent } = content;
+  const firstLine = mainContent.split('\n')[0] ?? theme;
+
+  let styleGuide = '';
+  let emotionGuide = '';
+  let subjectGuide = '';
+
+  if (genre === '恋愛') {
+    styleGuide = 'warm romantic atmosphere, soft pink and purple bokeh background, intimate and emotional mood';
+    emotionGuide = 'expressive longing or heartfelt emotion on face, slightly teary or deeply in love eyes';
+    subjectGuide = 'young Japanese woman in her 20s-30s, holding smartphone, looking thoughtful or emotional';
+  } else if (genre === '美容・ダイエット') {
+    styleGuide = 'clean bright beauty studio background, high-end cosmetic aesthetic, soft natural lighting';
+    emotionGuide = 'confident glowing expression, fresh and radiant skin, clean beauty look';
+    subjectGuide = 'beautiful Japanese woman in her 20s-30s, flawless skin, minimal makeup or beauty product in hand';
+  } else if (genre === 'ビジネス・起業' || genre === '転職・キャリア' || genre === '副業・稼ぐ') {
+    styleGuide = 'modern office or city background, professional and trustworthy atmosphere, cool tones';
+    emotionGuide = 'confident determined expression, strong eye contact, professional composure';
+    subjectGuide = 'Japanese professional man or woman in their 30s, business casual attire, holding laptop or documents';
+  } else if (genre === 'お金・資産') {
+    styleGuide = 'sleek financial aesthetic, dark premium background with gold accents, luxury atmosphere';
+    emotionGuide = 'motivated and focused expression, sense of achievement and ambition';
+    subjectGuide = 'Japanese man or woman in their 30s, smart casual outfit, looking aspirational and driven';
+  } else if (genre === '健康・メンタル') {
+    styleGuide = 'calm natural background, soft green tones, peaceful and healing atmosphere';
+    emotionGuide = 'serene relieved expression, calm and clear eyes, sense of inner peace';
+    subjectGuide = 'Japanese person in their 20s-40s, casual comfortable clothing, relaxed posture';
+  } else if (genre === '育児・子育て') {
+    styleGuide = 'warm cozy home background, soft pastel tones, heartwarming family atmosphere';
+    emotionGuide = 'warm loving expression, gentle smile, nurturing and caring look';
+    subjectGuide = 'Japanese mother or father in their 30s, casual homewear, caring gesture';
+  } else {
+    styleGuide = 'clean modern Japanese lifestyle background, bright and inviting atmosphere';
+    emotionGuide = 'engaged expressive face, relatable and approachable emotion';
+    subjectGuide = 'Japanese man or woman in their 20s-30s, casual everyday outfit';
+  }
+
+  return `[画像生成プロンプト - TikTokサムネイル専用]
+
+Vertical 9:16 ratio, 1080x1920px, ultra-high quality photorealistic image.
+
+Subject: ${subjectGuide}.
+Expression & Emotion: ${emotionGuide}.
+Style & Background: ${styleGuide}.
+Composition: close-up to mid-shot, subject positioned slightly off-center, strong visual hierarchy for text overlay.
+Text overlay area: leave upper 20% and lower 20% of image clear for Japanese text.
+Main text to overlay (top area): 「${firstLine}」
+Lighting: cinematic soft lighting, slight rim light on subject.
+Quality: 8K resolution, sharp focus on face, shallow depth of field background blur, professional photography style.
+Mood: emotionally engaging, high click-through rate TikTok thumbnail aesthetic.
+Japanese people only. Realistic, not illustrated or anime style.`;
+}
+
 export const ResultCard: React.FC<Props> = ({ content, enabledKeys }) => {
   const { buzzScore } = content;
   const seoText = `【SEOタイトル】\n${content.seoSet.title}\n\n【キーワード】\n${content.seoSet.keywords.join('、')}\n\n【メタディスクリプション】\n${content.seoSet.description}`;
+  const imagePrompt = generateImagePrompt(content);
 
   return (
     <div className="space-y-4">
@@ -177,9 +233,31 @@ export const ResultCard: React.FC<Props> = ({ content, enabledKeys }) => {
 
       {/* TikTokサムネイル */}
       {enabledKeys.includes('thumbnailTikTok') && (
-        <Section label="TikTokサムネイル（縦型 1080×1920）" emoji="📱" color="#EC4899" copyText={content.thumbnailTikTok}>
-          <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.thumbnailTikTok}</pre>
-        </Section>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3" style={{ background: '#EC489915', borderBottom: '2px solid #EC489930' }}>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">📱</span>
+              <span className="font-bold text-sm text-gray-800">TikTokサムネイル（縦型 1080×1920）</span>
+            </div>
+            <CopyButton text={content.thumbnailTikTok} />
+          </div>
+          <div className="px-5 py-4 space-y-4">
+            <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.thumbnailTikTok}</pre>
+            {/* 画像生成プロンプト */}
+            <div className="bg-pink-50 rounded-xl border border-pink-200 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5" style={{ background: '#EC489920', borderBottom: '1px solid #EC489930' }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🎨</span>
+                  <span className="font-bold text-xs text-gray-800">画像生成プロンプト（Midjourney / DALL-E 等）</span>
+                </div>
+                <CopyButton text={imagePrompt} />
+              </div>
+              <div className="px-4 py-3">
+                <pre className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed font-sans">{imagePrompt}</pre>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* noteサムネイル */}
