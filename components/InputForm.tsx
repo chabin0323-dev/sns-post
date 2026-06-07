@@ -60,19 +60,34 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
   // 保存済み通知用
   const [savedField, setSavedField] = useState<string | null>(null);
 
-  // ページ読み込み時にlocalStorageから復元
-  useEffect(() => {
-    const saved = localStorage.getItem('sns_post_saved');
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        if (data.prevTitle !== undefined) setPrevTitle(data.prevTitle);
-        if (data.postUrl !== undefined) setPostUrl(data.postUrl);
-        if (data.freeTheme !== undefined) setFreeTheme(data.freeTheme);
-        if (data.profileCta !== undefined) setProfileCta(data.profileCta);
-      } catch {}
+  const STORAGE_KEY = 'sns_post_saved_v2';
+
+  // localStorageから安全に読み込むヘルパー
+  const loadStorage = (): Record<string, string> => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return {};
+      return JSON.parse(raw) as Record<string, string>;
+    } catch {
+      return {};
     }
-  }, []);
+  };
+
+  // localStorageへ安全に書き込むヘルパー
+  const writeStorage = (data: Record<string, string>) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch {}
+  };
+
+  // アプリ起動時に保存データを復元
+  useEffect(() => {
+    const data = loadStorage();
+    if (data.prevTitle !== undefined && data.prevTitle !== '') setPrevTitle(data.prevTitle);
+    if (data.postUrl !== undefined && data.postUrl !== '') setPostUrl(data.postUrl);
+    if (data.freeTheme !== undefined && data.freeTheme !== '') setFreeTheme(data.freeTheme);
+    if (data.profileCta !== undefined && data.profileCta !== '') setProfileCta(data.profileCta);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showSaved = (field: string) => {
     setSavedField(field);
@@ -80,13 +95,9 @@ export const InputForm: React.FC<Props> = ({ onGenerate, loadingState }) => {
   };
 
   const saveField = (field: string, value: string) => {
-    const existing = localStorage.getItem('sns_post_saved');
-    let data: Record<string, string> = {};
-    if (existing) {
-      try { data = JSON.parse(existing); } catch {}
-    }
+    const data = loadStorage();
     data[field] = value;
-    localStorage.setItem('sns_post_saved', JSON.stringify(data));
+    writeStorage(data);
     showSaved(field);
   };
 
