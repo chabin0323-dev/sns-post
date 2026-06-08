@@ -1,1 +1,38 @@
-
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>保存テスト</title>
+<style>
+body{font-family:sans-serif;padding:20px;max-width:400px;margin:0 auto}
+button{display:block;width:100%;padding:14px;margin:8px 0;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;color:white;background:#EC4899}
+.result{background:#f3f4f6;border-radius:10px;padding:12px;margin:8px 0;font-size:15px}
+</style>
+</head>
+<body>
+<h2>📱 localStorageテスト</h2>
+<button onclick="doSave()">💾 保存する</button>
+<button onclick="doRead()" style="background:#8B5CF6">📖 読み込む</button>
+<div class="result" id="result">まだ何もしていません</div>
+<script>
+const KEY='ls_test_v1';
+function doSave(){
+  try{
+    localStorage.setItem(KEY,'テスト成功_'+new Date().toLocaleTimeString('ja-JP'));
+    const v=localStorage.getItem(KEY);
+    document.getElementById('result').innerHTML='<b style="color:green">✅保存成功: '+v+'</b>';
+  }catch(e){document.getElementById('result').innerHTML='<b style="color:red">❌エラー:'+e.message+'</b>';}
+}
+function doRead(){
+  try{
+    const v=localStorage.getItem(KEY);
+    document.getElementById('result').innerHTML=v
+      ?'<b style="color:green">✅読込成功: '+v+'</b>'
+      :'<b style="color:red">❌データなし（保存されていない）</b>';
+  }catch(e){document.getElementById('result').innerHTML='<b style="color:red">❌エラー:'+e.message+'</b>';}
+}
+window.onload=()=>doRead();
+</script>
+</body>
+</html>
