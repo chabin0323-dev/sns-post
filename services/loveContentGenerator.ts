@@ -1373,20 +1373,202 @@ export function generateContent(params: {
   let mainScriptBase: string;
   const themeSpecific = THEME_CONTENT[effectiveTheme];
   if (themeSpecific && themeSpecific.length > 0) {
+    // テーマ専用コンテンツが存在する場合：そのテーマに特化した記事を使用
     mainScriptBase = pickRandom(themeSpecific);
   } else {
-    // ② テーマ専用コンテンツがない場合のみフックテンプレートにフォールバック
-    let templateMap: Record<string, string[]>;
-    if (genre === '恋愛') {
-      if (tiktokLength === 300) templateMap = TEMPLATES_300;
-      else if (tiktokLength === 500) templateMap = TEMPLATES_500;
-      else templateMap = TEMPLATES_600;
-    } else {
-      templateMap = GENERAL_TEMPLATES;
-    }
-    const templates = templateMap[hookType] ?? templateMap['共感系'] ?? ['内容を生成できませんでした。'];
-    const rawTemplate = pickRandom(templates);
-    mainScriptBase = rawTemplate.replace(/\{theme\}/g, effectiveTheme);
+    // ② テーマ専用コンテンツがない場合：テーマ名を全文に反映した動的生成
+    // テーマ名をそのまま使い、フックタイプに合わせた構造で生成
+    const dynamicTemplates: Record<string, string> = {
+      '否定系': `「${effectiveTheme}」について
+やってはいけないことがあります。
+
+多くの人がやりがちですが
+これが結果を遠ざけている可能性があります。
+
+${effectiveTheme}でやめるべき3つのこと：
+
+① 焦って行動する
+${effectiveTheme}に関することは
+焦ると判断を誤りやすくなります。
+まず現状を正確に把握することが先です。
+
+② 周りの意見に流される
+${effectiveTheme}は人それぞれ状況が違います。
+他人の成功例をそのまま真似しても
+うまくいかないことがほとんどです。
+
+③ 一人で全部抱え込む
+${effectiveTheme}で行き詰まったとき
+一人で解決しようとすると
+視野が狭くなってしまいます。
+
+「やり方を変えるだけで結果が変わる」
+
+思い当たることはありましたか？`,
+
+      '不安系': `「${effectiveTheme}」が気になっているあなたへ。
+
+このまま放置していると
+後悔する可能性があります。
+
+${effectiveTheme}について知らないと起きること：
+
+① 判断が遅れる
+適切なタイミングを逃してしまいます。
+早めに知識をつけておくことが大切です。
+
+② 同じ失敗を繰り返す
+${effectiveTheme}でうまくいかない人の多くは
+原因を把握していないまま
+同じことを続けています。
+
+③ 選択肢が減っていく
+時間が経つほど
+選べる方法が限られてきます。
+
+「今この瞬間が一番早いタイミング」
+
+${effectiveTheme}について
+今日から向き合ってみてください。`,
+
+      '暴露系': `「${effectiveTheme}」について
+表では言えない本音を話します。
+
+これ、知っている人がほぼいません。
+
+${effectiveTheme}の知られていない3つの事実：
+
+① 一般的に言われていることは
+古くて効果が薄い場合があります。
+本当に効果があることは
+あまり広まっていません。
+
+② 結果を出している人は
+見せていない部分に力を入れています。
+表に出ている行動だけ真似しても
+同じ結果にはなりません。
+
+③ ${effectiveTheme}で一番大事なことは
+「継続できる仕組みを作ること」です。
+方法より仕組みの方が結果に直結します。
+
+「知っているかどうかで結果が変わる」
+
+この話、誰かに教えてあげてください。`,
+
+      '共感系': `「${effectiveTheme}」について
+頑張っているのに
+うまくいかないと感じていませんか。
+
+「自分だけなんでうまくいかないんだろう」
+そう思うことありますよね。
+
+その気持ち、すごくわかります。
+
+でも少しだけ伝えさせてください。
+
+${effectiveTheme}で大切なこと：
+
+① 自分を責めすぎない
+うまくいかない時期は誰にでもあります。
+その時期をどう過ごすかの方が大切です。
+
+② 小さな変化に気づいてあげる
+大きな結果だけを求めると
+積み重ねている小さな進歩を
+見落としてしまいます。
+
+③ 続けることを一番の目標にする
+完璧にやろうとするより
+70%でも続けた方が結果につながります。
+
+焦らなくていいです。
+一緒に前に進みましょう。`,
+
+      '実は系': `実は「${effectiveTheme}」について
+ほとんどの人が誤解していることがあります。
+
+これを知るだけで
+取り組み方が変わります。
+
+${effectiveTheme}に関する意外な真実：
+
+① 難しい方法ほど効果があると思っている
+実際は、シンプルな基本の方が
+再現性が高く結果につながります。
+
+② 成果が出ている人は特別だと思っている
+成果を出している人と
+そうでない人の差は才能ではなく
+「習慣と仕組み」の差です。
+
+③ 時間がかかるものだと思いすぎている
+正しい方向で取り組めば
+思ったより早く変化を感じられます。
+
+「シンプルに、でも丁寧に」
+
+これだけで変わる人が多いです。`,
+
+      '数字系': `「${effectiveTheme}」で結果を出すための
+5つのポイントを話します。
+
+順番が大事です。
+
+① 現状を正確に把握する
+感覚ではなく事実として
+今の状況を確認してください。
+
+② 目標を具体的な行動に落とし込む
+「うまくなりたい」ではなく
+「毎日○○を○分する」という
+行動レベルまで具体化してください。
+
+③ 一つのことに集中する
+複数のことを同時にやろうとすると
+どれも中途半端になります。
+
+④ 記録をつける
+変化は記録していないと気づきにくいです。
+記録が改善のヒントになります。
+
+⑤ 継続できる環境を作る
+意志力に頼らず
+続けやすい仕組みを整えることが
+一番の近道です。
+
+どれか1つ、今日から始めてみてください。`,
+
+      '限定系': `「${effectiveTheme}」で
+本当に成果を出した人だけが知っていることを話します。
+
+「もっと早くこれを知りたかった」
+と言われることが多い話です。
+
+成果を出す人だけがやっていること：
+
+① 始める前に「やめる基準」を決めている
+いつまで続けるかを先に決めることで
+余計な迷いがなくなり
+全力で取り組めるようになります。
+
+② 「なぜうまくいかないか」を
+感情ではなく事実で分析している
+感情的な自己分析は
+同じ失敗を繰り返させます。
+
+③ 小さな成功体験を意図的に作っている
+大きな目標だけを見ていると
+途中で心が折れやすくなります。
+
+「${effectiveTheme}で結果が出る人は
+準備と撤退基準が明確な人」です。
+
+保存して実践してみてください。`,
+    };
+
+    const dynTemplate = dynamicTemplates[hookType] ?? dynamicTemplates['共感系'];
+    mainScriptBase = dynTemplate;
   }
 
   // TikTok・YouTube Shorts・Instagram Reels台本：SNS_PROFILE_CTAを末尾に付与
@@ -1491,16 +1673,78 @@ export function generateContent(params: {
   const thumbnailNote = `サイズ：1280×670px（横型）\nテーマ：${effectiveTheme}\nメインテキスト：${mainScriptBase.split('\n')[0]}\nデザイン：シンプル・洗練・読みやすいフォント`;
   const thumbnailPrompt = `【TikTok用】\n${thumbnailTikTok}\n\n【note用】\n${thumbnailNote}`;
 
+  // BUZZ SCORE：記事内容・テーマ・フックタイプから実際に算出
+  const themeHasSpecific = !!(THEME_CONTENT[effectiveTheme]?.length);
+  const contentLen = mainScriptBase.length;
+  const hasQuestion = mainScriptBase.includes('？') || mainScriptBase.includes('?');
+  const hasNumber = /[①②③④⑤]/.test(mainScriptBase);
+  const hasEmotion = /[！!]/.test(mainScriptBase);
+
+  // フックタイプ別スコア（暴露系・限定系は拡散力高）
+  const hookPower =
+    hookType === '暴露系' ? 88 + Math.floor(Math.random() * 5) :
+    hookType === '限定系' ? 86 + Math.floor(Math.random() * 5) :
+    hookType === '否定系' ? 83 + Math.floor(Math.random() * 5) :
+    hookType === '不安系' ? 82 + Math.floor(Math.random() * 5) :
+    hookType === '数字系' ? 81 + Math.floor(Math.random() * 5) :
+    hookType === '実は系' ? 80 + Math.floor(Math.random() * 5) :
+    78 + Math.floor(Math.random() * 5);
+
+  // 保存率：専用コンテンツ・番号あり・長文は高い
+  const saveRate =
+    Math.min(95, (themeHasSpecific ? 78 : 65)
+      + (hasNumber ? 6 : 0)
+      + (contentLen > 400 ? 4 : 0)
+      + Math.floor(Math.random() * 8));
+
+  // コメント率：問いかけ・感情表現で上がる
+  const commentRate =
+    Math.min(95, (hasQuestion ? 78 : 68)
+      + (hasEmotion ? 5 : 0)
+      + (genre === '恋愛' ? 6 : 0)
+      + (genre === '人間関係' ? 4 : 0)
+      + Math.floor(Math.random() * 8));
+
+  // プロフィール遷移率
+  const profileRate =
+    Math.min(90, 72
+      + (genre === '恋愛' ? 8 : 0)
+      + (genre === '美容・ダイエット' ? 6 : 0)
+      + (themeHasSpecific ? 4 : 0)
+      + Math.floor(Math.random() * 8));
+
+  // SEOスコア
+  const seoScore =
+    Math.min(90, 68
+      + (themeHasSpecific ? 6 : 0)
+      + (hasNumber ? 4 : 0)
+      + Math.floor(Math.random() * 8));
+
+  // 総合点：各スコアの加重平均
+  const totalRaw = Math.round(
+    hookPower * 0.25 +
+    saveRate * 0.25 +
+    commentRate * 0.25 +
+    profileRate * 0.15 +
+    seoScore * 0.10
+  );
+  const total = Math.min(98, Math.max(60, totalRaw));
+
+  // スコアコメント：実際のスコアに基づいた評価
+  const scoreComment =
+    total >= 90 ? `${effectiveTheme}×${hookType}は最高クラスの組み合わせです。バズ確率が非常に高いです。` :
+    total >= 85 ? `${effectiveTheme}×${hookType}は拡散力が高い組み合わせです。保存・コメント誘導も効いています。` :
+    total >= 80 ? `${hookType}は反応率が高いフックです。${effectiveTheme}との相性も良好です。` :
+    `${effectiveTheme}のテーマで${hookType}を使用。改善の余地があります。`;
+
   const buzzScore = {
-    hookPower: hookType === '暴露系' ? 90 : hookType === '否定系' ? 85 : hookType === '限定系' ? 88 : 80,
-    saveRate: genre === '恋愛' ? 88 : 75,
-    commentRate: genre === '恋愛' ? 90 : 70,
-    profileRate: 82,
-    seoScore: 76,
-    total: genre === '恋愛' ? 87 : 78,
-    comment: genre === '恋愛'
-      ? `恋愛ジャンル×${hookType}の組み合わせは拡散力が高いです。コメント誘導も効いています。`
-      : `${hookType}は反応率が高いフックです。${effectiveTheme}との相性も良好。`,
+    hookPower,
+    saveRate,
+    commentRate,
+    profileRate,
+    seoScore,
+    total,
+    comment: scoreComment,
   };
 
   const nextTitles = generateNextTitles(genre, effectiveTheme, mainScriptBase.split('\n')[0] ?? '');
