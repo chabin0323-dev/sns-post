@@ -1,5 +1,6 @@
 // services/loveContentGenerator.ts
 import type { GeneratedContent, Genre, Theme, HookType, OutputKey } from '../types';
+import { THEME_CONTENT } from './themeContentMap';
 
 const TEMPLATES_300: Record<string, string[]> = {
   '否定系': [
@@ -1368,18 +1369,25 @@ export function generateContent(params: {
   const hookTypes = ['否定系', '不安系', '暴露系', '共感系', '実は系', '数字系', '限定系'];
   const hookType = pickRandom(hookTypes) as HookType;
 
-  let templateMap: Record<string, string[]>;
-  if (genre === '恋愛') {
-    if (tiktokLength === 300) templateMap = TEMPLATES_300;
-    else if (tiktokLength === 500) templateMap = TEMPLATES_500;
-    else templateMap = TEMPLATES_600;
+  // ① テーマ専用コンテンツを最優先で使用（テーマごとに完全に異なる内容）
+  let mainScriptBase: string;
+  const themeSpecific = THEME_CONTENT[effectiveTheme];
+  if (themeSpecific && themeSpecific.length > 0) {
+    mainScriptBase = pickRandom(themeSpecific);
   } else {
-    templateMap = GENERAL_TEMPLATES;
+    // ② テーマ専用コンテンツがない場合のみフックテンプレートにフォールバック
+    let templateMap: Record<string, string[]>;
+    if (genre === '恋愛') {
+      if (tiktokLength === 300) templateMap = TEMPLATES_300;
+      else if (tiktokLength === 500) templateMap = TEMPLATES_500;
+      else templateMap = TEMPLATES_600;
+    } else {
+      templateMap = GENERAL_TEMPLATES;
+    }
+    const templates = templateMap[hookType] ?? templateMap['共感系'] ?? ['内容を生成できませんでした。'];
+    const rawTemplate = pickRandom(templates);
+    mainScriptBase = rawTemplate.replace(/\{theme\}/g, effectiveTheme);
   }
-
-  const templates = templateMap[hookType] ?? templateMap['共感系'] ?? ['内容を生成できませんでした。'];
-  const rawTemplate = pickRandom(templates);
-  const mainScriptBase = rawTemplate.replace(/\{theme\}/g, effectiveTheme);
 
   // TikTok・YouTube Shorts・Instagram Reels台本：SNS_PROFILE_CTAを末尾に付与
   const mainContent = mainScriptBase + `\n\n${SNS_PROFILE_CTA}`;
