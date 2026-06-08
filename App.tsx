@@ -8,35 +8,18 @@ import { generateContent } from './services/loveContentGenerator';
 
 const RESULT_STORAGE_KEY = 'sns_post_last_result_v2';
 
-// cookie + localStorage 二重保存ヘルパー（iOS Safari対応）
-function _setCookie(name: string, value: string, days: number): void {
-  const expires = new Date();
-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + expires.toUTCString() + ';path=/;SameSite=Lax';
-}
-function _getCookie(name: string): string | null {
-  const prefix = name + '=';
-  const cookies = document.cookie.split(';');
-  for (let i = 0; i < cookies.length; i++) {
-    const c = cookies[i].trim();
-    if (c.indexOf(prefix) === 0) return decodeURIComponent(c.substring(prefix.length));
-  }
-  return null;
-}
+// localStorage 永続保存ヘルパー
 function _saveResult(data: object): void {
-  const json = JSON.stringify(data);
-  try { _setCookie(RESULT_STORAGE_KEY, json, 365); } catch {}
-  try { localStorage.setItem(RESULT_STORAGE_KEY, json); } catch {}
+  try {
+    localStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify(data));
+  } catch {}
 }
 function _loadResult(): string | null {
   try {
-    const v = _getCookie(RESULT_STORAGE_KEY);
-    if (v) return v;
-  } catch {}
-  try {
     return localStorage.getItem(RESULT_STORAGE_KEY);
-  } catch {}
-  return null;
+  } catch {
+    return null;
+  }
 }
 
 const App: React.FC = () => {
