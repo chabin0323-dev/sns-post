@@ -33,56 +33,23 @@ const PROFILE_CTAS = [
   '保存して後で使ってね📌',
 ];
 
-// ── 永続保存ヘルパー（cookie使用・iOS Safari対応） ──
+// ── 永続保存ヘルパー（localStorageのみ） ──
 const _STORAGE_KEY = 'sns_post_saved_v2';
 
-const _setCookie = (name: string, value: string, days: number): void => {
-  const expires = new Date();
-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + expires.toUTCString() + ';path=/;SameSite=Lax';
-};
-
-const _getCookie = (name: string): string | null => {
-  const prefix = name + '=';
-  const cookies = document.cookie.split(';');
-  for (let i = 0; i < cookies.length; i++) {
-    const c = cookies[i].trim();
-    if (c.indexOf(prefix) === 0) {
-      return decodeURIComponent(c.substring(prefix.length));
-    }
-  }
-  return null;
-};
-
 const _loadStorage = (): Record<string, string> => {
-  // まずcookieから読む
-  try {
-    const raw = _getCookie(_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (typeof parsed === 'object' && parsed !== null) return parsed as Record<string, string>;
-    }
-  } catch {}
-  // フォールバック: localStorage
   try {
     const raw = localStorage.getItem(_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (typeof parsed === 'object' && parsed !== null) return parsed as Record<string, string>;
-    }
-  } catch {}
-  return {};
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, string> : {};
+  } catch {
+    return {};
+  }
 };
 
 const _writeStorage = (data: Record<string, string>): void => {
-  const json = JSON.stringify(data);
-  // cookieに保存（365日間）
   try {
-    _setCookie(_STORAGE_KEY, json, 365);
-  } catch {}
-  // localStorageにも保存（フォールバック）
-  try {
-    localStorage.setItem(_STORAGE_KEY, json);
+    localStorage.setItem(_STORAGE_KEY, JSON.stringify(data));
   } catch {}
 };
 
