@@ -112,14 +112,14 @@ const App: React.FC = () => {
   // ============================================================
   // 新規ハンドラ（BuzzPost生成）
   // ============================================================
-  const handleBuzzGenerate = async (articleText: string) => {
+  const handleBuzzGenerate = async (articleText: string, length: 300 | 500 | 600) => {
     setIsBuzzLoading(true);
     // わずかなローディング感を演出（UX向上）
     await new Promise(r => setTimeout(r, 400));
     try {
       const result = generateBuzzPost({
         articleText,
-        tiktokLength: currentSettings.tiktokLength,
+        tiktokLength: length,
         profileCta: currentSettings.profileCta,
         postUrl: currentSettings.postUrl,
       });
@@ -188,7 +188,6 @@ const App: React.FC = () => {
         {/* ============================================================ */}
         <div ref={buzzRef}>
           <BuzzPostPanel
-            tiktokLength={currentSettings.tiktokLength}
             profileCta={currentSettings.profileCta}
             postUrl={currentSettings.postUrl}
             onGenerate={handleBuzzGenerate}
