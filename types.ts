@@ -106,4 +106,9 @@ export interface BuzzPostResult {
   xPost: string;              // X投稿文
   instagramPost: string;      // Instagram投稿文
   youtubePost: string;        // YouTube Shorts投稿文
+  profileCtaText: string;     // プロフィール誘導文（表示用）
+  postUrlText: string;        // 投稿URL（表示用）
+  thumbnailTikTok: string;    // TikTok画像生成指示文（1080×1920）
+  thumbnailNote: string;      // note画像生成指示文（1280×670）
+  seoSpecialTitle: string;    // SEO特化タイトル（検索流入・クリック率重視）
 }
