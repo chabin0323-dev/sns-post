@@ -96,6 +96,7 @@ export interface BuzzPostResult {
   postType: string;           // 投稿タイプ
   score: BuzzPostScore;       // BAZZ SCORE
   improvement: BuzzImprovement | null;  // 改善提案（95点未満のみ）
+  noteArticle: string;        // note記事
   seoTitle: string;           // SEOタイトル
   seoKeywords: string[];      // SEOキーワード
   metaDescription: string;    // メタディスクリプション
