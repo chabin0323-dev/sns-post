@@ -13,6 +13,7 @@ import { generateContent } from './services/loveContentGenerator';
 import { generateBuzzPost } from './services/buzzPostGenerator';
 
 const RESULT_STORAGE_KEY = 'sns_post_last_result_v2';
+const BUZZ_RESULT_KEY = 'buzz_last_result_v1';
 
 type TabType = 'note' | 'buzz';
 
@@ -48,10 +49,11 @@ const App: React.FC = () => {
   });
 
   // ============================================================
-  // 起動時に前回の生成結果を復元（変更なし）
+  // 起動時に前回の生成結果を復元
   // ============================================================
   useEffect(() => {
     try {
+      // note記事生成結果の復元（既存）
       const saved = localStorage.getItem(RESULT_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved) as { content: GeneratedContent; enabledKeys: OutputKey[] };
@@ -59,6 +61,14 @@ const App: React.FC = () => {
           setCurrentContent(parsed.content);
           setEnabledKeys(parsed.enabledKeys);
           setLoadingState(LoadingState.SUCCESS);
+        }
+      }
+      // バズる投稿生成結果の復元（追加）
+      const savedBuzz = localStorage.getItem(BUZZ_RESULT_KEY);
+      if (savedBuzz) {
+        const parsedBuzz = JSON.parse(savedBuzz) as BuzzPostResult;
+        if (parsedBuzz && parsedBuzz.postText) {
+          setBuzzResult(parsedBuzz);
         }
       }
     } catch {
@@ -119,6 +129,10 @@ const App: React.FC = () => {
         postUrl,
       });
       setBuzzResult(result);
+      // 生成結果を自動保存（ページリロード後も復元）
+      try {
+        localStorage.setItem(BUZZ_RESULT_KEY, JSON.stringify(result));
+      } catch { /* 保存失敗は無視 */ }
       setTimeout(() => {
         buzzRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
