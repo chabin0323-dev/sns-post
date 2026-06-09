@@ -1,5 +1,5 @@
 // components/BuzzPostPanel.tsx
-// 新規コンポーネント。既存コンポーネントへの変更はありません。
+// 追加出力項目・出力トグル・全選択デフォルト対応版
 
 import React, { useState } from 'react';
 import type { BuzzPostResult } from '../types';
@@ -12,7 +12,36 @@ interface BuzzPostPanelProps {
   isLoading: boolean;
 }
 
-// コピーボタン（ResultCardと同じ方式）
+// 出力項目定義
+type BuzzOutputKey =
+  | 'postText' | 'hashtags' | 'seoTitle' | 'seoKeywords'
+  | 'metaDescription' | 'articleTitle' | 'thumbnailTitle'
+  | 'threadsPost' | 'xPost' | 'instagramPost' | 'youtubePost'
+  | 'score' | 'improvement';
+
+const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
+  postText:        '🔥 バズる投稿文',
+  hashtags:        '# ハッシュタグ',
+  seoTitle:        '🔍 SEOタイトル',
+  seoKeywords:     '🏷️ SEOキーワード',
+  metaDescription: '📝 メタディスクリプション',
+  articleTitle:    '📰 記事タイトル',
+  thumbnailTitle:  '🖼️ サムネイル用タイトル',
+  threadsPost:     '💬 Threads投稿文',
+  xPost:           '✖️ X投稿文',
+  instagramPost:   '📸 Instagram投稿文',
+  youtubePost:     '▶️ YouTube Shorts',
+  score:           '⚡ BAZZ SCORE',
+  improvement:     '💡 改善提案',
+};
+
+const ALL_KEYS: BuzzOutputKey[] = [
+  'postText', 'hashtags', 'threadsPost', 'xPost', 'instagramPost', 'youtubePost',
+  'seoTitle', 'seoKeywords', 'metaDescription', 'articleTitle', 'thumbnailTitle',
+  'score', 'improvement',
+];
+
+// コピーボタン
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
@@ -20,26 +49,16 @@ function CopyButton({ text }: { text: string }) {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // fallback
-    }
+    } catch {}
   };
   return (
-    <button
-      onClick={handleCopy}
-      style={{
-        padding: '4px 12px',
-        borderRadius: '20px',
-        fontSize: '12px',
-        fontWeight: 'bold',
-        border: '1px solid',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        backgroundColor: copied ? '#D1FAE5' : '#fff',
-        borderColor: copied ? '#6EE7B7' : '#e5e7eb',
-        color: copied ? '#065F46' : '#6b7280',
-      }}
-    >
+    <button onClick={handleCopy} style={{
+      padding: '4px 12px', borderRadius: '20px', fontSize: '12px',
+      fontWeight: 'bold', border: '1px solid', cursor: 'pointer', transition: 'all 0.2s',
+      backgroundColor: copied ? '#D1FAE5' : '#fff',
+      borderColor: copied ? '#6EE7B7' : '#e5e7eb',
+      color: copied ? '#065F46' : '#6b7280',
+    }}>
       {copied ? '✅ コピー済み' : '📋 コピー'}
     </button>
   );
@@ -47,10 +66,7 @@ function CopyButton({ text }: { text: string }) {
 
 // スコアバー
 function ScoreBar({ label, value }: { label: string; value: number }) {
-  const color =
-    value >= 85 ? '#10B981' :
-    value >= 70 ? '#F59E0B' :
-    '#EF4444';
+  const color = value >= 85 ? '#10B981' : value >= 70 ? '#F59E0B' : '#EF4444';
   return (
     <div style={{ marginBottom: '8px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
@@ -58,16 +74,33 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
         <span style={{ fontSize: '12px', fontWeight: 'bold', color }}>{value}</span>
       </div>
       <div style={{ height: '6px', backgroundColor: '#f3f4f6', borderRadius: '3px', overflow: 'hidden' }}>
-        <div
-          style={{
-            height: '100%',
-            width: `${value}%`,
-            backgroundColor: color,
-            borderRadius: '3px',
-            transition: 'width 0.6s ease',
-          }}
-        />
+        <div style={{ height: '100%', width: `${value}%`, backgroundColor: color, borderRadius: '3px', transition: 'width 0.6s ease' }} />
       </div>
+    </div>
+  );
+}
+
+// 出力カード
+function OutputCard({ label, children, copyText, style: extraStyle }: {
+  label: string; children: React.ReactNode; copyText?: string;
+  style?: React.CSSProperties;
+}) {
+  const cardStyle: React.CSSProperties = {
+    backgroundColor: '#fff', borderRadius: '16px', padding: '16px',
+    marginBottom: '12px', border: '1px solid #fce7f3',
+    boxShadow: '0 2px 8px rgba(212,83,126,0.06)', ...extraStyle,
+  };
+  const labelStyle: React.CSSProperties = {
+    fontSize: '13px', fontWeight: '800', color: '#72243E',
+    marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px',
+  };
+  return (
+    <div style={cardStyle}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+        <div style={labelStyle}>{label}</div>
+        {copyText && <CopyButton text={copyText} />}
+      </div>
+      {children}
     </div>
   );
 }
@@ -81,111 +114,100 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
 }) => {
   const [articleText, setArticleText] = useState('');
   const [tiktokLength, setTiktokLength] = useState<300 | 500 | 600>(300);
+  // 初期状態：全選択
+  const [enabledKeys, setEnabledKeys] = useState<BuzzOutputKey[]>([...ALL_KEYS]);
+
+  const toggleKey = (key: BuzzOutputKey) => {
+    setEnabledKeys(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
+  };
 
   const handleClick = () => {
     if (!articleText.trim()) return;
     onGenerate(articleText, tiktokLength);
   };
 
-  const cardStyle: React.CSSProperties = {
-    backgroundColor: '#fff',
-    borderRadius: '16px',
-    padding: '16px',
-    marginBottom: '12px',
-    border: '1px solid #fce7f3',
-    boxShadow: '0 2px 8px rgba(212,83,126,0.06)',
-  };
+  const isEnabled = (key: BuzzOutputKey) => enabledKeys.includes(key);
 
-  const labelStyle: React.CSSProperties = {
-    fontSize: '13px',
-    fontWeight: '800',
-    color: '#72243E',
-    marginBottom: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
+  const preStyle: React.CSSProperties = {
+    fontSize: '13px', lineHeight: '1.8', margin: 0,
+    whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+    color: '#374151', fontFamily: 'inherit',
   };
 
   return (
     <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '20px', border: '2px solid #fce7f3', boxShadow: '0 4px 20px rgba(212,83,126,0.08)' }}>
 
-      {/* セクションタイトル */}
+      {/* タイトル */}
       <div style={{ marginBottom: '16px' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#72243E', margin: 0 }}>
-          ✍️ バズる投稿生成
-        </h3>
-        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0' }}>
-          作成済みの記事をそのまま貼り付けてください
-        </p>
+        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#72243E', margin: 0 }}>✍️ バズる投稿生成</h3>
+        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0' }}>作成済みの記事をそのまま貼り付けてください</p>
       </div>
 
       {/* 記事貼り付けエリア */}
-      <div style={cardStyle}>
-        <div style={labelStyle}>📄 記事本文を貼り付け</div>
+      <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '16px', marginBottom: '12px', border: '1px solid #fce7f3' }}>
+        <div style={{ fontSize: '13px', fontWeight: '800', color: '#72243E', marginBottom: '8px' }}>📄 記事本文を貼り付け</div>
         <textarea
           value={articleText}
           onChange={e => setArticleText(e.target.value)}
-          placeholder="作成済みの記事・台本をここに貼り付けてください&#10;&#10;例）&#10;片思いって、本当に消耗するよね。&#10;好きな人のことを考えるだけで...&#10;&#10;※記事本文は変更・削除・要約しません"
+          placeholder={"作成済みの記事・台本をここに貼り付けてください\n\n例）\n片思いって、本当に消耗するよね。\n好きな人のことを考えるだけで...\n\n※記事本文は変更・削除・要約しません"}
           rows={8}
           style={{
-            width: '100%',
-            padding: '12px',
-            borderRadius: '12px',
-            border: '1px solid #fce7f3',
-            fontSize: '13px',
-            lineHeight: '1.7',
-            resize: 'vertical',
-            outline: 'none',
-            fontFamily: 'inherit',
-            color: '#374151',
-            backgroundColor: '#fffafa',
-            boxSizing: 'border-box',
+            width: '100%', padding: '12px', borderRadius: '12px',
+            border: '1px solid #fce7f3', fontSize: '13px', lineHeight: '1.7',
+            resize: 'vertical', outline: 'none', fontFamily: 'inherit',
+            color: '#374151', backgroundColor: '#fffafa', boxSizing: 'border-box',
           }}
         />
         <div style={{ marginTop: '6px', textAlign: 'right', fontSize: '11px', color: '#9ca3af' }}>
-          {articleText.length}文字 ／ 使用設定：{tiktokLength}字
+          {articleText.replace(/\n/g, '').length}文字（改行除外）／ 設定：{tiktokLength}字
         </div>
       </div>
 
       {/* 文字数選択 */}
-      <div style={{ ...cardStyle, backgroundColor: '#fdf2f8', padding: '12px' }}>
-        <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700', marginBottom: '8px' }}>
-          📏 投稿文字数を選択
-        </div>
+      <div style={{ backgroundColor: '#fdf2f8', borderRadius: '16px', padding: '12px', marginBottom: '12px', border: '1px solid #fce7f3' }}>
+        <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700', marginBottom: '8px' }}>📏 投稿文字数を選択</div>
         <div style={{ display: 'flex', gap: '8px' }}>
           {([300, 500, 600] as (300 | 500 | 600)[]).map(len => (
-            <button
-              key={len}
-              onClick={() => setTiktokLength(len)}
-              style={{
-                flex: 1,
-                padding: '8px 0',
-                borderRadius: '10px',
-                border: '2px solid',
-                fontSize: '13px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                backgroundColor: tiktokLength === len ? '#FFE0EC' : '#fff',
-                borderColor: tiktokLength === len ? '#D4537E' : '#e5e7eb',
-                color: tiktokLength === len ? '#72243E' : '#6b7280',
-              }}
-            >
+            <button key={len} onClick={() => setTiktokLength(len)} style={{
+              flex: 1, padding: '8px 0', borderRadius: '10px', border: '2px solid',
+              fontSize: '13px', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s',
+              backgroundColor: tiktokLength === len ? '#FFE0EC' : '#fff',
+              borderColor: tiktokLength === len ? '#D4537E' : '#e5e7eb',
+              color: tiktokLength === len ? '#72243E' : '#6b7280',
+            }}>
               {len}字
             </button>
           ))}
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-          {profileCta && (
-            <span style={{ fontSize: '11px', backgroundColor: '#FFE0EC', color: '#72243E', padding: '2px 10px', borderRadius: '20px', fontWeight: '600' }}>
-              CTA設定済み
-            </span>
-          )}
-          {postUrl && (
-            <span style={{ fontSize: '11px', backgroundColor: '#FFE0EC', color: '#72243E', padding: '2px 10px', borderRadius: '20px', fontWeight: '600' }}>
-              URL設定済み
-            </span>
-          )}
+          {profileCta && <span style={{ fontSize: '11px', backgroundColor: '#FFE0EC', color: '#72243E', padding: '2px 10px', borderRadius: '20px', fontWeight: '600' }}>CTA設定済み</span>}
+          {postUrl && <span style={{ fontSize: '11px', backgroundColor: '#FFE0EC', color: '#72243E', padding: '2px 10px', borderRadius: '20px', fontWeight: '600' }}>URL設定済み</span>}
+        </div>
+      </div>
+
+      {/* 出力項目トグル */}
+      <div style={{ backgroundColor: '#fdf2f8', borderRadius: '16px', padding: '12px', marginBottom: '12px', border: '1px solid #fce7f3' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700' }}>📋 出力する項目を選択（初期：全選択）</div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button onClick={() => setEnabledKeys([...ALL_KEYS])} style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', border: '1px solid #D4537E', backgroundColor: '#FFE0EC', color: '#72243E', cursor: 'pointer', fontWeight: '700' }}>全選択</button>
+            <button onClick={() => setEnabledKeys([])} style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', border: '1px solid #e5e7eb', backgroundColor: '#fff', color: '#6b7280', cursor: 'pointer', fontWeight: '700' }}>全解除</button>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+          {ALL_KEYS.map(key => (
+            <button key={key} onClick={() => toggleKey(key)} style={{
+              fontSize: '11px', padding: '4px 10px', borderRadius: '20px',
+              border: '1px solid', cursor: 'pointer', transition: 'all 0.15s', fontWeight: '700',
+              backgroundColor: isEnabled(key) ? '#FFE0EC' : '#f9fafb',
+              borderColor: isEnabled(key) ? '#D4537E' : '#e5e7eb',
+              color: isEnabled(key) ? '#72243E' : '#9ca3af',
+            }}>
+              {OUTPUT_LABELS[key]}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -194,12 +216,8 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
         onClick={handleClick}
         disabled={isLoading || !articleText.trim()}
         style={{
-          width: '100%',
-          padding: '14px',
-          borderRadius: '14px',
-          border: 'none',
-          fontSize: '15px',
-          fontWeight: '900',
+          width: '100%', padding: '14px', borderRadius: '14px', border: 'none',
+          fontSize: '15px', fontWeight: '900', letterSpacing: '0.5px', marginBottom: '20px',
           cursor: !articleText.trim() || isLoading ? 'not-allowed' : 'pointer',
           background: !articleText.trim() || isLoading
             ? '#ccc'
@@ -207,99 +225,130 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
           color: '#fff',
           boxShadow: !articleText.trim() || isLoading ? 'none' : '0 4px 20px rgba(212,83,126,0.4)',
           transition: 'all 0.2s',
-          letterSpacing: '0.5px',
-          marginBottom: '20px',
         }}
       >
-        {isLoading
-          ? '⟳ 分析・生成中...'
-          : '🔥 バズる投稿を生成する'}
+        {isLoading ? '⟳ 分析・生成中...' : '🔥 バズる投稿を生成する'}
       </button>
 
       {/* 生成結果 */}
       {result && (
         <div>
-          {/* 感情タイプ・投稿タイプバッジ */}
+          {/* 感情・投稿タイプバッジ */}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-            <span style={{
-              fontSize: '12px', fontWeight: '800',
-              backgroundColor: '#EDE9FE', color: '#5B21B6',
-              padding: '4px 12px', borderRadius: '20px',
-            }}>
-              感情：{result.emotionType}
-            </span>
-            <span style={{
-              fontSize: '12px', fontWeight: '800',
-              backgroundColor: '#FCE7F3', color: '#9D174D',
-              padding: '4px 12px', borderRadius: '20px',
-            }}>
-              タイプ：{result.postType}
-            </span>
+            <span style={{ fontSize: '12px', fontWeight: '800', backgroundColor: '#EDE9FE', color: '#5B21B6', padding: '4px 12px', borderRadius: '20px' }}>感情：{result.emotionType}</span>
+            <span style={{ fontSize: '12px', fontWeight: '800', backgroundColor: '#FCE7F3', color: '#9D174D', padding: '4px 12px', borderRadius: '20px' }}>タイプ：{result.postType}</span>
           </div>
 
-          {/* バズ投稿文 */}
-          <div style={cardStyle}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <div style={labelStyle}>🔥 バズる投稿文</div>
-              <CopyButton text={result.postText} />
-            </div>
-            <pre style={{
-              fontSize: '13px', lineHeight: '1.8', margin: 0,
-              whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-              color: '#374151', fontFamily: 'inherit',
-            }}>
-              {result.postText}
-            </pre>
-          </div>
+          {/* バズる投稿文 */}
+          {isEnabled('postText') && (
+            <OutputCard label="🔥 バズる投稿文" copyText={result.postText}>
+              <pre style={preStyle}>{result.postText}</pre>
+            </OutputCard>
+          )}
 
           {/* ハッシュタグ */}
-          <div style={cardStyle}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <div style={labelStyle}># ハッシュタグ（5個）</div>
-              <CopyButton text={result.hashtagText} />
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
-              {result.hashtags.map((tag, i) => (
-                <span key={i} style={{
-                  fontSize: '12px', fontWeight: '700',
-                  backgroundColor: '#EDE9FE', color: '#5B21B6',
-                  padding: '4px 10px', borderRadius: '20px',
-                }}>
-                  {tag}
-                </span>
-              ))}
-            </div>
-            <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>
-              記事内容を分析して生成した動的ハッシュタグです
-            </p>
-          </div>
+          {isEnabled('hashtags') && (
+            <OutputCard label="# ハッシュタグ（TikTok / Instagram / Threads / X / YouTube対応）" copyText={result.hashtagText}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                {result.hashtags.map((tag, i) => (
+                  <span key={i} style={{ fontSize: '12px', fontWeight: '700', backgroundColor: '#EDE9FE', color: '#5B21B6', padding: '4px 10px', borderRadius: '20px' }}>{tag}</span>
+                ))}
+              </div>
+              <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>記事内容を分析して生成した動的ハッシュタグです</p>
+            </OutputCard>
+          )}
+
+          {/* Threads投稿文 */}
+          {isEnabled('threadsPost') && (
+            <OutputCard label="💬 Threads投稿文" copyText={result.threadsPost}>
+              <pre style={preStyle}>{result.threadsPost}</pre>
+            </OutputCard>
+          )}
+
+          {/* X投稿文 */}
+          {isEnabled('xPost') && (
+            <OutputCard label="✖️ X投稿文" copyText={result.xPost}>
+              <pre style={preStyle}>{result.xPost}</pre>
+              <p style={{ fontSize: '11px', color: '#9ca3af', margin: '6px 0 0' }}>※冒頭4行＋URL（140文字目安）</p>
+            </OutputCard>
+          )}
+
+          {/* Instagram投稿文 */}
+          {isEnabled('instagramPost') && (
+            <OutputCard label="📸 Instagram投稿文" copyText={result.instagramPost}>
+              <pre style={preStyle}>{result.instagramPost}</pre>
+            </OutputCard>
+          )}
+
+          {/* YouTube Shorts */}
+          {isEnabled('youtubePost') && (
+            <OutputCard label="▶️ YouTube Shorts投稿文" copyText={result.youtubePost}>
+              <pre style={preStyle}>{result.youtubePost}</pre>
+            </OutputCard>
+          )}
+
+          {/* SEOタイトル */}
+          {isEnabled('seoTitle') && (
+            <OutputCard label="🔍 SEOタイトル" copyText={result.seoTitle}>
+              <p style={{ fontSize: '14px', fontWeight: '800', color: '#1e40af', margin: 0 }}>{result.seoTitle}</p>
+            </OutputCard>
+          )}
+
+          {/* SEOキーワード */}
+          {isEnabled('seoKeywords') && (
+            <OutputCard label="🏷️ SEOキーワード" copyText={result.seoKeywords.join(', ')}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {result.seoKeywords.map((kw, i) => (
+                  <span key={i} style={{ fontSize: '12px', fontWeight: '700', backgroundColor: '#DBEAFE', color: '#1e40af', padding: '4px 10px', borderRadius: '20px' }}>{kw}</span>
+                ))}
+              </div>
+            </OutputCard>
+          )}
+
+          {/* メタディスクリプション */}
+          {isEnabled('metaDescription') && (
+            <OutputCard label="📝 メタディスクリプション" copyText={result.metaDescription}>
+              <p style={{ fontSize: '13px', color: '#374151', lineHeight: '1.7', margin: 0 }}>{result.metaDescription}</p>
+              <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0' }}>{result.metaDescription.length}文字（120文字以内推奨）</p>
+            </OutputCard>
+          )}
+
+          {/* 記事タイトル */}
+          {isEnabled('articleTitle') && (
+            <OutputCard label="📰 記事タイトル" copyText={result.articleTitle}>
+              <p style={{ fontSize: '15px', fontWeight: '800', color: '#374151', margin: 0 }}>{result.articleTitle}</p>
+            </OutputCard>
+          )}
+
+          {/* サムネイル用タイトル */}
+          {isEnabled('thumbnailTitle') && (
+            <OutputCard label="🖼️ サムネイル用タイトル" copyText={result.thumbnailTitle}>
+              <p style={{ fontSize: '18px', fontWeight: '900', color: '#D4537E', margin: 0, letterSpacing: '1px' }}>{result.thumbnailTitle}</p>
+              <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0' }}>短くインパクト重視（15文字以内）</p>
+            </OutputCard>
+          )}
 
           {/* BAZZ SCORE */}
-          <div style={cardStyle}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <div style={labelStyle}>⚡ BAZZ SCORE（推定）</div>
-              <div style={{
-                fontSize: '22px', fontWeight: '900',
-                color: result.score.total >= 85 ? '#10B981' : result.score.total >= 70 ? '#F59E0B' : '#EF4444',
-              }}>
-                {result.score.total}<span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 'normal' }}>/100</span>
+          {isEnabled('score') && (
+            <OutputCard label="⚡ BAZZ SCORE（推定）">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+                <span style={{ fontSize: '22px', fontWeight: '900', color: result.score.total >= 85 ? '#10B981' : result.score.total >= 70 ? '#F59E0B' : '#EF4444' }}>
+                  {result.score.total}<span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 'normal' }}>/100</span>
+                </span>
               </div>
-            </div>
-            <ScoreBar label="共感力" value={result.score.empathy} />
-            <ScoreBar label="保存率" value={result.score.saveRate} />
-            <ScoreBar label="クリック率" value={result.score.clickRate} />
-            <ScoreBar label="拡散率" value={result.score.spreadRate} />
-            <ScoreBar label="コメント率" value={result.score.commentRate} />
-            <ScoreBar label="プロフィール誘導力" value={result.score.profileRate} />
-            <p style={{ fontSize: '10px', color: '#9ca3af', margin: '10px 0 0', textAlign: 'right' }}>
-              ※推定スコアです
-            </p>
-          </div>
+              <ScoreBar label="共感力" value={result.score.empathy} />
+              <ScoreBar label="保存率" value={result.score.saveRate} />
+              <ScoreBar label="クリック率" value={result.score.clickRate} />
+              <ScoreBar label="拡散率" value={result.score.spreadRate} />
+              <ScoreBar label="コメント率" value={result.score.commentRate} />
+              <ScoreBar label="プロフィール誘導力" value={result.score.profileRate} />
+              <p style={{ fontSize: '10px', color: '#9ca3af', margin: '10px 0 0', textAlign: 'right' }}>※推定スコアです</p>
+            </OutputCard>
+          )}
 
           {/* 改善提案（95点未満のみ） */}
-          {result.improvement && (
-            <div style={{ ...cardStyle, backgroundColor: '#FFFBEB', border: '1px solid #FDE68A' }}>
-              <div style={{ ...labelStyle, color: '#92400E' }}>💡 改善提案</div>
+          {isEnabled('improvement') && result.improvement && (
+            <OutputCard label="💡 改善提案" style={{ backgroundColor: '#FFFBEB', border: '1px solid #FDE68A' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {[
                   { label: 'フック改善', text: result.improvement.hookSuggestion },
@@ -307,30 +356,19 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
                   { label: '保存率UP', text: result.improvement.saveSuggestion },
                   { label: 'クリック率UP', text: result.improvement.clickSuggestion },
                 ].map(({ label, text }) => (
-                  <div key={label} style={{
-                    backgroundColor: '#fff',
-                    padding: '10px 12px',
-                    borderRadius: '10px',
-                    border: '1px solid #FDE68A',
-                  }}>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: '#92400E', marginRight: '6px' }}>
-                      {label}
-                    </span>
-                    <span style={{ fontSize: '12px', color: '#374151', lineHeight: '1.6' }}>
-                      {text}
-                    </span>
+                  <div key={label} style={{ backgroundColor: '#fff', padding: '10px 12px', borderRadius: '10px', border: '1px solid #FDE68A' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '800', color: '#92400E', marginRight: '6px' }}>{label}</span>
+                    <span style={{ fontSize: '12px', color: '#374151', lineHeight: '1.6' }}>{text}</span>
                   </div>
                 ))}
               </div>
-            </div>
+            </OutputCard>
           )}
 
-          {/* スコアが95点以上の場合 */}
-          {!result.improvement && (
-            <div style={{ ...cardStyle, backgroundColor: '#D1FAE5', border: '1px solid #6EE7B7', textAlign: 'center' }}>
-              <p style={{ fontSize: '14px', fontWeight: '900', color: '#065F46', margin: 0 }}>
-                🎉 スコア95点以上！このまま投稿GO!
-              </p>
+          {/* 95点以上 */}
+          {isEnabled('improvement') && !result.improvement && (
+            <div style={{ backgroundColor: '#D1FAE5', borderRadius: '16px', padding: '16px', border: '1px solid #6EE7B7', textAlign: 'center', marginBottom: '12px' }}>
+              <p style={{ fontSize: '14px', fontWeight: '900', color: '#065F46', margin: 0 }}>🎉 スコア95点以上！このまま投稿GO!</p>
             </div>
           )}
         </div>
