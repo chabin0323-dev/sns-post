@@ -17,26 +17,28 @@ type BuzzOutputKey =
   | 'postText' | 'hashtags' | 'seoTitle' | 'seoKeywords'
   | 'metaDescription' | 'articleTitle' | 'thumbnailTitle'
   | 'threadsPost' | 'xPost' | 'instagramPost' | 'youtubePost'
-  | 'score' | 'improvement';
+  | 'noteArticle' | 'score' | 'improvement';
 
 const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
   postText:        '🔥 バズる投稿文',
   hashtags:        '# ハッシュタグ',
+  threadsPost:     '💬 Threads投稿文',
+  xPost:           '✖️ X投稿文',
+  instagramPost:   '📸 Instagram投稿文',
+  youtubePost:     '▶️ YouTube Shorts',
+  noteArticle:     '📝 note記事',
   seoTitle:        '🔍 SEOタイトル',
   seoKeywords:     '🏷️ SEOキーワード',
   metaDescription: '📝 メタディスクリプション',
   articleTitle:    '📰 記事タイトル',
   thumbnailTitle:  '🖼️ サムネイル用タイトル',
-  threadsPost:     '💬 Threads投稿文',
-  xPost:           '✖️ X投稿文',
-  instagramPost:   '📸 Instagram投稿文',
-  youtubePost:     '▶️ YouTube Shorts',
   score:           '⚡ BAZZ SCORE',
   improvement:     '💡 改善提案',
 };
 
 const ALL_KEYS: BuzzOutputKey[] = [
   'postText', 'hashtags', 'threadsPost', 'xPost', 'instagramPost', 'youtubePost',
+  'noteArticle',
   'seoTitle', 'seoKeywords', 'metaDescription', 'articleTitle', 'thumbnailTitle',
   'score', 'improvement',
 ];
@@ -284,6 +286,13 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
           {isEnabled('youtubePost') && (
             <OutputCard label="▶️ YouTube Shorts投稿文" copyText={result.youtubePost}>
               <pre style={preStyle}>{result.youtubePost}</pre>
+            </OutputCard>
+          )}
+
+          {/* note記事 */}
+          {isEnabled('noteArticle') && (
+            <OutputCard label="📝 note記事" copyText={result.noteArticle}>
+              <pre style={preStyle}>{result.noteArticle}</pre>
             </OutputCard>
           )}
 
