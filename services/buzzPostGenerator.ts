@@ -615,6 +615,151 @@ function generatePlatformPosts(
 }
 
 
+
+// ============================================================
+// TikTok画像生成指示文（1080×1920）
+// ============================================================
+function generateThumbnailTikTok(text: string, emotion: EmotionType, postType: PostType): string {
+  const hook = extractHook(text);
+  const colorMap: Record<PostType, string> = {
+    '共感型':     'ピンク・ラベンダー系・温かみのある配色',
+    '衝撃型':     '赤・オレンジ系・インパクト重視の配色',
+    '切ない型':   '青・グレー系・切なさを表現する配色',
+    '恋愛依存型': 'パープル・ディープピンク系の配色',
+    '暴露型':     '黒・ゴールド系・シリアスな配色',
+    '心理学型':   'ネイビー・白系・信頼感のある配色',
+    'ストーリー型':'セピア・ウォームブラウン系の配色',
+  };
+  const styleMap: Record<PostType, string> = {
+    '共感型':     '共感を呼ぶ表情のイラスト・手書き風テキスト',
+    '衝撃型':     '驚いた表情・エフェクト線・太字インパクトフォント',
+    '切ない型':   '物悲しい雰囲気・涙や夜景のモチーフ',
+    '恋愛依存型': '依存・引き付けられる感情を表すイラスト',
+    '暴露型':     'マイク・スポットライト・暴露感のある演出',
+    '心理学型':   '脳・考える人・心理学的な図解風デザイン',
+    'ストーリー型':'映画風・回想シーン・ストーリー感のある構図',
+  };
+  return [
+    '【TikTok画像生成指示文】',
+    'サイズ：1080 × 1920px（縦型 9:16）',
+    '',
+    '■ メインテキスト（大きく中央に配置）',
+    `「${hook}」`,
+    '',
+    '■ デザイン指示',
+    `・配色：${colorMap[postType]}`,
+    `・スタイル：${styleMap[postType]}`,
+    '・フォント：太字・視認性重視・文字に縁取り追加',
+    '・文字サイズ：メインテキストは画面幅の80%以上',
+    '',
+    '■ 感情トーン',
+    `・感情：${emotion}`,
+    `・投稿タイプ：${postType}`,
+    '',
+    '■ その他',
+    '・テキストは画面中央〜上部に配置',
+    '・背景はグラデーションまたは単色',
+    '・過度な装飾は避けシンプルに仕上げる',
+  ].join('
+');
+}
+
+// ============================================================
+// note画像生成指示文（1280×670）
+// ============================================================
+function generateThumbnailNote(text: string, emotion: EmotionType, postType: PostType): string {
+  const hook = extractHook(text);
+  const colorMap: Record<PostType, string> = {
+    '共感型':     'ピンク・ホワイト系・温かみのある配色',
+    '衝撃型':     'レッド・ホワイト系・メリハリのある配色',
+    '切ない型':   'ブルーグレー・ホワイト系・落ち着いた配色',
+    '恋愛依存型': 'パープル・ラベンダー系の配色',
+    '暴露型':     'ダークグレー・ゴールド系・洗練された配色',
+    '心理学型':   'ネイビー・ライトグレー系・知的な配色',
+    'ストーリー型':'ベージュ・ブラウン系・温かみのある配色',
+  };
+  return [
+    '【note画像生成指示文】',
+    'サイズ：1280 × 670px（横型 16:9）',
+    '',
+    '■ メインテキスト（左寄せまたは中央）',
+    `「${hook}」`,
+    '',
+    '■ デザイン指示',
+    `・配色：${colorMap[postType]}`,
+    '・スタイル：シンプル・洗練・読みやすいフォント',
+    '・フォント：明朝体またはゴシック体・読みやすさ重視',
+    '・文字サイズ：タイトルは大きく・サブテキストは小さめ',
+    '',
+    '■ レイアウト',
+    '・左側にテキスト・右側にイメージ画像（またはイラスト）',
+    '・または全面にテキストと背景のみのシンプル構成',
+    '・余白を十分に取りスッキリした印象に',
+    '',
+    '■ 感情トーン',
+    `・感情：${emotion}`,
+    `・投稿タイプ：${postType}`,
+  ].join('
+');
+}
+
+// ============================================================
+// SEO特化タイトル（検索流入・クリック率重視・30〜40文字）
+// ============================================================
+function generateSeoSpecialTitle(text: string, emotion: EmotionType, postType: PostType): string {
+  const hook = extractHook(text);
+  // キーワード候補を抽出
+  const kwCandidates = [
+    '恋愛', '片思い', '復縁', '失恋', '男性心理', '女性心理', 'LINE',
+    'マッチングアプリ', '婚活', '浮気', '職場恋愛', 'お金', '節約',
+    '投資', '副業', '転職', '美容', 'ダイエット', '育児', 'メンタル',
+  ];
+  const foundKw = kwCandidates.filter(kw => text.includes(kw))[0] ?? emotion;
+
+  const templates: Record<PostType, string[]> = {
+    '共感型': [
+      `【${foundKw}あるある】${hook}と感じる人が急増中`,
+      `${hook}と思う人必見｜${foundKw}で共感多数の理由`,
+      `なぜ${hook}になるのか｜${foundKw}の心理を徹底解説`,
+    ],
+    '衝撃型': [
+      `【衝撃】${hook}｜99%が知らない${foundKw}の真実`,
+      `${hook}の本当の理由｜${foundKw}で話題の新事実`,
+      `知らないと損する｜${hook}が起きる${foundKw}のメカニズム`,
+    ],
+    '切ない型': [
+      `${hook}で涙する人へ｜${foundKw}の切ない現実と対処法`,
+      `【${foundKw}】${hook}という経験を乗り越える方法`,
+      `${hook}が止まらないあなたへ｜${foundKw}の感情整理術`,
+    ],
+    '恋愛依存型': [
+      `【${foundKw}依存】${hook}から抜け出す具体的な方法`,
+      `${hook}になってしまう原因｜${foundKw}依存のメカニズム`,
+      `${foundKw}で${hook}と感じたら読む｜依存からの脱出法`,
+    ],
+    '暴露型': [
+      `【本音暴露】${hook}の真実｜${foundKw}の裏側を公開`,
+      `誰も言わない${foundKw}の本音｜${hook}の実態とは`,
+      `${hook}という${foundKw}の裏側｜知られていない真実`,
+    ],
+    '心理学型': [
+      `【心理学】${hook}のメカニズム｜${foundKw}の科学的根拠`,
+      `${foundKw}で${hook}になる心理学的理由と改善策`,
+      `心理学が証明｜${hook}が起きる${foundKw}の脳の仕組み`,
+    ],
+    'ストーリー型': [
+      `${hook}という経験談｜${foundKw}で人生が変わった話`,
+      `【実体験】${hook}から気づいた${foundKw}の大切なこと`,
+      `${hook}を経験したあなたへ｜${foundKw}の体験から学ぶ`,
+    ],
+  };
+
+  const candidates = templates[postType] ?? templates['共感型'];
+  // 30〜40文字に収まるものを優先
+  const suitable = candidates.find(t => t.length >= 28 && t.length <= 42);
+  return suitable ?? candidates[0];
+}
+
 // ============================================================
 // メイン生成関数（外部公開）
 // ============================================================
@@ -681,6 +826,11 @@ export function generateBuzzPost(params: {
     postType,
   );
 
+  // 画像生成指示文・SEO特化タイトルを生成
+  const thumbnailTikTok = generateThumbnailTikTok(articleText, emotion, postType);
+  const thumbnailNote = generateThumbnailNote(articleText, emotion, postType);
+  const seoSpecialTitle = generateSeoSpecialTitle(articleText, emotion, postType);
+
   return {
     postText: postTextFormatted,
     hashtags,
@@ -699,5 +849,10 @@ export function generateBuzzPost(params: {
     xPost: platformPosts.xPost,
     instagramPost: platformPosts.instagram,
     youtubePost: platformPosts.youtube,
+    profileCtaText: profileCta,
+    postUrlText: postUrl,
+    thumbnailTikTok,
+    thumbnailNote,
+    seoSpecialTitle,
   };
 }
