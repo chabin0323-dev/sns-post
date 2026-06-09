@@ -846,8 +846,8 @@ export function generateBuzzPost(params: {
     .replace('{hook}', hook)
     .replace('{core}', core);
 
-  // 5. プロフィール誘導文のみ付与（URLはプラットフォーム別に個別付与）
-  if (profileCta) postText += `\n\n${profileCta}`;
+  // 5. CTA・URLはgeneratePlatformPosts内でプラットフォーム別に付与
+  //    postText本体には含めない（重複防止）
 
   // 6. 動的ハッシュタグ生成（記事ごとに最適な5個）
   const hashtags = generateDynamicHashtags(articleText, emotion, postType);
