@@ -841,6 +841,63 @@ const URL_CTA_PATTERNS: Record<Genre, string[]> = {
   'ライフスタイル': ['🌈 詳しくはプロフのリンクから', '👆 続きはプロフから読めます', '✨ プロフのリンクで詳細を確認してね'],
 };
 
+
+// ============================================================
+// TikTok向け20文字改行処理（文字数確定後の後処理）
+// 改行は文字数に含めない・意味を変えない
+// ============================================================
+function addTikTokLineBreaks(text: string): string {
+  const paragraphs = text.split('\n');
+  return paragraphs.map(para => {
+    if (para.trim().length === 0) return para;
+    if (para.length <= 22) return para;
+    return breakLine(para);
+  }).join('\n');
+}
+
+function breakLine(text: string): string {
+  const MIN = 13;
+  const MAX = 22;
+  const segments: string[] = [];
+  let current = '';
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    current += ch;
+    // 句読点で区切る
+    if ((ch === '。' || ch === '！' || ch === '？' || ch === '…')) {
+      segments.push(current);
+      current = '';
+    } else if (ch === '、' && current.length >= MIN) {
+      segments.push(current);
+      current = '';
+    }
+  }
+  if (current) segments.push(current);
+
+  let result = '';
+  let lineLen = 0;
+  for (const seg of segments) {
+    if (lineLen === 0) {
+      result += seg;
+      lineLen += seg.length;
+    } else if (lineLen + seg.length <= MAX) {
+      result += seg;
+      lineLen += seg.length;
+    } else {
+      result += '\n' + seg;
+      lineLen = seg.length;
+    }
+    if (seg.endsWith('。') || seg.endsWith('！') || seg.endsWith('？') || seg.endsWith('…')) {
+      if (lineLen >= MIN) {
+        result += '\n';
+        lineLen = 0;
+      }
+    }
+  }
+  return result.replace(/\n$/, '');
+}
+
 // ============================================================
 // 文字数調整
 // ============================================================
@@ -911,7 +968,9 @@ export function generateContent(params: {
     mainScriptBase = rawTemplate.replace(/\{theme\}/g, effectiveTheme);
   }
 
-  const mainContent = adjustLength(mainScriptBase, tiktokLength, profileCta);
+  // 文字数確定後にTikTok改行を適用（改行は文字数に含めない）
+  const mainContentRaw = adjustLength(mainScriptBase, tiktokLength, profileCta);
+  const mainContent = addTikTokLineBreaks(mainContentRaw);
 
   const hashtags = generateHashtags(effectiveTheme, genre);
   const hashtagText = hashtags.join(' ');
@@ -924,7 +983,9 @@ export function generateContent(params: {
   const threadsPost = `${mainContent}\n\n${hashtagText}${urlCta}`;
   const xPost = mainScriptBase.split('\n').slice(0, 8).join('\n') + urlCta;
 
-  const noteArticle = `${effectiveTheme}について知っておくべきこと\n\n${mainContent}`;
+  // note記事はTikTok改行なしのオリジナル文章を使用（読みやすさ重視）
+  const noteArticleBase = adjustLength(mainScriptBase, tiktokLength, profileCta);
+  const noteArticle = `${effectiveTheme}について知っておくべきこと\n\n${noteArticleBase}`;
 
   const seoSet = {
     title: `【2026年最新】${effectiveTheme}の真実｜知らないと損する3つのこと`,
