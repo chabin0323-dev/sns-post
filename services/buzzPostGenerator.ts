@@ -421,6 +421,67 @@ function generateImprovement(score: BuzzPostScore): BuzzImprovement | null {
   };
 }
 
+
+// ============================================================
+// TikTok向け改行処理（文字数カウント後の後処理・意味を変えない）
+// ============================================================
+function addTikTokLineBreaks(text: string): string {
+  // 段落ごとに処理（既存の改行は維持）
+  const paragraphs = text.split('\n');
+  return paragraphs.map(para => {
+    if (para.trim().length === 0) return para;
+    // 1段落が25文字以下ならそのまま
+    if (para.length <= 25) return para;
+    return breakParagraph(para);
+  }).join('\n');
+}
+
+function breakParagraph(text: string): string {
+  // 句読点を区切りに分割して再結合（自然な改行）
+  const MIN_LINE = 13;
+  const MAX_LINE = 22;
+
+  // まず句読点で文を分割
+  const segments: string[] = [];
+  let current = '';
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    current += ch;
+    if ((ch === '。' || ch === '！' || ch === '？' || ch === '…') ) {
+      segments.push(current);
+      current = '';
+    } else if (ch === '、' && current.length >= MIN_LINE) {
+      segments.push(current);
+      current = '';
+    }
+  }
+  if (current) segments.push(current);
+
+  // セグメントを結合しながら改行を挿入
+  let result = '';
+  let lineLen = 0;
+  for (const seg of segments) {
+    if (lineLen === 0) {
+      result += seg;
+      lineLen += seg.length;
+    } else if (lineLen + seg.length <= MAX_LINE) {
+      result += seg;
+      lineLen += seg.length;
+    } else {
+      result += '\n' + seg;
+      lineLen = seg.length;
+    }
+    // セグメント末尾が文末句読点なら改行
+    if (seg.endsWith('。') || seg.endsWith('！') || seg.endsWith('？') || seg.endsWith('…')) {
+      if (lineLen >= MIN_LINE) {
+        result += '\n';
+        lineLen = 0;
+      }
+    }
+  }
+  return result.replace(/\n$/, ''); // 末尾の余分な改行を除去
+}
+
 // ============================================================
 // メイン生成関数（外部公開）
 // ============================================================
@@ -463,8 +524,11 @@ export function generateBuzzPost(params: {
   // 8. 改善提案生成（95点未満のみ）
   const improvement = generateImprovement(score);
 
+  // TikTok向け改行処理を適用（文字数カウント後の後処理）
+  const postTextFormatted = addTikTokLineBreaks(postText);
+
   return {
-    postText,
+    postText: postTextFormatted,
     hashtags,
     hashtagText,
     emotionType: emotion,
@@ -473,4 +537,3 @@ export function generateBuzzPost(params: {
     improvement,
   };
 }
-
