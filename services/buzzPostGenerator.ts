@@ -589,52 +589,31 @@ function generatePlatformPosts(
   postType: PostType,
 ): { threads: string; xPost: string; instagram: string; youtube: string } {
 
-  const lines = basePost.split('
-').filter(l => l.trim());
+  const lines = basePost.split('\n').filter((l: string) => l.trim());
   const hook = lines[0] ?? '';
-  const body = lines.slice(1, 6).join('
-');
-  const ctaSuffix = [profileCta, postUrl].filter(Boolean).join('
-');
+  const body = lines.slice(1, 6).join('\n');
+  const ctaSuffix = [profileCta, postUrl].filter(Boolean).join('\n');
 
   // Threads：全文＋ハッシュタグ（500文字以内推奨）
-  const threads = `${basePost}
-
-${hashtagText}${ctaSuffix ? '
-
-' + ctaSuffix : ''}`;
+  const threads = basePost + '\n\n' + hashtagText + (ctaSuffix ? '\n\n' + ctaSuffix : '');
 
   // X（旧Twitter）：冒頭フック＋3行＋URL（140文字目安）
-  const xLines = lines.slice(0, 4).join('
-');
-  const xPost = `${xLines}${postUrl ? '
-
-' + postUrl : ''}`;
+  const xLines = lines.slice(0, 4).join('\n');
+  const xPost = xLines + (postUrl ? '\n\n' + postUrl : '');
 
   // Instagram：絵文字リッチ＋ハッシュタグ多め（全文）
   const igEmoji = postType === '共感型' ? '💕' : postType === '衝撃型' ? '😱' :
     postType === '切ない型' ? '🥺' : postType === '恋愛依存型' ? '💭' :
     postType === '暴露型' ? '🔥' : postType === '心理学型' ? '🧠' : '✨';
   const igHashtags = [...hashtags, '#恋愛', '#インスタ恋愛', '#恋愛あるある'].slice(0, 8).join(' ');
-  const instagram = `${igEmoji} ${hook}
-
-${body}
-
-${igHashtags}${ctaSuffix ? '
-
-' + ctaSuffix : ''}`;
+  const instagram = igEmoji + ' ' + hook + '\n\n' + body + '\n\n' + igHashtags + (ctaSuffix ? '\n\n' + ctaSuffix : '');
 
   // YouTube Shorts：タイトル感のある冒頭＋説明文
-  const ytPost = `【${hook}】
-
-${body}
-
-${hashtagText}${ctaSuffix ? '
-
-' + ctaSuffix : ''}`;
+  const ytPost = '【' + hook + '】\n\n' + body + '\n\n' + hashtagText + (ctaSuffix ? '\n\n' + ctaSuffix : '');
 
   return { threads, xPost, instagram, youtube: ytPost };
 }
+
 
 // ============================================================
 // メイン生成関数（外部公開）
