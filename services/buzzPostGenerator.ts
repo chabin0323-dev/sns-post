@@ -482,6 +482,160 @@ function breakParagraph(text: string): string {
   return result.replace(/\n$/, ''); // 末尾の余分な改行を除去
 }
 
+
+// ============================================================
+// SEOタイトル生成
+// ============================================================
+function generateSeoTitle(text: string, emotion: EmotionType, postType: PostType): string {
+  const hook = extractHook(text);
+  const titleTemplates: Record<PostType, string[]> = {
+    '共感型':    [`${hook}【共感多数】`, `あなたも経験してる？${hook}`, `知らないと損する！${hook}`],
+    '衝撃型':    [`【衝撃】${hook}`, `99%が知らない${hook}の真実`, `これが本当のこと。${hook}`],
+    '切ない型':  [`${hook}【切なすぎる恋愛の話】`, `泣ける。${hook}`, `${hook}を乗り越える方法`],
+    '恋愛依存型':[`${hook}【恋愛依存あるある】`, `やめられない理由。${hook}`, `${hook}から抜け出す方法`],
+    '暴露型':    [`【本音】${hook}`, `誰も言わないけど${hook}`, `${hook}の裏側を暴露`],
+    '心理学型':  [`【心理学】${hook}`, `心理学的に証明！${hook}`, `${hook}の心理的な理由`],
+    'ストーリー型':[`${hook}の話`, `ある日気づいた。${hook}`, `${hook}から変わった私の話`],
+  };
+  return pickRandom(titleTemplates[postType]);
+}
+
+// ============================================================
+// SEOキーワード生成
+// ============================================================
+function generateSeoKeywords(text: string, emotion: EmotionType): string[] {
+  const base: string[] = [];
+  // テキストから頻出ワードを抽出
+  const candidates = [
+    '恋愛', '片思い', '復縁', '失恋', '男性心理', '女性心理', 'LINE',
+    'マッチングアプリ', '婚活', '不倫', '浮気', '職場恋愛', '遠距離恋愛',
+    'お金', '節約', '投資', '副業', '仕事', '転職', '美容', 'ダイエット', '育児',
+    '自己肯定感', 'メンタル', 'ストレス', '人間関係',
+  ];
+  candidates.forEach(kw => { if (text.includes(kw)) base.push(kw); });
+
+  // 感情タイプキーワードを追加
+  const emotionKw: Record<EmotionType, string> = {
+    '共感': 'あるある', '恋愛不安': '不安解消', '切なさ': '切ない恋愛',
+    '後悔': '後悔しない', '嫉妬': '嫉妬心', '孤独': '孤独感',
+    '依存': '恋愛依存', '片思い': '片思い', '復縁願望': '復縁方法',
+    '失恋': '失恋乗り越え', '期待': '脈あり', '安心感': '幸せな恋愛',
+    '自己肯定感': '自己肯定感', '驚き': '衝撃事実',
+  };
+  base.push(emotionKw[emotion]);
+  base.push('TikTok', 'SNS');
+
+  // 重複除去して最大6個
+  return [...new Set(base)].slice(0, 6);
+}
+
+// ============================================================
+// メタディスクリプション生成
+// ============================================================
+function generateMetaDescription(text: string, emotion: EmotionType): string {
+  const hook = extractHook(text);
+  const templates = [
+    `${hook}。${emotion}に共感する人が続出。あなたの気持ちに寄り添う内容です。`,
+    `${hook}について詳しく解説。${emotion}を感じている人に読んでほしい内容。`,
+    `${hook}の真実を公開。多くの人が気づいていない${emotion}の話。`,
+  ];
+  const desc = pickRandom(templates);
+  // 120文字以内に収める
+  return desc.length > 120 ? desc.slice(0, 117) + '...' : desc;
+}
+
+// ============================================================
+// 記事タイトル生成
+// ============================================================
+function generateArticleTitle(text: string, emotion: EmotionType, postType: PostType): string {
+  const hook = extractHook(text);
+  const templates: string[] = [
+    `${hook}について`,
+    `${hook}の真実`,
+    `${hook}を経験したあなたへ`,
+    `${hook}：${emotion}を感じたら読む話`,
+    `なぜ${hook}になるのか`,
+  ];
+  return pickRandom(templates);
+}
+
+// ============================================================
+// サムネイル用タイトル生成
+// ============================================================
+function generateThumbnailTitle(text: string, postType: PostType): string {
+  const hook = extractHook(text);
+  // 短く・インパクト重視・15文字以内
+  const templates: Record<PostType, string[]> = {
+    '共感型':     [`共感しかない`, `これ私のこと？`, `わかりすぎる`],
+    '衝撃型':     [`え、知らなかった`, `衝撃の事実`, `まじか…`],
+    '切ない型':   [`切なすぎる`, `泣ける話`, `胸が痛い`],
+    '恋愛依存型': [`やめられない`, `手放せない理由`, `依存してた`],
+    '暴露型':     [`本音言うね`, `裏側を暴露`, `誰も言わない`],
+    '心理学型':   [`心理学的真実`, `脳の反応`, `科学的に証明`],
+    'ストーリー型':[`実話です`, `あの日のこと`, `忘れられない`],
+  };
+  return pickRandom(templates[postType]);
+}
+
+// ============================================================
+// プラットフォーム別SNS投稿文生成
+// ============================================================
+function generatePlatformPosts(
+  basePost: string,
+  hashtags: string[],
+  hashtagText: string,
+  profileCta: string,
+  postUrl: string,
+  postType: PostType,
+): { threads: string; xPost: string; instagram: string; youtube: string } {
+
+  const lines = basePost.split('
+').filter(l => l.trim());
+  const hook = lines[0] ?? '';
+  const body = lines.slice(1, 6).join('
+');
+  const ctaSuffix = [profileCta, postUrl].filter(Boolean).join('
+');
+
+  // Threads：全文＋ハッシュタグ（500文字以内推奨）
+  const threads = `${basePost}
+
+${hashtagText}${ctaSuffix ? '
+
+' + ctaSuffix : ''}`;
+
+  // X（旧Twitter）：冒頭フック＋3行＋URL（140文字目安）
+  const xLines = lines.slice(0, 4).join('
+');
+  const xPost = `${xLines}${postUrl ? '
+
+' + postUrl : ''}`;
+
+  // Instagram：絵文字リッチ＋ハッシュタグ多め（全文）
+  const igEmoji = postType === '共感型' ? '💕' : postType === '衝撃型' ? '😱' :
+    postType === '切ない型' ? '🥺' : postType === '恋愛依存型' ? '💭' :
+    postType === '暴露型' ? '🔥' : postType === '心理学型' ? '🧠' : '✨';
+  const igHashtags = [...hashtags, '#恋愛', '#インスタ恋愛', '#恋愛あるある'].slice(0, 8).join(' ');
+  const instagram = `${igEmoji} ${hook}
+
+${body}
+
+${igHashtags}${ctaSuffix ? '
+
+' + ctaSuffix : ''}`;
+
+  // YouTube Shorts：タイトル感のある冒頭＋説明文
+  const ytPost = `【${hook}】
+
+${body}
+
+${hashtagText}${ctaSuffix ? '
+
+' + ctaSuffix : ''}`;
+
+  return { threads, xPost, instagram, youtube: ytPost };
+}
+
 // ============================================================
 // メイン生成関数（外部公開）
 // ============================================================
@@ -527,6 +681,23 @@ export function generateBuzzPost(params: {
   // TikTok向け改行処理を適用（文字数カウント後の後処理）
   const postTextFormatted = addTikTokLineBreaks(postText);
 
+  // 追加出力項目を生成
+  const seoTitle = generateSeoTitle(articleText, emotion, postType);
+  const seoKeywords = generateSeoKeywords(articleText, emotion);
+  const metaDescription = generateMetaDescription(articleText, emotion);
+  const articleTitle = generateArticleTitle(articleText, emotion, postType);
+  const thumbnailTitle = generateThumbnailTitle(articleText, postType);
+
+  // プラットフォーム別SNS投稿文を生成
+  const platformPosts = generatePlatformPosts(
+    postTextFormatted,
+    hashtags,
+    hashtagText,
+    profileCta,
+    postUrl,
+    postType,
+  );
+
   return {
     postText: postTextFormatted,
     hashtags,
@@ -535,5 +706,14 @@ export function generateBuzzPost(params: {
     postType,
     score,
     improvement,
+    seoTitle,
+    seoKeywords,
+    metaDescription,
+    articleTitle,
+    thumbnailTitle,
+    threadsPost: platformPosts.threads,
+    xPost: platformPosts.xPost,
+    instagramPost: platformPosts.instagram,
+    youtubePost: platformPosts.youtube,
   };
 }
