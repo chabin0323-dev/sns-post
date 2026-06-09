@@ -603,7 +603,8 @@ function generatePlatformPosts(
   const body = lines.slice(1, 6).join('\n');
   const ctaSuffix = [profileCta, postUrl].filter(Boolean).join('\n');
 
-  // Threads：全文＋ハッシュタグ（500文字以内推奨）
+  // Threads：投稿文＋ハッシュタグ＋CTA＋URL（重複なし）
+  // basePostにURLは含まれないのでctaSuffixで1回だけ付与
   const threads = basePost + '\n\n' + hashtagText + (ctaSuffix ? '\n\n' + ctaSuffix : '');
 
   // X（旧Twitter）：冒頭フック＋4行＋CTA＋URL＋ハッシュタグ
@@ -810,9 +811,8 @@ function generateTikTokArticle(
     base += fillers[i++];
   }
 
-  // ②CTA・URLを付与
+  // ②CTAのみ付与（URLは共用記事に含めない）
   if (profileCta) base += '\n\n' + profileCta;
-  if (postUrl) base += '\n' + postUrl;
 
   // ③TikTok向け20文字改行処理を適用（文字数確定後）
   return addTikTokLineBreaks(base);
@@ -846,9 +846,8 @@ export function generateBuzzPost(params: {
     .replace('{hook}', hook)
     .replace('{core}', core);
 
-  // 5. プロフィール誘導文・URLを末尾に付与（既存設定流用）
+  // 5. プロフィール誘導文のみ付与（URLはプラットフォーム別に個別付与）
   if (profileCta) postText += `\n\n${profileCta}`;
-  if (postUrl) postText += `\n${postUrl}`;
 
   // 6. 動的ハッシュタグ生成（記事ごとに最適な5個）
   const hashtags = generateDynamicHashtags(articleText, emotion, postType);
