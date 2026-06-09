@@ -12,7 +12,7 @@ interface BuzzPostPanelProps {
 
 // 出力項目定義
 type BuzzOutputKey =
-  | 'postText' | 'hashtags' | 'seoTitle' | 'seoKeywords'
+  | 'tiktokArticle' | 'postText' | 'hashtags' | 'seoTitle' | 'seoKeywords'
   | 'metaDescription' | 'articleTitle' | 'thumbnailTitle'
   | 'threadsPost' | 'xPost' | 'instagramPost' | 'youtubePost'
   | 'noteArticle' | 'score' | 'improvement'
@@ -20,6 +20,7 @@ type BuzzOutputKey =
   | 'thumbnailTikTok' | 'thumbnailNote' | 'seoSpecialTitle';
 
 const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
+  tiktokArticle:   '🎬 TikTok記事本文',
   postText:        '🔥 バズる投稿文',
   hashtags:        '# ハッシュタグ',
   threadsPost:     '💬 Threads投稿文',
@@ -42,7 +43,7 @@ const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
 };
 
 const ALL_KEYS: BuzzOutputKey[] = [
-  'postText', 'hashtags', 'threadsPost', 'xPost', 'instagramPost', 'youtubePost',
+  'tiktokArticle', 'postText', 'hashtags', 'threadsPost', 'xPost', 'instagramPost', 'youtubePost',
   'noteArticle',
   'profileCtaText', 'postUrlText',
   'thumbnailTikTok', 'thumbnailNote',
@@ -319,6 +320,16 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
             <span style={{ fontSize: '12px', fontWeight: '800', backgroundColor: '#EDE9FE', color: '#5B21B6', padding: '4px 12px', borderRadius: '20px' }}>感情：{result.emotionType}</span>
             <span style={{ fontSize: '12px', fontWeight: '800', backgroundColor: '#FCE7F3', color: '#9D174D', padding: '4px 12px', borderRadius: '20px' }}>タイプ：{result.postType}</span>
           </div>
+
+          {/* TikTok記事本文 */}
+          {isEnabled('tiktokArticle') && (
+            <OutputCard label="🎬 TikTok記事本文（20文字改行・音声読み上げ対応）" copyText={result.tiktokArticle}>
+              <pre style={preStyle}>{result.tiktokArticle}</pre>
+              <p style={{ fontSize: '11px', color: '#9ca3af', margin: '6px 0 0' }}>
+                改行除外文字数：{result.tiktokArticle.replace(/\n/g, '').length}字
+              </p>
+            </OutputCard>
+          )}
 
           {/* バズる投稿文 */}
           {isEnabled('postText') && (
