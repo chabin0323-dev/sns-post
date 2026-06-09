@@ -166,6 +166,19 @@ const App: React.FC = () => {
           ))}
         </div>
 
+        {/* ============================================================ */}
+        {/* バズる投稿生成（トップ配置・既存機能と完全分離） */}
+        {/* ============================================================ */}
+        <div ref={buzzRef}>
+          <BuzzPostPanel
+            profileCta={currentSettings.profileCta}
+            postUrl={currentSettings.postUrl}
+            onGenerate={handleBuzzGenerate}
+            result={buzzResult}
+            isLoading={isBuzzLoading}
+          />
+        </div>
+
         {/* 入力フォーム（既存・変更なし） */}
         <InputForm onGenerate={handleGenerate} loadingState={loadingState} />
 
@@ -182,19 +195,6 @@ const App: React.FC = () => {
             <ResultCard content={currentContent} enabledKeys={enabledKeys} />
           </div>
         )}
-
-        {/* ============================================================ */}
-        {/* 新規追加：BuzzPostPanel（既存コンポーネントとは完全に分離） */}
-        {/* ============================================================ */}
-        <div ref={buzzRef}>
-          <BuzzPostPanel
-            profileCta={currentSettings.profileCta}
-            postUrl={currentSettings.postUrl}
-            onGenerate={handleBuzzGenerate}
-            result={buzzResult}
-            isLoading={isBuzzLoading}
-          />
-        </div>
 
       </main>
       <footer className="text-center py-8 text-xs text-gray-400 select-none space-y-1">
