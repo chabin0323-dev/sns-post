@@ -660,6 +660,10 @@ export function generateBuzzPost(params: {
   // TikTok向け改行処理を適用（文字数カウント後の後処理）
   const postTextFormatted = addTikTokLineBreaks(postText);
 
+  // note記事生成（記事本文をそのまま使用・TikTok改行なし）
+  const noteTitle = generateArticleTitle(articleText, emotion, postType);
+  const noteArticle = noteTitle + '\n\n' + articleText;
+
   // 追加出力項目を生成
   const seoTitle = generateSeoTitle(articleText, emotion, postType);
   const seoKeywords = generateSeoKeywords(articleText, emotion);
@@ -685,6 +689,7 @@ export function generateBuzzPost(params: {
     postType,
     score,
     improvement,
+    noteArticle,
     seoTitle,
     seoKeywords,
     metaDescription,
