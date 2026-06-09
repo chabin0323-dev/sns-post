@@ -4,10 +4,8 @@
 import React, { useState } from 'react';
 import type { BuzzPostResult } from '../types';
 
-interface BuzzPostPanelProps {a
-  profileCta: string;
-  postUrl: string;
-  onGenerate: (articleText: string, length: 300 | 500 | 600) => void;
+interface BuzzPostPanelProps {
+  onGenerate: (articleText: string, length: 300 | 500 | 600, profileCta: string, postUrl: string) => void;
   result: BuzzPostResult | null;
   isLoading: boolean;
 }
@@ -116,17 +114,40 @@ function OutputCard({ label, children, copyText, style: extraStyle }: {
   );
 }
 
+const BUZZ_SETTINGS_KEY = 'buzz_post_settings_v1';
+
 export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
-  profileCta,
-  postUrl,
   onGenerate,
   result,
   isLoading,
 }) => {
   const [articleText, setArticleText] = useState('');
   const [tiktokLength, setTiktokLength] = useState<300 | 500 | 600>(300);
-  // 初期状態：全選択
   const [enabledKeys, setEnabledKeys] = useState<BuzzOutputKey[]>([...ALL_KEYS]);
+  // 独自のprofileCta・postUrl入力欄（localStorage保存）
+  const [profileCta, setProfileCta] = useState('');
+  const [postUrl, setPostUrl] = useState('');
+  const [savedMsg, setSavedMsg] = useState(false);
+
+  // 起動時にlocalStorageから復元
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem(BUZZ_SETTINGS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.profileCta) setProfileCta(parsed.profileCta);
+        if (parsed.postUrl) setPostUrl(parsed.postUrl);
+      }
+    } catch {}
+  }, []);
+
+  const handleSave = () => {
+    try {
+      localStorage.setItem(BUZZ_SETTINGS_KEY, JSON.stringify({ profileCta, postUrl }));
+      setSavedMsg(true);
+      setTimeout(() => setSavedMsg(false), 2000);
+    } catch {}
+  };
 
   const toggleKey = (key: BuzzOutputKey) => {
     setEnabledKeys(prev =>
@@ -136,7 +157,7 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
 
   const handleClick = () => {
     if (!articleText.trim()) return;
-    onGenerate(articleText, tiktokLength);
+    onGenerate(articleText, tiktokLength, profileCta, postUrl);
   };
 
   const isEnabled = (key: BuzzOutputKey) => enabledKeys.includes(key);
@@ -192,10 +213,59 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
             </button>
           ))}
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-          {profileCta && <span style={{ fontSize: '11px', backgroundColor: '#FFE0EC', color: '#72243E', padding: '2px 10px', borderRadius: '20px', fontWeight: '600' }}>CTA設定済み</span>}
-          {postUrl && <span style={{ fontSize: '11px', backgroundColor: '#FFE0EC', color: '#72243E', padding: '2px 10px', borderRadius: '20px', fontWeight: '600' }}>URL設定済み</span>}
+      </div>
+
+      {/* プロフィール誘導文・投稿URL入力 */}
+      <div style={{ backgroundColor: '#fdf2f8', borderRadius: '16px', padding: '14px', marginBottom: '12px', border: '1px solid #fce7f3' }}>
+        <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700', marginBottom: '10px' }}>⚙️ 設定（保存するとアプリ再起動後も保持）</div>
+
+        {/* プロフィール誘導文 */}
+        <div style={{ marginBottom: '10px' }}>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: '#72243E', marginBottom: '4px' }}>👤 プロフィール誘導文</div>
+          <input
+            type="text"
+            value={profileCta}
+            onChange={e => setProfileCta(e.target.value)}
+            placeholder="例）プロフのリンクから詳細を確認してね💕"
+            style={{
+              width: '100%', padding: '10px 12px', borderRadius: '10px',
+              border: '1px solid #fce7f3', fontSize: '13px', outline: 'none',
+              fontFamily: 'inherit', color: '#374151', backgroundColor: '#fffafa',
+              boxSizing: 'border-box',
+            }}
+          />
         </div>
+
+        {/* 投稿URL */}
+        <div style={{ marginBottom: '10px' }}>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: '#72243E', marginBottom: '4px' }}>🔗 投稿URL</div>
+          <input
+            type="text"
+            value={postUrl}
+            onChange={e => setPostUrl(e.target.value)}
+            placeholder="例）https://note.com/yourname/n/xxxxx"
+            style={{
+              width: '100%', padding: '10px 12px', borderRadius: '10px',
+              border: '1px solid #fce7f3', fontSize: '13px', outline: 'none',
+              fontFamily: 'inherit', color: '#374151', backgroundColor: '#fffafa',
+              boxSizing: 'border-box',
+            }}
+          />
+        </div>
+
+        {/* 保存ボタン */}
+        <button
+          onClick={handleSave}
+          style={{
+            padding: '8px 20px', borderRadius: '10px', border: 'none',
+            fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+            backgroundColor: savedMsg ? '#D1FAE5' : '#FFE0EC',
+            color: savedMsg ? '#065F46' : '#72243E',
+            transition: 'all 0.2s',
+          }}
+        >
+          {savedMsg ? '✅ 保存しました' : '💾 設定を保存'}
+        </button>
       </div>
 
       {/* 出力項目トグル */}
