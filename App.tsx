@@ -1,11 +1,6 @@
-// App.tsx（完全版）
-// 既存コードに以下を追加:
-//   - import BuzzPostPanel
-//   - import generateBuzzPost
-//   - buzzResult / isBuzzLoading の2ステート
-//   - handleBuzzGenerate ハンドラ
-//   - <BuzzPostPanel> を InputForm の下に配置
-// 既存の handleGenerate / currentContent / enabledKeys は一切変更なし
+// App.tsx
+// タブ切り替え版：①note記事生成 ②バズる投稿生成
+// 既存の handleGenerate / currentContent / enabledKeys / ResultCard は一切変更なし
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Header } from './components/Header';
@@ -19,7 +14,14 @@ import { generateBuzzPost } from './services/buzzPostGenerator';
 
 const RESULT_STORAGE_KEY = 'sns_post_last_result_v2';
 
+type TabType = 'note' | 'buzz';
+
 const App: React.FC = () => {
+  // ============================================================
+  // タブ状態
+  // ============================================================
+  const [activeTab, setActiveTab] = useState<TabType>('note');
+
   // ============================================================
   // 既存ステート（変更なし）
   // ============================================================
@@ -29,13 +31,12 @@ const App: React.FC = () => {
   const resultRef = useRef<HTMLDivElement>(null);
 
   // ============================================================
-  // 新規追加ステート（BuzzPost用）
+  // BuzzPost用ステート（変更なし）
   // ============================================================
   const [buzzResult, setBuzzResult] = useState<BuzzPostResult | null>(null);
   const [isBuzzLoading, setIsBuzzLoading] = useState(false);
   const buzzRef = useRef<HTMLDivElement>(null);
 
-  // InputFormの現在設定を保持（BuzzPostPanelへ渡すため）
   const [currentSettings, setCurrentSettings] = useState<{
     tiktokLength: 300 | 500 | 600;
     profileCta: string;
@@ -47,7 +48,7 @@ const App: React.FC = () => {
   });
 
   // ============================================================
-  // 起動時に前回の生成結果を復元（既存ロジック・変更なし）
+  // 起動時に前回の生成結果を復元（変更なし）
   // ============================================================
   useEffect(() => {
     try {
@@ -80,14 +81,11 @@ const App: React.FC = () => {
   }) => {
     setLoadingState(LoadingState.LOADING);
     setEnabledKeys(params.enabledKeys);
-
-    // 現在の設定をBuzzPostPanel用に保持
     setCurrentSettings({
       tiktokLength: params.tiktokLength,
       profileCta: params.profileCta,
       postUrl: params.postUrl,
     });
-
     await new Promise(r => setTimeout(r, 500));
     try {
       const result = generateContent(params);
@@ -98,9 +96,7 @@ const App: React.FC = () => {
           content: result,
           enabledKeys: params.enabledKeys,
         }));
-      } catch {
-        // 保存失敗時は無視
-      }
+      } catch { /* 保存失敗は無視 */ }
       setTimeout(() => {
         resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
@@ -110,11 +106,10 @@ const App: React.FC = () => {
   };
 
   // ============================================================
-  // 新規ハンドラ（BuzzPost生成）
+  // BuzzPost生成ハンドラ（変更なし）
   // ============================================================
   const handleBuzzGenerate = async (articleText: string, length: 300 | 500 | 600) => {
     setIsBuzzLoading(true);
-    // わずかなローディング感を演出（UX向上）
     await new Promise(r => setTimeout(r, 400));
     try {
       const result = generateBuzzPost({
@@ -127,11 +122,37 @@ const App: React.FC = () => {
       setTimeout(() => {
         buzzRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
-    } catch {
-      // エラー時は静かに失敗
-    } finally {
-      setIsBuzzLoading(false);
-    }
+    } catch { /* エラーは無視 */ }
+    finally { setIsBuzzLoading(false); }
+  };
+
+  // ============================================================
+  // タブスタイル
+  // ============================================================
+  const tabBase: React.CSSProperties = {
+    flex: 1,
+    padding: '12px 0',
+    border: 'none',
+    borderRadius: '14px',
+    fontSize: '14px',
+    fontWeight: '900',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    letterSpacing: '0.3px',
+  };
+
+  const tabActive: React.CSSProperties = {
+    ...tabBase,
+    background: 'linear-gradient(135deg, #F472B6, #D4537E)',
+    color: '#fff',
+    boxShadow: '0 4px 14px rgba(212,83,126,0.35)',
+  };
+
+  const tabInactive: React.CSSProperties = {
+    ...tabBase,
+    backgroundColor: '#fff',
+    color: '#9ca3af',
+    boxShadow: 'none',
   };
 
   return (
@@ -139,7 +160,7 @@ const App: React.FC = () => {
       <Header />
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
 
-        {/* キャッチコピー（既存・変更なし） */}
+        {/* キャッチコピー */}
         <div className="text-center space-y-1 py-2">
           <h2 className="text-2xl font-black text-gray-800">10ジャンル・全テーマ対応</h2>
           <p
@@ -151,7 +172,7 @@ const App: React.FC = () => {
           <p className="text-xs text-gray-500 mt-1">APIキー不要・ローカル生成・完全無料</p>
         </div>
 
-        {/* バッジ（既存・変更なし） */}
+        {/* バッジ */}
         <div className="flex gap-3 justify-center flex-wrap">
           {[
             { icon: '🎯', text: '10ジャンル対応' },
@@ -167,32 +188,62 @@ const App: React.FC = () => {
         </div>
 
         {/* ============================================================ */}
-        {/* バズる投稿生成（トップ配置・既存機能と完全分離） */}
+        {/* タブ切り替え */}
         {/* ============================================================ */}
-        <div ref={buzzRef}>
-          <BuzzPostPanel
-            profileCta={currentSettings.profileCta}
-            postUrl={currentSettings.postUrl}
-            onGenerate={handleBuzzGenerate}
-            result={buzzResult}
-            isLoading={isBuzzLoading}
-          />
+        <div style={{
+          display: 'flex',
+          gap: '6px',
+          backgroundColor: '#fce7f3',
+          borderRadius: '18px',
+          padding: '6px',
+        }}>
+          <button
+            onClick={() => setActiveTab('note')}
+            style={activeTab === 'note' ? tabActive : tabInactive}
+          >
+            📝 note記事生成
+          </button>
+          <button
+            onClick={() => setActiveTab('buzz')}
+            style={activeTab === 'buzz' ? tabActive : tabInactive}
+          >
+            ✍️ バズる投稿生成
+          </button>
         </div>
 
-        {/* 入力フォーム（既存・変更なし） */}
-        <InputForm onGenerate={handleGenerate} loadingState={loadingState} />
+        {/* ============================================================ */}
+        {/* タブ①：note記事生成（既存機能・変更なし） */}
+        {/* ============================================================ */}
+        {activeTab === 'note' && (
+          <>
+            <InputForm onGenerate={handleGenerate} loadingState={loadingState} />
 
-        {/* エラー表示（既存・変更なし） */}
-        {loadingState === LoadingState.ERROR && (
-          <div className="bg-red-50 border border-red-200 text-red-600 rounded-2xl p-4 text-center text-sm font-bold">
-            ⚠️ 生成に失敗しました。もう一度お試しください。
-          </div>
+            {loadingState === LoadingState.ERROR && (
+              <div className="bg-red-50 border border-red-200 text-red-600 rounded-2xl p-4 text-center text-sm font-bold">
+                ⚠️ 生成に失敗しました。もう一度お試しください。
+              </div>
+            )}
+
+            {loadingState === LoadingState.SUCCESS && currentContent && (
+              <div ref={resultRef}>
+                <ResultCard content={currentContent} enabledKeys={enabledKeys} />
+              </div>
+            )}
+          </>
         )}
 
-        {/* 生成結果（既存・変更なし） */}
-        {loadingState === LoadingState.SUCCESS && currentContent && (
-          <div ref={resultRef}>
-            <ResultCard content={currentContent} enabledKeys={enabledKeys} />
+        {/* ============================================================ */}
+        {/* タブ②：バズる投稿生成（独立ツール・変更なし） */}
+        {/* ============================================================ */}
+        {activeTab === 'buzz' && (
+          <div ref={buzzRef}>
+            <BuzzPostPanel
+              profileCta={currentSettings.profileCta}
+              postUrl={currentSettings.postUrl}
+              onGenerate={handleBuzzGenerate}
+              result={buzzResult}
+              isLoading={isBuzzLoading}
+            />
           </div>
         )}
 
