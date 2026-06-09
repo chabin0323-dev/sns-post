@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import type { BuzzPostResult } from '../types';
 
-interface BuzzPostPanelProps {
+interface BuzzPostPanelProps {a
   profileCta: string;
   postUrl: string;
   onGenerate: (articleText: string, length: 300 | 500 | 600) => void;
@@ -17,7 +17,9 @@ type BuzzOutputKey =
   | 'postText' | 'hashtags' | 'seoTitle' | 'seoKeywords'
   | 'metaDescription' | 'articleTitle' | 'thumbnailTitle'
   | 'threadsPost' | 'xPost' | 'instagramPost' | 'youtubePost'
-  | 'noteArticle' | 'score' | 'improvement';
+  | 'noteArticle' | 'score' | 'improvement'
+  | 'profileCtaText' | 'postUrlText'
+  | 'thumbnailTikTok' | 'thumbnailNote' | 'seoSpecialTitle';
 
 const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
   postText:        '🔥 バズる投稿文',
@@ -27,9 +29,14 @@ const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
   instagramPost:   '📸 Instagram投稿文',
   youtubePost:     '▶️ YouTube Shorts',
   noteArticle:     '📝 note記事',
+  profileCtaText:  '👤 プロフィール誘導文',
+  postUrlText:     '🔗 投稿URL',
+  thumbnailTikTok: '🎨 TikTok画像生成指示文',
+  thumbnailNote:   '📝 note画像生成指示文',
+  seoSpecialTitle: '🔍 SEO特化タイトル',
   seoTitle:        '🔍 SEOタイトル',
   seoKeywords:     '🏷️ SEOキーワード',
-  metaDescription: '📝 メタディスクリプション',
+  metaDescription: '📄 メタディスクリプション',
   articleTitle:    '📰 記事タイトル',
   thumbnailTitle:  '🖼️ サムネイル用タイトル',
   score:           '⚡ BAZZ SCORE',
@@ -39,7 +46,9 @@ const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
 const ALL_KEYS: BuzzOutputKey[] = [
   'postText', 'hashtags', 'threadsPost', 'xPost', 'instagramPost', 'youtubePost',
   'noteArticle',
-  'seoTitle', 'seoKeywords', 'metaDescription', 'articleTitle', 'thumbnailTitle',
+  'profileCtaText', 'postUrlText',
+  'thumbnailTikTok', 'thumbnailNote',
+  'seoSpecialTitle', 'seoTitle', 'seoKeywords', 'metaDescription', 'articleTitle', 'thumbnailTitle',
   'score', 'improvement',
 ];
 
@@ -293,6 +302,42 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
           {isEnabled('noteArticle') && (
             <OutputCard label="📝 note記事" copyText={result.noteArticle}>
               <pre style={preStyle}>{result.noteArticle}</pre>
+            </OutputCard>
+          )}
+
+          {/* プロフィール誘導文 */}
+          {isEnabled('profileCtaText') && result.profileCtaText && (
+            <OutputCard label="👤 プロフィール誘導文" copyText={result.profileCtaText}>
+              <p style={{ fontSize: '14px', fontWeight: '700', color: '#374151', margin: 0 }}>{result.profileCtaText}</p>
+            </OutputCard>
+          )}
+
+          {/* 投稿URL */}
+          {isEnabled('postUrlText') && result.postUrlText && (
+            <OutputCard label="🔗 投稿URL" copyText={result.postUrlText}>
+              <p style={{ fontSize: '13px', color: '#2563eb', margin: 0, wordBreak: 'break-all' }}>{result.postUrlText}</p>
+            </OutputCard>
+          )}
+
+          {/* TikTok画像生成指示文 */}
+          {isEnabled('thumbnailTikTok') && (
+            <OutputCard label="🎨 TikTok画像生成指示文（1080×1920）" copyText={result.thumbnailTikTok}>
+              <pre style={preStyle}>{result.thumbnailTikTok}</pre>
+            </OutputCard>
+          )}
+
+          {/* note画像生成指示文 */}
+          {isEnabled('thumbnailNote') && (
+            <OutputCard label="📝 note画像生成指示文（1280×670）" copyText={result.thumbnailNote}>
+              <pre style={preStyle}>{result.thumbnailNote}</pre>
+            </OutputCard>
+          )}
+
+          {/* SEO特化タイトル */}
+          {isEnabled('seoSpecialTitle') && (
+            <OutputCard label="🔍 SEO特化タイトル（検索流入・クリック率重視）" copyText={result.seoSpecialTitle}>
+              <p style={{ fontSize: '15px', fontWeight: '900', color: '#1e40af', margin: 0 }}>{result.seoSpecialTitle}</p>
+              <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0' }}>{result.seoSpecialTitle.length}文字（30〜40文字推奨）</p>
             </OutputCard>
           )}
 
