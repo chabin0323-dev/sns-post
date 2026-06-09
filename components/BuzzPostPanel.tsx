@@ -20,7 +20,7 @@ type BuzzOutputKey =
   | 'thumbnailTikTok' | 'thumbnailNote' | 'seoSpecialTitle';
 
 const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
-  tiktokArticle:   '🎬 TikTok記事本文',
+  tiktokArticle:   '🎬 TikTok・YouTube Shorts・Instagram共用記事',
   postText:        '🔥 バズる投稿文',
   hashtags:        '# ハッシュタグ',
   threadsPost:     '💬 Threads投稿文',
@@ -116,6 +116,7 @@ function OutputCard({ label, children, copyText, style: extraStyle }: {
 }
 
 const BUZZ_SETTINGS_KEY = 'buzz_post_settings_v1';
+const BUZZ_KEYS_STORAGE_KEY = 'buzz_output_keys_v1';
 
 export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
   onGenerate,
@@ -133,11 +134,20 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
   // 起動時にlocalStorageから復元
   React.useEffect(() => {
     try {
+      // プロフィール誘導文・URL復元
       const saved = localStorage.getItem(BUZZ_SETTINGS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.profileCta) setProfileCta(parsed.profileCta);
         if (parsed.postUrl) setPostUrl(parsed.postUrl);
+      }
+      // 出力項目選択状態復元（初回のみ全選択・2回目以降は保存状態）
+      const savedKeys = localStorage.getItem(BUZZ_KEYS_STORAGE_KEY);
+      if (savedKeys) {
+        const parsedKeys = JSON.parse(savedKeys) as BuzzOutputKey[];
+        if (Array.isArray(parsedKeys) && parsedKeys.length > 0) {
+          setEnabledKeys(parsedKeys);
+        }
       }
     } catch {}
   }, []);
@@ -151,9 +161,25 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
   };
 
   const toggleKey = (key: BuzzOutputKey) => {
-    setEnabledKeys(prev =>
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
-    );
+    setEnabledKeys(prev => {
+      const next = prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key];
+      // 変更のたびに自動保存
+      try { localStorage.setItem(BUZZ_KEYS_STORAGE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  // 全選択ボタン押下時も保存
+  const handleSelectAll = () => {
+    const all = [...ALL_KEYS];
+    setEnabledKeys(all);
+    try { localStorage.setItem(BUZZ_KEYS_STORAGE_KEY, JSON.stringify(all)); } catch {}
+  };
+
+  // 全解除ボタン押下時も保存
+  const handleClearAll = () => {
+    setEnabledKeys([]);
+    try { localStorage.setItem(BUZZ_KEYS_STORAGE_KEY, JSON.stringify([])); } catch {}
   };
 
   const handleClick = () => {
@@ -274,8 +300,8 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700' }}>📋 出力する項目を選択（初期：全選択）</div>
           <div style={{ display: 'flex', gap: '6px' }}>
-            <button onClick={() => setEnabledKeys([...ALL_KEYS])} style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', border: '1px solid #D4537E', backgroundColor: '#FFE0EC', color: '#72243E', cursor: 'pointer', fontWeight: '700' }}>全選択</button>
-            <button onClick={() => setEnabledKeys([])} style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', border: '1px solid #e5e7eb', backgroundColor: '#fff', color: '#6b7280', cursor: 'pointer', fontWeight: '700' }}>全解除</button>
+            <button onClick={handleSelectAll} style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', border: '1px solid #D4537E', backgroundColor: '#FFE0EC', color: '#72243E', cursor: 'pointer', fontWeight: '700' }}>全選択</button>
+            <button onClick={handleClearAll} style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', border: '1px solid #e5e7eb', backgroundColor: '#fff', color: '#6b7280', cursor: 'pointer', fontWeight: '700' }}>全解除</button>
           </div>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -323,7 +349,7 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
 
           {/* TikTok記事本文 */}
           {isEnabled('tiktokArticle') && (
-            <OutputCard label="🎬 TikTok記事本文（20文字改行・音声読み上げ対応）" copyText={result.tiktokArticle}>
+            <OutputCard label="🎬 TikTok・YouTube Shorts・Instagram共用記事（20文字改行）" copyText={result.tiktokArticle}>
               <pre style={preStyle}>{result.tiktokArticle}</pre>
               <p style={{ fontSize: '11px', color: '#9ca3af', margin: '6px 0 0' }}>
                 改行除外文字数：{result.tiktokArticle.replace(/\n/g, '').length}字
