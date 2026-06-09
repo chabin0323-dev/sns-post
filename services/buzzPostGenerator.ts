@@ -660,8 +660,7 @@ function generateThumbnailTikTok(text: string, emotion: EmotionType, postType: P
     '・テキストは画面中央〜上部に配置',
     '・背景はグラデーションまたは単色',
     '・過度な装飾は避けシンプルに仕上げる',
-  ].join('
-');
+  ].join('\n');
 }
 
 // ============================================================
@@ -699,8 +698,7 @@ function generateThumbnailNote(text: string, emotion: EmotionType, postType: Pos
     '■ 感情トーン',
     `・感情：${emotion}`,
     `・投稿タイプ：${postType}`,
-  ].join('
-');
+  ].join('\n');
 }
 
 // ============================================================
