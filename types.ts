@@ -4,9 +4,11 @@ export enum LoadingState {
   SUCCESS = 'SUCCESS',
   ERROR = 'ERROR',
 }
+
 export type Genre =
   | '恋愛' | 'お金・資産' | '副業・稼ぐ' | '美容・ダイエット' | '育児・子育て'
   | '健康・メンタル' | '転職・キャリア' | '人間関係' | 'ビジネス・起業' | 'ライフスタイル';
+
 export type Theme =
   | '脈なし' | '脈あり' | '男性心理' | 'LINE' | '片思い' | '復縁' | '運命の人' | '恋愛心理学' | '職場恋愛' | '婚活' | 'マッチングアプリ'
   | '節約術' | '投資入門' | 'NISA活用' | '貯金習慣' | '給料アップ' | '保険見直し' | '副収入' | 'クレカ活用' | 'ポイント最大化' | '老後資金'
@@ -18,10 +20,13 @@ export type Theme =
   | '職場いじめ' | '毒親' | '友達付き合い' | 'ママ友' | '義実家問題' | '自己肯定感' | 'コミュ力アップ' | '断り方' | '人たらし術' | 'HSP生き方'
   | '起業アイデア' | 'SNSマーケ' | '集客術' | '価格設定' | 'Canva活用' | 'ChatGPT活用' | '個人ブランディング' | 'コンテンツマーケ' | 'LINE公式活用' | 'ストーリーズ活用'
   | 'ミニマリスト' | '朝活' | '読書習慣' | '手帳活用' | '一人暮らし節約' | 'おうち時間' | '旅行ハック' | 'サウナ効果' | 'ペット' | 'インテリア';
+
 export type HookType = '否定系' | '不安系' | '暴露系' | '共感系' | '実は系' | '数字系' | '限定系';
+
 export type OutputKey =
   | 'mainContent' | 'hashtags' | 'threads' | 'x'
   | 'note' | 'seo' | 'thumbnailTikTok' | 'thumbnailNote';
+
 export interface BuzzScore {
   hookPower: number;
   saveRate: number;
@@ -31,6 +36,7 @@ export interface BuzzScore {
   total: number;
   comment: string;
 }
+
 export interface GeneratedContent {
   genre: Genre;
   theme: Theme;
@@ -53,6 +59,33 @@ export interface GeneratedContent {
   thumbnailTikTok: string;
   thumbnailNote: string;
   buzzScore: BuzzScore;
+  nextTitles?: string[];
   timestamp: string;
-  nextTitles: string[];
+}
+
+export interface BuzzPostScore {
+  empathy: number;
+  saveRate: number;
+  clickRate: number;
+  spreadRate: number;
+  commentRate: number;
+  profileRate: number;
+  total: number;
+}
+
+export interface BuzzImprovement {
+  hookSuggestion: string;
+  emotionSuggestion: string;
+  saveSuggestion: string;
+  clickSuggestion: string;
+}
+
+export interface BuzzPostResult {
+  postText: string;
+  hashtags: string[];
+  hashtagText: string;
+  emotionType: string;
+  postType: string;
+  score: BuzzPostScore;
+  improvement: BuzzImprovement | null;
 }
