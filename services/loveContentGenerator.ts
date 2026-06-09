@@ -899,30 +899,57 @@ function breakLine(text: string): string {
 }
 
 // ============================================================
-// 文字数調整
+// 文字数調整（改行除外で判定・確実に目標文字数を満たす）
 // ============================================================
+function countChars(text: string): number {
+  // 改行・タブ・空白を除いた純粋な文字数
+  return text.replace(/[\n\t\r]/g, '').length;
+}
+
 function adjustLength(text: string, targetLength: number, profileCta: string): string {
   const suffix = profileCta ? `\n\n${profileCta}` : '';
 
-  // 改行を除いた本文文字数でチェック
-  const textOnly = text.replace(/\n/g, '');
-  if (textOnly.length >= targetLength) {
+  // 改行除外の文字数で判定
+  if (countChars(text) >= targetLength) {
     return text + suffix;
   }
 
-  // 文字数が足りない場合の補足フィラー
+  // 文字数不足時に追加するフィラーブロック（各30〜60文字）
   const fillers = [
-    '\n\nこれを知っているだけで\n結果が大きく変わります。',
-    '\n\n今日から意識するだけで\n3ヶ月後の自分が変わります。',
-    '\n\n小さな一歩を踏み出すことが\n全ての始まりです。',
-    '\n\nまず今日1つだけ\n実践してみてください。',
-    '\n\n知ることから全てが始まります。\n一緒に成長していきましょう。',
+    '\n\nこれを知っているだけで、恋愛の見え方が大きく変わります。焦らなくていい。自分のペースで進んでいきましょう。',
+    '\n\n大切なのは相手の反応より、自分の気持ちに正直でいること。自分を大切にしている人は、自然と相手からも大切にされます。',
+    '\n\n恋愛でうまくいかないときほど、自分を責めないでほしい。あなたは十分頑張っている。それだけで価値があります。',
+    '\n\n今日から少しだけ、自分を優先してみてください。自分が満たされていると、不思議と恋愛もうまく回り始めます。',
+    '\n\n完璧な人なんていない。傷ついた経験があるから、人の痛みがわかる。それがあなたの一番の強みになります。',
+    '\n\n焦る気持ちはよくわかる。でも焦りは必ず相手に伝わってしまう。深呼吸して、今この瞬間だけに集中してみて。',
+    '\n\n好きな人ができるたびに全力になれるあなたは、それだけ人を大切にできる証拠。その気持ちは絶対に報われます。',
+    '\n\n恋愛は結果だけじゃない。その過程で気づいたこと、成長したこと、全部が意味を持っています。無駄な経験は一つもない。',
+    '\n\n自分を好きになることが、全ての恋愛の基盤になります。今日一つだけ、自分を褒めることを忘れないでください。',
+    '\n\nどんな結果になっても、あなたの価値は変わらない。相手の反応で自分を測ることをやめると、恋愛が急に楽になります。',
   ];
 
   let result = text;
-  for (const filler of fillers) {
-    if (result.replace(/\n/g, '').length >= targetLength) break;
-    result = result + filler;
+  let fillerIdx = 0;
+
+  // targetLengthに達するまでフィラーを追加
+  while (countChars(result) < targetLength && fillerIdx < fillers.length) {
+    result = result + fillers[fillerIdx];
+    fillerIdx++;
+  }
+
+  // それでも足りない場合は汎用テキストで補完
+  const genericFillers = [
+    '\n\n恋愛で一番大切なのは自己肯定感です。自分を好きでいられる人は、どんな恋愛でも前向きに進めます。',
+    '\n\n相手のことを考えすぎるとき、少しだけ自分のことを考えてみてください。あなたの気持ちも同じくらい大切です。',
+    '\n\n恋愛がうまくいかないと感じるとき、それは次のステージへの準備期間かもしれません。焦らず待てる人が最後に笑います。',
+    '\n\n好きな人の前では自然体でいることが一番の武器になります。作った自分より本当の自分の方が、ずっと魅力的に映ります。',
+    '\n\n恋愛の悩みはつきないけれど、悩める自分を責めないで。悩むのは本気だから。その真剣さが必ず伝わる日が来ます。',
+  ];
+
+  let genericIdx = 0;
+  while (countChars(result) < targetLength && genericIdx < genericFillers.length) {
+    result = result + genericFillers[genericIdx];
+    genericIdx++;
   }
 
   return result + suffix;
