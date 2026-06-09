@@ -5,10 +5,9 @@ import React, { useState } from 'react';
 import type { BuzzPostResult } from '../types';
 
 interface BuzzPostPanelProps {
-  tiktokLength: 300 | 500 | 600;
   profileCta: string;
   postUrl: string;
-  onGenerate: (articleText: string) => void;
+  onGenerate: (articleText: string, length: 300 | 500 | 600) => void;
   result: BuzzPostResult | null;
   isLoading: boolean;
 }
@@ -74,7 +73,6 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
 }
 
 export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
-  tiktokLength,
   profileCta,
   postUrl,
   onGenerate,
@@ -82,10 +80,11 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
   isLoading,
 }) => {
   const [articleText, setArticleText] = useState('');
+  const [tiktokLength, setTiktokLength] = useState<300 | 500 | 600>(300);
 
   const handleClick = () => {
     if (!articleText.trim()) return;
-    onGenerate(articleText);
+    onGenerate(articleText, tiktokLength);
   };
 
   const cardStyle: React.CSSProperties = {
@@ -148,15 +147,35 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
         </div>
       </div>
 
-      {/* 現在の設定表示 */}
+      {/* 文字数選択 */}
       <div style={{ ...cardStyle, backgroundColor: '#fdf2f8', padding: '12px' }}>
-        <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700', marginBottom: '6px' }}>
-          📌 現在の設定を自動適用
+        <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700', marginBottom: '8px' }}>
+          📏 投稿文字数を選択
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-          <span style={{ fontSize: '11px', backgroundColor: '#FFE0EC', color: '#72243E', padding: '2px 10px', borderRadius: '20px', fontWeight: '600' }}>
-            {tiktokLength}字設定
-          </span>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {([300, 500, 600] as (300 | 500 | 600)[]).map(len => (
+            <button
+              key={len}
+              onClick={() => setTiktokLength(len)}
+              style={{
+                flex: 1,
+                padding: '8px 0',
+                borderRadius: '10px',
+                border: '2px solid',
+                fontSize: '13px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                backgroundColor: tiktokLength === len ? '#FFE0EC' : '#fff',
+                borderColor: tiktokLength === len ? '#D4537E' : '#e5e7eb',
+                color: tiktokLength === len ? '#72243E' : '#6b7280',
+              }}
+            >
+              {len}字
+            </button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
           {profileCta && (
             <span style={{ fontSize: '11px', backgroundColor: '#FFE0EC', color: '#72243E', padding: '2px 10px', borderRadius: '20px', fontWeight: '600' }}>
               CTA設定済み
@@ -319,4 +338,3 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
     </div>
   );
 };
-
