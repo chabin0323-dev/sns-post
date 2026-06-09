@@ -291,14 +291,23 @@ function extractHook(text: string): string {
 function extractCore(text: string, tiktokLength: number): string {
   const lines = text.split('\n').filter(l => l.trim().length > 0);
 
-  // 2行目以降から本文を抽出、文字数に合わせて調整
+  // 2行目以降から本文を抽出
   const bodyLines = lines.slice(1);
   let core = bodyLines.join('\n');
 
-  // 文字数制限（tiktokLengthに応じて調整）
-  const maxChars = tiktokLength === 300 ? 150 : tiktokLength === 500 ? 250 : 320;
-  if (core.length > maxChars) {
-    core = core.slice(0, maxChars - 3) + '…';
+  // 文字数上限（改行除外で判定・余裕を持って設定）
+  const maxChars = tiktokLength === 300 ? 280 : tiktokLength === 500 ? 480 : 580;
+  const coreChars = core.replace(/\n/g, '').length;
+  if (coreChars > maxChars) {
+    // 文字数超過時は後ろを切り詰め
+    let trimmed = '';
+    let count = 0;
+    for (const ch of core) {
+      if (ch !== '\n') count++;
+      trimmed += ch;
+      if (count >= maxChars - 3) { trimmed += '…'; break; }
+    }
+    core = trimmed;
   }
 
   return core || lines[0]?.slice(0, maxChars) || '';
@@ -597,9 +606,13 @@ function generatePlatformPosts(
   // Threads：全文＋ハッシュタグ（500文字以内推奨）
   const threads = basePost + '\n\n' + hashtagText + (ctaSuffix ? '\n\n' + ctaSuffix : '');
 
-  // X（旧Twitter）：冒頭フック＋3行＋URL（140文字目安）
+  // X（旧Twitter）：冒頭フック＋4行＋CTA＋URL＋ハッシュタグ
   const xLines = lines.slice(0, 4).join('\n');
-  const xPost = xLines + (postUrl ? '\n\n' + postUrl : '');
+  const xHashtags = hashtags.slice(0, 3).join(' ');
+  const xPost = xLines
+    + (profileCta ? '\n\n' + profileCta : '')
+    + (postUrl ? '\n' + postUrl : '')
+    + (xHashtags ? '\n\n' + xHashtags : '');
 
   // Instagram：絵文字リッチ＋ハッシュタグ多め（全文）
   const igEmoji = postType === '共感型' ? '💕' : postType === '衝撃型' ? '😱' :
@@ -758,6 +771,53 @@ function generateSeoSpecialTitle(text: string, emotion: EmotionType, postType: P
   return suitable ?? candidates[0];
 }
 
+
+// ============================================================
+// TikTok記事本文生成（貼り付け記事を指定文字数で整形）
+// ============================================================
+function countTextChars(text: string): number {
+  return text.replace(/[\n\t\r]/g, '').length;
+}
+
+function generateTikTokArticle(
+  articleText: string,
+  tiktokLength: number,
+  profileCta: string,
+  postUrl: string,
+): string {
+  // 記事本文をベースに使用（変更・要約しない）
+  let base = articleText.trim();
+
+  // 文字数フィラー（不足時に追加）
+  const fillers = [
+    '\n\nこれを知っているだけで、恋愛の見え方が大きく変わります。焦らなくていい。自分のペースで進んでいきましょう。',
+    '\n\n大切なのは相手の反応より、自分の気持ちに正直でいること。自分を大切にしている人は、自然と相手からも大切にされます。',
+    '\n\n恋愛でうまくいかないときほど、自分を責めないでほしい。あなたは十分頑張っている。それだけで価値があります。',
+    '\n\n今日から少しだけ、自分を優先してみてください。自分が満たされていると、不思議と恋愛もうまく回り始めます。',
+    '\n\n完璧な人なんていない。傷ついた経験があるから、人の痛みがわかる。それがあなたの一番の強みになります。',
+    '\n\n焦る気持ちはよくわかる。でも焦りは必ず相手に伝わってしまう。深呼吸して、今この瞬間だけに集中してみて。',
+    '\n\n好きな人ができるたびに全力になれるあなたは、それだけ人を大切にできる証拠。その気持ちは絶対に報われます。',
+    '\n\n恋愛は結果だけじゃない。その過程で気づいたこと、成長したこと、全部が意味を持っています。無駄な経験は一つもない。',
+    '\n\n自分を好きになることが、全ての恋愛の基盤になります。今日一つだけ、自分を褒めることを忘れないでください。',
+    '\n\nどんな結果になっても、あなたの価値は変わらない。相手の反応で自分を測ることをやめると、恋愛が急に楽になります。',
+    '\n\n恋愛で一番大切なのは自己肯定感です。自分を好きでいられる人は、どんな恋愛でも前向きに進めます。',
+    '\n\n相手のことを考えすぎるとき、少しだけ自分のことを考えてみてください。あなたの気持ちも同じくらい大切です。',
+  ];
+
+  // ①文字数確認（改行除外）・不足時にフィラーで補完
+  let i = 0;
+  while (countTextChars(base) < tiktokLength && i < fillers.length) {
+    base += fillers[i++];
+  }
+
+  // ②CTA・URLを付与
+  if (profileCta) base += '\n\n' + profileCta;
+  if (postUrl) base += '\n' + postUrl;
+
+  // ③TikTok向け20文字改行処理を適用（文字数確定後）
+  return addTikTokLineBreaks(base);
+}
+
 // ============================================================
 // メイン生成関数（外部公開）
 // ============================================================
@@ -803,6 +863,9 @@ export function generateBuzzPost(params: {
   // TikTok向け改行処理を適用（文字数カウント後の後処理）
   const postTextFormatted = addTikTokLineBreaks(postText);
 
+  // TikTok記事本文生成（文字数確定→改行処理→CTA付与）
+  const tiktokArticle = generateTikTokArticle(articleText, tiktokLength, profileCta, postUrl);
+
   // note記事生成（記事本文をそのまま使用・TikTok改行なし）
   const noteTitle = generateArticleTitle(articleText, emotion, postType);
   const noteArticle = noteTitle + '\n\n' + articleText;
@@ -831,6 +894,7 @@ export function generateBuzzPost(params: {
 
   return {
     postText: postTextFormatted,
+    tiktokArticle,
     hashtags,
     hashtagText,
     emotionType: emotion,
