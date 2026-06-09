@@ -1,3 +1,6 @@
+// types.ts（完全版）
+// 既存の型定義はそのまま維持し、末尾にBuzzPost関連型を追記しています
+
 export enum LoadingState {
   IDLE = 'IDLE',
   LOADING = 'LOADING',
@@ -63,29 +66,43 @@ export interface GeneratedContent {
   timestamp: string;
 }
 
+// ============================================================
+// ↓↓↓ 以下を既存types.tsの末尾に追記 ↓↓↓
+// （BuzzPostPanel / buzzPostGeneratorで使用する新規型）
+// ============================================================
+
 export interface BuzzPostScore {
-  empathy: number;
-  saveRate: number;
-  clickRate: number;
-  spreadRate: number;
-  commentRate: number;
-  profileRate: number;
-  total: number;
+  empathy: number;       // 共感力
+  saveRate: number;      // 保存率
+  clickRate: number;     // クリック率
+  spreadRate: number;    // 拡散率
+  commentRate: number;   // コメント率
+  profileRate: number;   // プロフィール誘導力
+  total: number;         // 総合スコア（0〜100）
 }
 
 export interface BuzzImprovement {
-  hookSuggestion: string;
-  emotionSuggestion: string;
-  saveSuggestion: string;
-  clickSuggestion: string;
+  hookSuggestion: string;     // フック改善案
+  emotionSuggestion: string;  // 感情強化案
+  saveSuggestion: string;     // 保存率改善案
+  clickSuggestion: string;    // クリック率改善案
 }
 
 export interface BuzzPostResult {
-  postText: string;
-  hashtags: string[];
-  hashtagText: string;
-  emotionType: string;
-  postType: string;
-  score: BuzzPostScore;
-  improvement: BuzzImprovement | null;
+  postText: string;           // バズ投稿文
+  hashtags: string[];         // 動的ハッシュタグ（プラットフォーム別）
+  hashtagText: string;        // ハッシュタグ連結文字列
+  emotionType: string;        // 分析された感情タイプ
+  postType: string;           // 投稿タイプ
+  score: BuzzPostScore;       // BAZZ SCORE
+  improvement: BuzzImprovement | null;  // 改善提案（95点未満のみ）
+  seoTitle: string;           // SEOタイトル
+  seoKeywords: string[];      // SEOキーワード
+  metaDescription: string;    // メタディスクリプション
+  articleTitle: string;       // 記事タイトル
+  thumbnailTitle: string;     // サムネイル用タイトル
+  threadsPost: string;        // Threads投稿文
+  xPost: string;              // X投稿文
+  instagramPost: string;      // Instagram投稿文
+  youtubePost: string;        // YouTube Shorts投稿文
 }
