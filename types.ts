@@ -110,6 +110,7 @@ export interface BuzzPostResult {
   profileCtaText: string;     // プロフィール誘導文（表示用）
   postUrlText: string;        // 投稿URL（表示用）
   thumbnailTikTok: string;    // TikTok画像生成指示文（1080×1920）
+  thumbnailTikTokPerson: string; // TikTok人物画像生成指示文（CapCut用）
   thumbnailNote: string;      // note画像生成指示文（1280×670）
   seoSpecialTitle: string;    // SEO特化タイトル（検索流入・クリック率重視）
 }
