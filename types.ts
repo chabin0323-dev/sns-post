@@ -106,6 +106,7 @@ export interface BuzzPostResult {
   xPost: string;              // X投稿文
   instagramPost: string;      // Instagram投稿文
   youtubePost: string;        // YouTube Shorts投稿文
+  tiktokArticle: string;      // TikTok記事本文（20文字改行済み）
   profileCtaText: string;     // プロフィール誘導文（表示用）
   postUrlText: string;        // 投稿URL（表示用）
   thumbnailTikTok: string;    // TikTok画像生成指示文（1080×1920）
