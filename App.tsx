@@ -108,15 +108,15 @@ const App: React.FC = () => {
   // ============================================================
   // BuzzPost生成ハンドラ（変更なし）
   // ============================================================
-  const handleBuzzGenerate = async (articleText: string, length: 300 | 500 | 600) => {
+  const handleBuzzGenerate = async (articleText: string, length: 300 | 500 | 600, profileCta: string, postUrl: string) => {
     setIsBuzzLoading(true);
     await new Promise(r => setTimeout(r, 400));
     try {
       const result = generateBuzzPost({
         articleText,
         tiktokLength: length,
-        profileCta: currentSettings.profileCta,
-        postUrl: currentSettings.postUrl,
+        profileCta,
+        postUrl,
       });
       setBuzzResult(result);
       setTimeout(() => {
