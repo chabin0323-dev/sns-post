@@ -17,7 +17,7 @@ type BuzzOutputKey =
   | 'threadsPost' | 'xPost' | 'instagramPost' | 'youtubePost'
   | 'noteArticle' | 'score' | 'improvement'
   | 'profileCtaText' | 'postUrlText'
-  | 'thumbnailTikTok' | 'thumbnailNote' | 'seoSpecialTitle';
+  | 'thumbnailTikTok' | 'thumbnailTikTokPerson' | 'thumbnailNote' | 'seoSpecialTitle';
 
 const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
   tiktokArticle:   '🎬 TikTok・YouTube Shorts・Instagram共用記事',
@@ -31,6 +31,7 @@ const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
   profileCtaText:  '👤 プロフィール誘導文',
   postUrlText:     '🔗 投稿URL',
   thumbnailTikTok: '🎨 TikTok画像生成指示文',
+  thumbnailTikTokPerson: '👤 TikTok人物画像生成指示文',
   thumbnailNote:   '📝 note画像生成指示文',
   seoSpecialTitle: '🔍 SEO特化タイトル',
   seoTitle:        '🔍 SEOタイトル',
@@ -46,7 +47,7 @@ const ALL_KEYS: BuzzOutputKey[] = [
   'tiktokArticle', 'postText', 'hashtags', 'threadsPost', 'xPost', 'instagramPost', 'youtubePost',
   'noteArticle',
   'profileCtaText', 'postUrlText',
-  'thumbnailTikTok', 'thumbnailNote',
+  'thumbnailTikTok', 'thumbnailTikTokPerson', 'thumbnailNote',
   'seoSpecialTitle', 'seoTitle', 'seoKeywords', 'metaDescription', 'articleTitle', 'thumbnailTitle',
   'score', 'improvement',
 ];
@@ -129,6 +130,22 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
   // 独自のprofileCta・postUrl入力欄（localStorage保存）
   const [profileCta, setProfileCta] = useState('');
   const [postUrl, setPostUrl] = useState('');
+
+  // プロフィール誘導文・URLを入力のたびに自動保存
+  const handleProfileCtaChange = (val: string) => {
+    setProfileCta(val);
+    try {
+      const current = JSON.parse(localStorage.getItem(BUZZ_SETTINGS_KEY) || '{}');
+      localStorage.setItem(BUZZ_SETTINGS_KEY, JSON.stringify({ ...current, profileCta: val }));
+    } catch {}
+  };
+  const handlePostUrlChange = (val: string) => {
+    setPostUrl(val);
+    try {
+      const current = JSON.parse(localStorage.getItem(BUZZ_SETTINGS_KEY) || '{}');
+      localStorage.setItem(BUZZ_SETTINGS_KEY, JSON.stringify({ ...current, postUrl: val }));
+    } catch {}
+  };
   const [savedMsg, setSavedMsg] = useState(false);
 
   // 起動時にlocalStorageから復元
@@ -252,7 +269,7 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
           <input
             type="text"
             value={profileCta}
-            onChange={e => setProfileCta(e.target.value)}
+            onChange={e => handleProfileCtaChange(e.target.value)}
             placeholder="例）プロフのリンクから詳細を確認してね💕"
             style={{
               width: '100%', padding: '10px 12px', borderRadius: '10px',
@@ -269,7 +286,7 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
           <input
             type="text"
             value={postUrl}
-            onChange={e => setPostUrl(e.target.value)}
+            onChange={e => handlePostUrlChange(e.target.value)}
             placeholder="例）https://note.com/yourname/n/xxxxx"
             style={{
               width: '100%', padding: '10px 12px', borderRadius: '10px',
@@ -430,6 +447,13 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
           {isEnabled('thumbnailTikTok') && (
             <OutputCard label="🎨 TikTok画像生成指示文（1080×1920）" copyText={result.thumbnailTikTok}>
               <pre style={preStyle}>{result.thumbnailTikTok}</pre>
+            </OutputCard>
+          )}
+
+          {/* TikTok人物画像生成指示文 */}
+          {isEnabled('thumbnailTikTokPerson') && (
+            <OutputCard label="👤 TikTok人物画像生成指示文（CapCutテンプレート用）" copyText={result.thumbnailTikTokPerson}>
+              <pre style={preStyle}>{result.thumbnailTikTokPerson}</pre>
             </OutputCard>
           )}
 
