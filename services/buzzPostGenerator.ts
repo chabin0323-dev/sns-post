@@ -357,8 +357,10 @@ function generatePlatformPosts(
   const body = lines.slice(1, 6).join('\n');
   const ctaSuffix = [profileCta, postUrl].filter(Boolean).join('\n');
 
-  // Threads
-  const threads = basePost + '\n\n' + hashtagText + (ctaSuffix ? '\n\n' + ctaSuffix : '');
+  // Threads：投稿文 → CTA・URL → ハッシュタグ の順
+  const threads = basePost
+    + (ctaSuffix ? '\n\n' + ctaSuffix : '')
+    + '\n\n' + hashtagText;
 
   // X
   const xLines = lines.slice(0, 4).join('\n');
