@@ -351,7 +351,7 @@ function generateQuote(emotion: EmotionType): string {
 function generateTikTokArticle(
   articleText: string,
   tiktokLength: number,
-  profileCta: string,
+  tiktokCta: string,
   emotion: EmotionType,
   postType: PostType,
 ): string {
@@ -376,8 +376,8 @@ function generateTikTokArticle(
   base += '\n\n' + generateQuote(emotion);
   // 難読漢字置換
   base = fixTikTokReading(base);
-  // CTAのみ付与（URLは含めない）
-  if (profileCta) base += '\n\n' + profileCta;
+  // TikTok専用誘導文のみ付与（他SNSには渡さない）
+  if (tiktokCta) base += '\n\n' + tiktokCta;
   // TikTok改行処理
   return addTikTokLineBreaks(base);
 }
@@ -642,8 +642,9 @@ export function generateBuzzPost(params: {
   tiktokLength: number;
   profileCta: string;
   postUrl: string;
+  tiktokCta: string;
 }): BuzzPostResult {
-  const { articleText, tiktokLength, profileCta, postUrl } = params;
+  const { articleText, tiktokLength, profileCta, postUrl, tiktokCta } = params;
 
   const emotion = analyzeEmotion(articleText);
   const postType = selectPostType(articleText, emotion);
@@ -660,7 +661,7 @@ export function generateBuzzPost(params: {
   const improvement = generateImprovement(score);
 
   const postTextFormatted = addTikTokLineBreaks(postText);
-  const tiktokArticle = generateTikTokArticle(articleText, tiktokLength, profileCta, emotion, postType);
+  const tiktokArticle = generateTikTokArticle(articleText, tiktokLength, tiktokCta, emotion, postType);
   const noteArticle = generateNoteArticle(articleText, emotion, postType);
 
   const platformPosts = generatePlatformPosts(postTextFormatted, hashtags, hashtagText, profileCta, postUrl, postType);
