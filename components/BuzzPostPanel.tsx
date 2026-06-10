@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import type { BuzzPostResult } from '../types';
 
 interface BuzzPostPanelProps {
-  onGenerate: (articleText: string, length: 300 | 500 | 600, profileCta: string, postUrl: string) => void;
+  onGenerate: (articleText: string, length: 300 | 500 | 600, profileCta: string, postUrl: string, tiktokCta: string) => void;
   result: BuzzPostResult | null;
   isLoading: boolean;
 }
@@ -119,6 +119,21 @@ const BUZZ_SETTINGS_KEY = 'buzz_post_settings_v1';
 const BUZZ_KEYS_STORAGE_KEY = 'buzz_output_keys_v1';
 const BUZZ_ARTICLE_KEY = 'buzz_article_text_v1';
 const BUZZ_LENGTH_KEY = 'buzz_tiktok_length_v1';
+const BUZZ_TIKTOK_CTA_KEY = 'buzz_tiktok_cta_v1';
+
+// TikTok専用誘導文の雛型テンプレート
+const TIKTOK_CTA_TEMPLATES = [
+  '❤️ 気になる方は
+プロフィールのリンクから',
+  '❤️ 続きが気になる方は
+プロフィールのリンクから',
+  '❤️ もっと詳しく知りたい方は
+プロフィールのリンクから',
+  '❤️ 共感した方は
+プロフィールのリンクから',
+  '❤️ 保存してゆっくり読んでね
+プロフィールのリンクから',
+];
 
 export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
   onGenerate,
@@ -131,6 +146,10 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
   // 独自のprofileCta・postUrl入力欄（localStorage保存）
   const [profileCta, setProfileCta] = useState('');
   const [postUrl, setPostUrl] = useState('');
+  // TikTok専用誘導文
+  const [tiktokCtaTemplate, setTiktokCtaTemplate] = useState(TIKTOK_CTA_TEMPLATES[0]);
+  const [tiktokCtaExtra, setTiktokCtaExtra] = useState('');
+  const [tiktokCtaSaved, setTiktokCtaSaved] = useState(false);
 
   // プロフィール誘導文・URLを入力のたびに自動保存
   const handleProfileCtaChange = (val: string) => {
@@ -167,6 +186,15 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
           setEnabledKeys(parsedKeys);
         }
       }
+      // TikTok専用誘導文復元
+      const savedTiktokCta = localStorage.getItem(BUZZ_TIKTOK_CTA_KEY);
+      if (savedTiktokCta) {
+        try {
+          const parsed = JSON.parse(savedTiktokCta);
+          if (parsed.template) setTiktokCtaTemplate(parsed.template);
+          if (parsed.extra) setTiktokCtaExtra(parsed.extra);
+        } catch {}
+      }
       // 記事本文復元
       const savedArticle = localStorage.getItem(BUZZ_ARTICLE_KEY);
       if (savedArticle) setArticleText(savedArticle);
@@ -185,6 +213,21 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
       setSavedMsg(true);
       setTimeout(() => setSavedMsg(false), 2000);
     } catch {}
+  };
+
+  const handleTiktokCtaSave = () => {
+    try {
+      localStorage.setItem(BUZZ_TIKTOK_CTA_KEY, JSON.stringify({ template: tiktokCtaTemplate, extra: tiktokCtaExtra }));
+      setTiktokCtaSaved(true);
+      setTimeout(() => setTiktokCtaSaved(false), 2000);
+    } catch {}
+  };
+
+  // TikTok最終誘導文を組み立て
+  const buildTiktokCta = (): string => {
+    const parts = [tiktokCtaTemplate, tiktokCtaExtra].filter(Boolean);
+    return parts.join('
+');
   };
 
   const toggleKey = (key: BuzzOutputKey) => {
@@ -211,7 +254,7 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
 
   const handleClick = () => {
     if (!articleText.trim()) return;
-    onGenerate(articleText, tiktokLength, profileCta, postUrl);
+    onGenerate(articleText, tiktokLength, profileCta, postUrl, buildTiktokCta());
   };
 
   const isEnabled = (key: BuzzOutputKey) => enabledKeys.includes(key);
@@ -311,6 +354,60 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
               boxSizing: 'border-box',
             }}
           />
+        </div>
+
+        {/* TikTok専用誘導文設定 */}
+        <div style={{ borderTop: '1px solid #fce7f3', paddingTop: '10px', marginTop: '4px' }}>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: '#72243E', marginBottom: '6px' }}>
+            🎬 TikTok専用誘導文（他SNSには反映されません）
+          </div>
+          {/* 雛型選択 */}
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>雛型を選択</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
+            {TIKTOK_CTA_TEMPLATES.map((tmpl, idx) => (
+              <button
+                key={idx}
+                onClick={() => setTiktokCtaTemplate(tmpl)}
+                style={{
+                  padding: '8px 10px', borderRadius: '10px', border: '1px solid',
+                  fontSize: '12px', cursor: 'pointer', textAlign: 'left', lineHeight: '1.5',
+                  backgroundColor: tiktokCtaTemplate === tmpl ? '#FFE0EC' : '#fff',
+                  borderColor: tiktokCtaTemplate === tmpl ? '#D4537E' : '#e5e7eb',
+                  color: tiktokCtaTemplate === tmpl ? '#72243E' : '#6b7280',
+                  fontWeight: tiktokCtaTemplate === tmpl ? '700' : '400',
+                }}
+              >
+                {tmpl}
+              </button>
+            ))}
+          </div>
+          {/* TikTok追加誘導文 */}
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>TikTok追加誘導文（自由入力）</div>
+          <textarea
+            value={tiktokCtaExtra}
+            onChange={e => setTiktokCtaExtra(e.target.value)}
+            placeholder={'例）彼の本音が知りたい方は
+プロフィールのリンクから'}
+            rows={2}
+            style={{
+              width: '100%', padding: '8px 10px', borderRadius: '10px',
+              border: '1px solid #fce7f3', fontSize: '12px', lineHeight: '1.6',
+              outline: 'none', fontFamily: 'inherit', color: '#374151',
+              backgroundColor: '#fffafa', boxSizing: 'border-box', resize: 'none',
+            }}
+          />
+          <button
+            onClick={handleTiktokCtaSave}
+            style={{
+              marginTop: '6px', padding: '6px 16px', borderRadius: '10px', border: 'none',
+              fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+              backgroundColor: tiktokCtaSaved ? '#D1FAE5' : '#FFE0EC',
+              color: tiktokCtaSaved ? '#065F46' : '#72243E',
+              transition: 'all 0.2s',
+            }}
+          >
+            {tiktokCtaSaved ? '✅ 保存しました' : '💾 TikTok誘導文を保存'}
+          </button>
         </div>
 
         {/* 保存ボタン */}
