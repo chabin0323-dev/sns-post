@@ -158,33 +158,101 @@ function generateImprovement(score: BuzzPostScore): BuzzImprovement | null {
 }
 
 // ============================================================
-// TikTok改行処理
+// TikTok改行処理（約20文字・句読点優先・強制改行対応）
 // ============================================================
 function addTikTokLineBreaks(text: string): string {
   return text.split('\n').map(para => {
-    if (!para.trim() || para.length <= 22) return para;
+    if (!para.trim() || para.length <= 20) return para;
     return breakLine(para);
   }).join('\n');
 }
 
 function breakLine(text: string): string {
-  const MIN = 13, MAX = 22;
+  const TARGET = 20;
+  const MAX = 25;
+
+  // ① まず句読点・読点でセグメントに分割
   const segs: string[] = [];
   let cur = '';
-  for (const ch of text) {
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
     cur += ch;
-    if ('。！？…'.includes(ch)) { segs.push(cur); cur = ''; }
-    else if (ch === '、' && cur.length >= MIN) { segs.push(cur); cur = ''; }
+    // 文末句読点の直後で区切る
+    if ('。！？…'.includes(ch)) {
+      segs.push(cur);
+      cur = '';
+    // 読点は一定文字数以上になったら区切る
+    } else if (ch === '、' && cur.length >= 10) {
+      segs.push(cur);
+      cur = '';
+    // 長すぎる場合は助詞・接続詞の前で強制区切り
+    } else if (cur.length >= MAX) {
+      const naturalEnds = ['が', 'を', 'に', 'は', 'で', 'と', 'も', 'から', 'けど', 'ので', 'なら'];
+      let cut = false;
+      for (const ne of naturalEnds) {
+        if (text.slice(i + 1).startsWith(ne)) {
+          segs.push(cur);
+          cur = '';
+          cut = true;
+          break;
+        }
+      }
+      // 助詞も見つからない場合はそのまま続ける（次の句読点まで待つ）
+    }
   }
   if (cur) segs.push(cur);
-  let result = '', len = 0;
+
+  // ② セグメントを結合しながら TARGET 文字前後で改行
+  let result = '';
+  let lineLen = 0;
+
   for (const seg of segs) {
-    if (len === 0) { result += seg; len += seg.length; }
-    else if (len + seg.length <= MAX) { result += seg; len += seg.length; }
-    else { result += '\n' + seg; len = seg.length; }
-    if ('。！？…'.includes(seg.slice(-1)) && len >= MIN) { result += '\n'; len = 0; }
+    if (lineLen === 0) {
+      result += seg;
+      lineLen += seg.length;
+    } else if (lineLen + seg.length <= TARGET + 5) {
+      result += seg;
+      lineLen += seg.length;
+    } else {
+      result += '\n' + seg;
+      lineLen = seg.length;
+    }
+    // 文末句読点の後は必ず改行
+    if ('。！？…'.includes(seg.slice(-1)) && lineLen >= 8) {
+      result += '\n';
+      lineLen = 0;
+    }
   }
-  return result.replace(/\n$/, '');
+
+  // ③ それでも25文字超の行が残っていたら強制的に分割
+  const finalLines = result.replace(/\n$/, '').split('\n');
+  const processed = finalLines.map(line => {
+    if (line.length <= MAX) return line;
+    // 25文字超の行を強制分割
+    const chunks: string[] = [];
+    let remaining = line;
+    while (remaining.length > MAX) {
+      // TARGET付近で切れる場所を探す
+      let cutAt = TARGET;
+      // 少し前後を見て自然な区切りを探す
+      for (let offset = 0; offset <= 5; offset++) {
+        const pos = TARGET - offset;
+        if (pos > 0 && pos < remaining.length) {
+          const ch = remaining[pos - 1];
+          if ('。！？…、'.includes(ch) || ['が','を','に','は','で','と','も'].includes(remaining[pos])) {
+            cutAt = pos;
+            break;
+          }
+        }
+      }
+      chunks.push(remaining.slice(0, cutAt));
+      remaining = remaining.slice(cutAt);
+    }
+    if (remaining) chunks.push(remaining);
+    return chunks.join('\n');
+  });
+
+  return processed.join('\n');
 }
 
 // ============================================================
