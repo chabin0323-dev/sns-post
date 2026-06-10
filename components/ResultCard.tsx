@@ -47,15 +47,12 @@ const Section: React.FC<{ label: string; emoji: string; color: string; children:
   </div>
 );
 
-// TikTokサムネイル用・画像生成プロンプトを自動生成する関数
 function generateImagePrompt(content: GeneratedContent): string {
   const { genre, theme, mainContent } = content;
   const firstLine = mainContent.split('\n')[0] ?? theme;
-
   let styleGuide = '';
   let emotionGuide = '';
   let subjectGuide = '';
-
   if (genre === '恋愛') {
     styleGuide = 'warm romantic atmosphere, soft pink and purple bokeh background, intimate and emotional mood';
     emotionGuide = 'expressive longing or heartfelt emotion on face, slightly teary or deeply in love eyes';
@@ -85,7 +82,6 @@ function generateImagePrompt(content: GeneratedContent): string {
     emotionGuide = 'engaged expressive face, relatable and approachable emotion';
     subjectGuide = 'Japanese man or woman in their 20s-30s, casual everyday outfit';
   }
-
   return `[画像生成プロンプト - TikTokサムネイル専用]
 
 Vertical 9:16 ratio, 1080x1920px, ultra-high quality photorealistic image.
@@ -106,6 +102,10 @@ export const ResultCard: React.FC<Props> = ({ content, enabledKeys }) => {
   const { buzzScore } = content;
   const seoText = `【SEOタイトル】\n${content.seoSet.title}\n\n【キーワード】\n${content.seoSet.keywords.join('、')}\n\n【メタディスクリプション】\n${content.seoSet.description}`;
   const imagePrompt = generateImagePrompt(content);
+
+  // ハッシュタグの#重複を防ぐ（loveContentGeneratorが#付きで返すため）
+  const cleanTag = (tag: string) => tag.startsWith('#') ? tag : `#${tag}`;
+  const hashtagCopyText = content.hashtags.map(cleanTag).join(' ');
 
   return (
     <div className="space-y-4">
@@ -166,10 +166,12 @@ export const ResultCard: React.FC<Props> = ({ content, enabledKeys }) => {
 
       {/* ハッシュタグ */}
       {enabledKeys.includes('hashtags') && (
-        <Section label="ハッシュタグ" emoji="#️⃣" color="#8B5CF6" copyText={content.hashtagText}>
+        <Section label="ハッシュタグ" emoji="#️⃣" color="#8B5CF6" copyText={hashtagCopyText}>
           <div className="flex flex-wrap gap-2">
-            {content.hashtags.map(tag => (
-              <span key={tag} className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background: '#8B5CF6' }}>#{tag}</span>
+            {content.hashtags.map((tag, i) => (
+              <span key={i} className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background: '#8B5CF6' }}>
+                {cleanTag(tag)}
+              </span>
             ))}
           </div>
         </Section>
@@ -264,7 +266,6 @@ export const ResultCard: React.FC<Props> = ({ content, enabledKeys }) => {
           </div>
           <div className="px-5 py-4 space-y-4">
             <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{content.thumbnailTikTok}</pre>
-            {/* 画像生成プロンプト */}
             <div className="bg-pink-50 rounded-xl border border-pink-200 overflow-hidden">
               <div className="flex items-center justify-between px-4 py-2.5" style={{ background: '#EC489920', borderBottom: '1px solid #EC489930' }}>
                 <div className="flex items-center gap-2">
@@ -293,13 +294,13 @@ export const ResultCard: React.FC<Props> = ({ content, enabledKeys }) => {
         onClick={async () => {
           const parts = [];
           if (enabledKeys.includes('mainContent')) parts.push(`【TikTok台本】\n${content.mainContent}`);
-          if (enabledKeys.includes('hashtags')) parts.push(`【ハッシュタグ】\n${content.hashtagText}`);
-          if (enabledKeys.includes('threads')) parts.push(`【Threads投稿】\n${content.threadsPost}`);
-          if (enabledKeys.includes('x')) parts.push(`【X投稿】\n${content.xPost}`);
-          if (enabledKeys.includes('note')) parts.push(`【note記事】\n${content.noteArticle}`);
-          if (enabledKeys.includes('seo')) parts.push(`【SEO対策】\n${seoText}`);
+          if (enabledKeys.includes('hashtags'))    parts.push(`【ハッシュタグ】\n${hashtagCopyText}`);
+          if (enabledKeys.includes('threads'))     parts.push(`【Threads投稿】\n${content.threadsPost}`);
+          if (enabledKeys.includes('x'))           parts.push(`【X投稿】\n${content.xPost}`);
+          if (enabledKeys.includes('note'))        parts.push(`【note記事】\n${content.noteArticle}`);
+          if (enabledKeys.includes('seo'))         parts.push(`【SEO対策】\n${seoText}`);
           if (enabledKeys.includes('thumbnailTikTok')) parts.push(`【TikTokサムネイル】\n${content.thumbnailTikTok}`);
-          if (enabledKeys.includes('thumbnailNote')) parts.push(`【noteサムネイル】\n${content.thumbnailNote}`);
+          if (enabledKeys.includes('thumbnailNote'))   parts.push(`【noteサムネイル】\n${content.thumbnailNote}`);
           await navigator.clipboard.writeText(parts.join('\n\n' + '─'.repeat(30) + '\n\n'));
           alert('✅ 全コンテンツをコピーしました！');
         }}
