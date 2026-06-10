@@ -1,305 +1,97 @@
 // services/buzzPostGenerator.ts
-// 既存の loveContentGenerator.ts とは完全に独立したファイルです
-// 既存コードへの影響はありません
-
 import type { BuzzPostResult, BuzzPostScore, BuzzImprovement } from '../types';
 
-// ============================================================
-// 感情タイプ定義
-// ============================================================
 type EmotionType =
   | '共感' | '恋愛不安' | '切なさ' | '後悔' | '嫉妬'
   | '孤独' | '依存' | '片思い' | '復縁願望' | '失恋'
   | '期待' | '安心感' | '自己肯定感' | '驚き';
 
-// ============================================================
-// 投稿タイプ定義
-// ============================================================
 type PostType =
   | '共感型' | '衝撃型' | '切ない型' | '恋愛依存型'
   | '暴露型' | '心理学型' | 'ストーリー型';
 
-// ============================================================
-// 感情キーワードマップ
-// ============================================================
-const EMOTION_KEYWORDS: Record<EmotionType, string[]> = {
-  '共感': ['わかる', '同じ', 'あるある', '私だけ', 'みんな', 'そうだよね', '経験', 'あの感じ', '共感', '思い当たる'],
-  '恋愛不安': ['不安', '心配', '怖い', '嫌われ', '好かれてる', 'どう思われ', '脈', 'LINEが来ない', '既読スルー', '返信'],
-  '切なさ': ['切ない', '寂しい', '会いたい', '会えない', '離れ', '遠距離', '好きなのに', '想い', 'もどかしい', '届かない'],
-  '後悔': ['後悔', '後になって', 'あの時', 'もっと早く', 'やっておけば', '気づかなかった', '逃した', '失った', 'あの頃'],
-  '嫉妬': ['嫉妬', '他の女', '他の男', '浮気', 'ヤキモチ', '気になる', 'なんで', '羨ましい', '悔しい'],
-  '孤独': ['孤独', '一人', '誰もいない', '理解されない', '孤立', '話せない', '一人で', '誰にも', '頼れない'],
-  '依存': ['依存', '離れられない', 'ないと無理', '必要', 'すがる', '手放せない', 'やめられない', '抜け出せない'],
-  '片思い': ['片思い', '好きな人', '告白', '気持ちを伝え', '想いを伝え', '両想い', '振られ', '勇気がなく', '一方的'],
-  '復縁願望': ['復縁', 'よりを戻し', '元彼', '元カノ', '戻りたい', 'もう一度', 'やり直し', '別れてから', '忘れられない'],
-  '失恋': ['失恋', '振られ', '別れ', 'フラれ', '終わった', '好きだったのに', 'どうすれば', '立ち直れ', '泣いた'],
-  '期待': ['期待', 'もしかして', 'チャンス', 'うまくいく', '脈あり', '好意', 'アピール', 'サイン', '可能性'],
-  '安心感': ['安心', 'ほっとした', '大丈夫', 'うまくいく', '信じ', '大切にされ', '愛されてる', '幸せ', '満たされ'],
-  '自己肯定感': ['自分を好き', '自信', '自己肯定', '自分を大切', '自分らしく', '変わった', '成長', '認めてもらえ'],
-  '驚き': ['実は', 'え', 'まさか', '知らなかった', '衝撃', 'びっくり', '意外', 'ありえない', '絶対知って', '真実'],
-};
-
-// ============================================================
-// 投稿タイプキーワードマップ
-// ============================================================
-const POST_TYPE_KEYWORDS: Record<PostType, string[]> = {
-  '共感型': ['わかる', '同じ', 'あるある', 'そうだよね', '私も', 'みんな'],
-  '衝撃型': ['実は', '知らなかった', '驚き', '衝撃', 'まさか', '意外', 'え'],
-  '切ない型': ['切ない', '寂しい', '会いたい', 'もどかしい', '届かない'],
-  '恋愛依存型': ['依存', '離れられない', '必要', '手放せない', 'すがる'],
-  '暴露型': ['本音', '裏側', '本当のこと', '実態', '真実', '本当は'],
-  '心理学型': ['心理', '無意識', '脳', '行動', 'パターン', '傾向'],
-  'ストーリー型': ['ある日', 'あの時', 'そこから', 'それから', 'ある出来事', 'あの瞬間'],
-};
-
-// ============================================================
-// 投稿タイプ別テンプレート
-// ============================================================
-const BUZZ_POST_TEMPLATES: Record<PostType, string[]> = {
-  '共感型': [
-    `{hook}
-
-これ、私だけじゃなかったんだって気づいた瞬間、すごく楽になった。
-
-{core}
-
-「そうそう、わかる」って感じた人、ぜひ保存してね。`,
-
-    `{hook}
-
-同じ気持ちの人、絶対いると思って書いた。
-
-{core}
-
-コメントで「わかる」って教えてくれると嬉しいな。`,
-  ],
-
-  '衝撃型': [
-    `{hook}
-
-これ、ほとんどの人が知らないんだよね。
-
-{core}
-
-知ってるだけで全然違う。保存しておいて損はないよ。`,
-
-    `{hook}
-
-正直、私も最近まで気づいてなかった。
-
-{core}
-
-これを知ってから、見え方が変わった。`,
-  ],
-
-  '切ない型': [
-    `{hook}
-
-ずっとその気持ちを抱えてきた人に届いてほしい。
-
-{core}
-
-あなたの気持ち、ちゃんと誰かに届いてるよ。`,
-
-    `{hook}
-
-言葉にできない気持ちって、あるよね。
-
-{core}
-
-同じ気持ちの人、ひとりじゃないよ。`,
-  ],
-
-  '恋愛依存型': [
-    `{hook}
-
-頭ではわかってるのに、やめられない。
-
-{core}
-
-無理に変わろうとしなくていい。まず自分の気持ちを認めることから。`,
-
-    `{hook}
-
-これが「好き」なのか「依存」なのか、わからなくなることってある。
-
-{core}
-
-自分の気持ちに正直でいることが、最初の一歩だと思う。`,
-  ],
-
-  '暴露型': [
-    `{hook}
-
-誰も言わないけど、これが本音だと思う。
-
-{core}
-
-知ってほしかったから書いた。保存してね。`,
-
-    `{hook}
-
-表向きとは全然違う話をするね。
-
-{core}
-
-これ、友達にも教えてあげてほしい。`,
-  ],
-
-  '心理学型': [
-    `{hook}
-
-これ、心理学的に証明されてる話なんだけど。
-
-{core}
-
-人の行動には必ず理由がある。知っておくと、気持ちが楽になるよ。`,
-
-    `{hook}
-
-無意識にやってることって、意外と多い。
-
-{core}
-
-自分のパターンを知るだけで、すごく変わる。`,
-  ],
-
-  'ストーリー型': [
-    `{hook}
-
-あの時の自分に言ってあげたかった言葉がある。
-
-{core}
-
-同じ状況の人に、少しでも届いたら嬉しい。`,
-
-    `{hook}
-
-ある日気づいたんだよね。
-
-{core}
-
-あの経験があったから、今の自分がいる。`,
-  ],
-};
-
-// ============================================================
-// 改善提案テンプレート
-// ============================================================
-const IMPROVEMENT_TEMPLATES: Record<string, string[]> = {
-  hook: [
-    '冒頭に「これ知ってる？」「実は〇〇だった」など疑問・驚きで始めると開封率UP',
-    '最初の1行目を短くして「え、続きは？」と思わせる構成にするとクリック率が上がる',
-    '具体的な数字（3秒・87%・1つだけ）を入れると信頼性と注目度が上がる',
-    '「〇〇な人へ」と対象を絞ると刺さる読者が増え保存率がアップする',
-  ],
-  emotion: [
-    '「そう、それ私だ」と感じさせる具体的なシーンを1つ追加するとより刺さる',
-    '読者の感情を代弁する言葉（「ずっとモヤモヤしてた」等）を冒頭に入れると共感力UP',
-    '投稿の最後に「あなたはどう思う？」と問いかけるとコメント率が上がる',
-    '感情の変化（before→after）を描くとストーリー性が生まれ保存率UP',
-  ],
-  save: [
-    '「保存しておくといい」「スクショして」などの明示的な保存誘導を入れる',
-    '投稿を箇条書き・ステップ形式にすると「後で読む」感が出て保存率UP',
-    'チェックリスト形式（□□□）にすると「自分用に保存したい」と思わせやすい',
-    '「これだけ知っておけばOK」という絞り込みフレーズが保存率を高める',
-  ],
-  click: [
-    '「続きはプロフィールから」より「詳しくは今すぐプロフへ→」の方が誘導率が高い',
-    'コメント誘導（「あなたはどっち？」「当てはまったらコメントして」）を追加する',
-    '投稿最後の行を「〇〇な人だけ読んでほしい」と限定系にするとクリック意欲UP',
-    'プロフィールへの誘導文に絵文字（👇💕✨）を入れるとタップ率が上がる',
-  ],
-};
-
-// ============================================================
-// ユーティリティ
-// ============================================================
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function countTextChars(text: string): number {
+  return text.replace(/[\n\t\r]/g, '').length;
 }
 
 // ============================================================
 // 感情分析
 // ============================================================
-function analyzeEmotion(text: string): EmotionType {
-  const scores: Record<EmotionType, number> = {} as Record<EmotionType, number>;
+const EMOTION_KEYWORDS: Record<EmotionType, string[]> = {
+  '共感': ['わかる', '同じ', 'あるある', '私だけ', 'みんな', 'そうだよね', '経験', '共感'],
+  '恋愛不安': ['不安', '心配', '怖い', '嫌われ', '脈', 'LINEが来ない', '既読スルー', '返信'],
+  '切なさ': ['切ない', '寂しい', '会いたい', '会えない', '好きなのに', 'もどかしい', '届かない'],
+  '後悔': ['後悔', 'あの時', 'もっと早く', '気づかなかった', '逃した', '失った'],
+  '嫉妬': ['他の女', '他の男', '浮気', 'ヤキモチ', '羨ましい', '悔しい'],
+  '孤独': ['一人', '誰もいない', '理解されない', '孤立', '話せない', '頼れない'],
+  '依存': ['離れられない', 'ないと無理', '必要', 'すがる', '手放せない', 'やめられない'],
+  '片思い': ['片思い', '好きな人', '告白', '気持ちを伝え', '両想い', '振られ', '勇気がなく'],
+  '復縁願望': ['復縁', '元彼', '元カノ', '戻りたい', 'もう一度', 'やり直し', '忘れられない'],
+  '失恋': ['失恋', '振られ', '別れ', 'フラれ', '終わった', '好きだったのに', '泣いた'],
+  '期待': ['期待', 'もしかして', 'チャンス', '脈あり', '好意', 'アピール', 'サイン'],
+  '安心感': ['安心', 'ほっとした', '大丈夫', '信じ', '大切にされ', '愛されてる', '幸せ'],
+  '自己肯定感': ['自分を好き', '自信', '自己肯定', '自分を大切', '変わった', '成長'],
+  '驚き': ['実は', 'まさか', '知らなかった', '衝撃', 'びっくり', '意外', '真実'],
+};
 
+function analyzeEmotion(text: string): EmotionType {
+  const scores: Partial<Record<EmotionType, number>> = {};
   for (const [emotion, keywords] of Object.entries(EMOTION_KEYWORDS) as [EmotionType, string[]][]) {
     scores[emotion] = keywords.filter(kw => text.includes(kw)).length;
   }
-
-  const sorted = (Object.entries(scores) as [EmotionType, number][])
-    .sort((a, b) => b[1] - a[1]);
-
+  const sorted = (Object.entries(scores) as [EmotionType, number][]).sort((a, b) => b[1] - a[1]);
   return sorted[0][1] > 0 ? sorted[0][0] : '共感';
 }
 
 // ============================================================
 // 投稿タイプ選択
 // ============================================================
-function selectPostType(text: string, emotion: EmotionType): PostType {
-  const scores: Record<PostType, number> = {} as Record<PostType, number>;
+const POST_TYPE_KEYWORDS: Record<PostType, string[]> = {
+  '共感型': ['わかる', '同じ', 'あるある', 'そうだよね', '私も'],
+  '衝撃型': ['実は', '知らなかった', '驚き', '衝撃', 'まさか', '意外'],
+  '切ない型': ['切ない', '寂しい', '会いたい', 'もどかしい', '届かない'],
+  '恋愛依存型': ['離れられない', '必要', '手放せない', 'すがる'],
+  '暴露型': ['本音', '裏側', '本当のこと', '真実', '本当は'],
+  '心理学型': ['心理', '無意識', '脳', '行動', 'パターン'],
+  'ストーリー型': ['ある日', 'あの時', 'そこから', 'ある出来事'],
+};
 
+function selectPostType(text: string, emotion: EmotionType): PostType {
+  const scores: Partial<Record<PostType, number>> = {};
   for (const [type, keywords] of Object.entries(POST_TYPE_KEYWORDS) as [PostType, string[]][]) {
     scores[type] = keywords.filter(kw => text.includes(kw)).length;
   }
-
-  // 感情タイプとの相性でボーナスを加算
-  const emotionBonus: Partial<Record<EmotionType, PostType>> = {
-    '共感': '共感型',
-    '驚き': '衝撃型',
-    '切なさ': '切ない型',
-    '依存': '恋愛依存型',
-    '後悔': 'ストーリー型',
-    '恋愛不安': '心理学型',
-    '嫉妬': '暴露型',
-    '孤独': '切ない型',
-    '片思い': '共感型',
-    '復縁願望': 'ストーリー型',
-    '失恋': '切ない型',
-    '期待': '共感型',
-    '安心感': '共感型',
-    '自己肯定感': '心理学型',
+  const bonus: Partial<Record<EmotionType, PostType>> = {
+    '共感': '共感型', '驚き': '衝撃型', '切なさ': '切ない型',
+    '依存': '恋愛依存型', '後悔': 'ストーリー型',
+    '恋愛不安': '心理学型', '嫉妬': '暴露型',
   };
-
-  const bonus = emotionBonus[emotion];
-  if (bonus) scores[bonus] = (scores[bonus] || 0) + 2;
-
-  const sorted = (Object.entries(scores) as [PostType, number][])
-    .sort((a, b) => b[1] - a[1]);
-
+  const b = bonus[emotion];
+  if (b) scores[b] = (scores[b] || 0) + 2;
+  const sorted = (Object.entries(scores) as [PostType, number][]).sort((a, b) => b[1] - a[1]);
   return sorted[0][1] > 0 ? sorted[0][0] : '共感型';
 }
 
 // ============================================================
-// フック文生成（記事の冒頭から抽出）
+// フック・コア抽出
 // ============================================================
 function extractHook(text: string): string {
   const lines = text.split('\n').filter(l => l.trim().length > 0);
-
-  // 最初の1〜2行をフックとして使う（最大40文字）
-  const firstLine = lines[0]?.trim() ?? '';
-  if (firstLine.length <= 40) return firstLine;
-  return firstLine.slice(0, 38) + '…';
+  const first = lines[0]?.trim() ?? '';
+  return first.length <= 40 ? first : first.slice(0, 38) + '…';
 }
 
-// ============================================================
-// コア本文抽出（記事の要点を凝縮）
-// ============================================================
 function extractCore(text: string, tiktokLength: number): string {
   const lines = text.split('\n').filter(l => l.trim().length > 0);
-
-  // 2行目以降から本文を抽出
   const bodyLines = lines.slice(1);
   let core = bodyLines.join('\n');
-
-  // 文字数上限（改行除外で判定・余裕を持って設定）
   const maxChars = tiktokLength === 300 ? 280 : tiktokLength === 500 ? 480 : 580;
-  const coreChars = core.replace(/\n/g, '').length;
+  const coreChars = countTextChars(core);
   if (coreChars > maxChars) {
-    // 文字数超過時は後ろを切り詰め
     let trimmed = '';
     let count = 0;
     for (const ch of core) {
@@ -309,285 +101,248 @@ function extractCore(text: string, tiktokLength: number): string {
     }
     core = trimmed;
   }
-
   return core || lines[0]?.slice(0, maxChars) || '';
 }
 
 // ============================================================
-// 動的ハッシュタグ生成（記事内容ベース・固定禁止）
+// ハッシュタグ生成
 // ============================================================
 function generateDynamicHashtags(text: string, emotion: EmotionType, postType: PostType): string[] {
-  const tags: string[] = [];
-
-  // 感情タイプから1個
   const emotionTags: Record<EmotionType, string> = {
-    '共感': '#あるある',
-    '恋愛不安': '#恋愛不安',
-    '切なさ': '#切ない恋愛',
-    '後悔': '#後悔しない恋愛',
-    '嫉妬': '#恋愛の悩み',
-    '孤独': '#一人じゃない',
-    '依存': '#恋愛依存',
-    '片思い': '#片思い',
-    '復縁願望': '#復縁',
-    '失恋': '#失恋',
-    '期待': '#恋愛',
-    '安心感': '#幸せな恋愛',
-    '自己肯定感': '#自己肯定感',
-    '驚き': '#知らなかった',
+    '共感': '#あるある', '恋愛不安': '#恋愛不安', '切なさ': '#切ない恋愛',
+    '後悔': '#後悔しない恋愛', '嫉妬': '#恋愛の悩み', '孤独': '#一人じゃない',
+    '依存': '#恋愛依存', '片思い': '#片思い', '復縁願望': '#復縁',
+    '失恋': '#失恋', '期待': '#恋愛', '安心感': '#幸せな恋愛',
+    '自己肯定感': '#自己肯定感', '驚き': '#知らなかった',
   };
-  tags.push(emotionTags[emotion]);
-
-  // 投稿タイプから1個
   const postTypeTags: Record<PostType, string> = {
-    '共感型': '#共感した人RT',
-    '衝撃型': '#衝撃の事実',
-    '切ない型': '#切ない',
-    '恋愛依存型': '#恋愛依存',
-    '暴露型': '#本音',
-    '心理学型': '#恋愛心理学',
+    '共感型': '#共感した人RT', '衝撃型': '#衝撃の事実', '切ない型': '#切ない',
+    '恋愛依存型': '#恋愛依存', '暴露型': '#本音', '心理学型': '#恋愛心理学',
     'ストーリー型': '#恋愛体験談',
   };
-  tags.push(postTypeTags[postType]);
-
-  // テキストから頻出ワードを抽出してタグ化（2個）
-  const keywordCandidates = [
-    '恋愛', '片思い', '復縁', '失恋', '男性心理', '女性心理', 'LINE', 'マッチングアプリ',
-    '婚活', '不倫', '浮気', '職場恋愛', '遠距離恋愛', '告白', '好きな人',
-    'お金', '節約', '投資', '副業', '仕事', '転職', '美容', 'ダイエット', '育児',
-  ];
-  const found = keywordCandidates.filter(kw => text.includes(kw)).slice(0, 2);
-  found.forEach(kw => tags.push(`#${kw}`));
-
-  // 合計が5個に満たない場合は汎用タグで補完
-  const genericTags = ['#SNS投稿', '#バズる投稿', '#保存して', '#TikTok', '#Threads'];
-  while (tags.length < 5) {
-    const candidate = genericTags[tags.length - (5 - genericTags.length)] ?? genericTags[0];
-    if (!tags.includes(candidate)) tags.push(candidate);
-    else tags.push(`#${emotion}${tags.length}`);
-  }
-
+  const tags: string[] = [emotionTags[emotion], postTypeTags[postType]];
+  const candidates = ['恋愛', '片思い', '復縁', '失恋', '男性心理', '女性心理', 'LINE',
+    'マッチングアプリ', '婚活', '浮気', '職場恋愛'];
+  candidates.filter(kw => text.includes(kw)).slice(0, 2).forEach(kw => tags.push('#' + kw));
+  const generics = ['#SNS投稿', '#バズる投稿', '#保存して', '#TikTok', '#Threads'];
+  while (tags.length < 5) tags.push(generics[tags.length]);
   return tags.slice(0, 5);
 }
 
 // ============================================================
-// BAZZ SCORE算出
+// BAZZ SCORE
 // ============================================================
-function calcBazzScore(
-  text: string,
-  postType: PostType,
-  emotion: EmotionType,
-  profileCta: string,
-  postUrl: string,
-): BuzzPostScore {
-  // 各スコアをテキスト特性・投稿タイプ・感情タイプから算出
-
-  // 共感力：感情キーワードの密度
-  const emotionKeywords = EMOTION_KEYWORDS[emotion] ?? [];
-  const emotionHits = emotionKeywords.filter(kw => text.includes(kw)).length;
-  const empathy = Math.min(100, 60 + emotionHits * 5 + (postType === '共感型' ? 15 : postType === '切ない型' ? 10 : 5));
-
-  // 保存率：ステップ・箇条書き・数字の有無
+function calcBazzScore(text: string, postType: PostType, emotion: EmotionType, profileCta: string, postUrl: string): BuzzPostScore {
   const hasStructure = /[\d①②③]|・|□/.test(text);
-  const hasKeyword = /保存|スクショ|メモ|チェック/.test(text);
-  const saveRate = Math.min(100, 60 + (hasStructure ? 15 : 0) + (hasKeyword ? 10 : 0) + (postType === '心理学型' ? 10 : 0));
-
-  // クリック率：疑問文・フックワードの有無
   const hasQuestion = /？|\?|どう思う|あなたは/.test(text);
-  const hasHookWord = /実は|知らなかった|衝撃|まさか|え、/.test(text);
-  const clickRate = Math.min(100, 58 + (hasQuestion ? 12 : 0) + (hasHookWord ? 15 : 0) + (postType === '衝撃型' ? 10 : 0));
-
-  // 拡散率：共感・シェアワードの有無
-  const hasShareWord = /友達|シェア|教えて|広めて|伝えて|送って/.test(text);
-  const spreadRate = Math.min(100, 55 + (hasShareWord ? 20 : 0) + (postType === '共感型' ? 15 : 0));
-
-  // コメント率：問いかけ・選択肢の有無
-  const hasChoice = /どっち|AかB|あなたはどう|コメント/.test(text);
-  const commentRate = Math.min(100, 55 + (hasQuestion ? 15 : 0) + (hasChoice ? 20 : 0));
-
-  // プロフィール誘導力：CTAとURLの有無
+  const hasHookWord = /実は|知らなかった|衝撃|まさか/.test(text);
+  const hasShareWord = /友達|シェア|教えて|広めて/.test(text);
+  const empathy = Math.min(100, 60 + (postType === '共感型' ? 15 : 8) + Math.floor(Math.random() * 8));
+  const saveRate = Math.min(100, 60 + (hasStructure ? 15 : 0) + Math.floor(Math.random() * 8));
+  const clickRate = Math.min(100, 58 + (hasQuestion ? 12 : 0) + (hasHookWord ? 15 : 0) + Math.floor(Math.random() * 8));
+  const spreadRate = Math.min(100, 55 + (hasShareWord ? 20 : 0) + Math.floor(Math.random() * 8));
+  const commentRate = Math.min(100, 55 + (hasQuestion ? 15 : 0) + Math.floor(Math.random() * 8));
   const profileRate = Math.min(100, 50 + (profileCta ? 25 : 0) + (postUrl ? 20 : 0));
-
-  // 総合スコア（加重平均）
-  const total = Math.round(
-    (empathy * 0.2 + saveRate * 0.2 + clickRate * 0.2 + spreadRate * 0.15 + commentRate * 0.1 + profileRate * 0.15)
-  );
-
+  const total = Math.round(empathy * 0.2 + saveRate * 0.2 + clickRate * 0.2 + spreadRate * 0.15 + commentRate * 0.1 + profileRate * 0.15);
   return { empathy, saveRate, clickRate, spreadRate, commentRate, profileRate, total };
 }
 
-// ============================================================
-// 改善提案生成（95点未満のみ）
-// ============================================================
 function generateImprovement(score: BuzzPostScore): BuzzImprovement | null {
   if (score.total >= 95) return null;
-
   return {
-    hookSuggestion: pickRandom(IMPROVEMENT_TEMPLATES.hook),
-    emotionSuggestion: pickRandom(IMPROVEMENT_TEMPLATES.emotion),
-    saveSuggestion: pickRandom(IMPROVEMENT_TEMPLATES.save),
-    clickSuggestion: pickRandom(IMPROVEMENT_TEMPLATES.click),
+    hookSuggestion: '冒頭に「これ知ってる？」「実は〇〇だった」など疑問・驚きで始めると開封率UP',
+    emotionSuggestion: '「そう、それ私だ」と感じさせる具体的なシーンを1つ追加するとより刺さる',
+    saveSuggestion: '「保存しておくといい」などの明示的な保存誘導を入れる',
+    clickSuggestion: '「続きはプロフィールから」より「詳しくは今すぐプロフへ→」の方が誘導率が高い',
   };
 }
 
-
 // ============================================================
-// TikTok向け改行処理（文字数カウント後の後処理・意味を変えない）
+// TikTok改行処理
 // ============================================================
 function addTikTokLineBreaks(text: string): string {
-  // 段落ごとに処理（既存の改行は維持）
-  const paragraphs = text.split('\n');
-  return paragraphs.map(para => {
-    if (para.trim().length === 0) return para;
-    // 1段落が25文字以下ならそのまま
-    if (para.length <= 25) return para;
-    return breakParagraph(para);
+  return text.split('\n').map(para => {
+    if (!para.trim() || para.length <= 22) return para;
+    return breakLine(para);
   }).join('\n');
 }
 
-function breakParagraph(text: string): string {
-  // 句読点を区切りに分割して再結合（自然な改行）
-  const MIN_LINE = 13;
-  const MAX_LINE = 22;
-
-  // まず句読点で文を分割
-  const segments: string[] = [];
-  let current = '';
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    current += ch;
-    if ((ch === '。' || ch === '！' || ch === '？' || ch === '…') ) {
-      segments.push(current);
-      current = '';
-    } else if (ch === '、' && current.length >= MIN_LINE) {
-      segments.push(current);
-      current = '';
-    }
+function breakLine(text: string): string {
+  const MIN = 13, MAX = 22;
+  const segs: string[] = [];
+  let cur = '';
+  for (const ch of text) {
+    cur += ch;
+    if ('。！？…'.includes(ch)) { segs.push(cur); cur = ''; }
+    else if (ch === '、' && cur.length >= MIN) { segs.push(cur); cur = ''; }
   }
-  if (current) segments.push(current);
-
-  // セグメントを結合しながら改行を挿入
-  let result = '';
-  let lineLen = 0;
-  for (const seg of segments) {
-    if (lineLen === 0) {
-      result += seg;
-      lineLen += seg.length;
-    } else if (lineLen + seg.length <= MAX_LINE) {
-      result += seg;
-      lineLen += seg.length;
-    } else {
-      result += '\n' + seg;
-      lineLen = seg.length;
-    }
-    // セグメント末尾が文末句読点なら改行
-    if (seg.endsWith('。') || seg.endsWith('！') || seg.endsWith('？') || seg.endsWith('…')) {
-      if (lineLen >= MIN_LINE) {
-        result += '\n';
-        lineLen = 0;
-      }
-    }
+  if (cur) segs.push(cur);
+  let result = '', len = 0;
+  for (const seg of segs) {
+    if (len === 0) { result += seg; len += seg.length; }
+    else if (len + seg.length <= MAX) { result += seg; len += seg.length; }
+    else { result += '\n' + seg; len = seg.length; }
+    if ('。！？…'.includes(seg.slice(-1)) && len >= MIN) { result += '\n'; len = 0; }
   }
-  return result.replace(/\n$/, ''); // 末尾の余分な改行を除去
-}
-
-
-// ============================================================
-// SEOタイトル生成
-// ============================================================
-function generateSeoTitle(text: string, emotion: EmotionType, postType: PostType): string {
-  const hook = extractHook(text);
-  const titleTemplates: Record<PostType, string[]> = {
-    '共感型':    [`${hook}【共感多数】`, `あなたも経験してる？${hook}`, `知らないと損する！${hook}`],
-    '衝撃型':    [`【衝撃】${hook}`, `99%が知らない${hook}の真実`, `これが本当のこと。${hook}`],
-    '切ない型':  [`${hook}【切なすぎる恋愛の話】`, `泣ける。${hook}`, `${hook}を乗り越える方法`],
-    '恋愛依存型':[`${hook}【恋愛依存あるある】`, `やめられない理由。${hook}`, `${hook}から抜け出す方法`],
-    '暴露型':    [`【本音】${hook}`, `誰も言わないけど${hook}`, `${hook}の裏側を暴露`],
-    '心理学型':  [`【心理学】${hook}`, `心理学的に証明！${hook}`, `${hook}の心理的な理由`],
-    'ストーリー型':[`${hook}の話`, `ある日気づいた。${hook}`, `${hook}から変わった私の話`],
-  };
-  return pickRandom(titleTemplates[postType]);
+  return result.replace(/\n$/, '');
 }
 
 // ============================================================
-// SEOキーワード生成
+// 難読漢字置換（TikTok読み上げ対策）
 // ============================================================
-function generateSeoKeywords(text: string, emotion: EmotionType): string[] {
-  const base: string[] = [];
-  // テキストから頻出ワードを抽出
-  const candidates = [
-    '恋愛', '片思い', '復縁', '失恋', '男性心理', '女性心理', 'LINE',
-    'マッチングアプリ', '婚活', '不倫', '浮気', '職場恋愛', '遠距離恋愛',
-    'お金', '節約', '投資', '副業', '仕事', '転職', '美容', 'ダイエット', '育児',
-    '自己肯定感', 'メンタル', 'ストレス', '人間関係',
+function fixTikTokReading(text: string): string {
+  const r: [RegExp, string][] = [
+    [/高鳴り/g, 'ドキドキ'], [/高鳴る/g, 'ドキドキする'],
+    [/募る/g, '大きくなる'], [/葛藤/g, '心の迷い'],
+    [/曖昧/g, 'はっきりしない'], [/嫉妬/g, 'やきもち'],
+    [/孤独/g, 'ひとり'], [/脆い/g, '弱い'],
+    [/躊躇/g, 'ためらい'], [/諦め/g, 'あきらめ'],
+    [/執着/g, 'こだわり'], [/焦燥/g, 'あせり'],
+    [/喪失/g, '失った気持ち'], [/虚無/g, '空っぽな気持ち'],
   ];
-  candidates.forEach(kw => { if (text.includes(kw)) base.push(kw); });
+  let result = text;
+  for (const [p, rep] of r) result = result.replace(p, rep);
+  return result;
+}
 
-  // 感情タイプキーワードを追加
-  const emotionKw: Record<EmotionType, string> = {
-    '共感': 'あるある', '恋愛不安': '不安解消', '切なさ': '切ない恋愛',
-    '後悔': '後悔しない', '嫉妬': '嫉妬心', '孤独': '孤独感',
-    '依存': '恋愛依存', '片思い': '片思い', '復縁願望': '復縁方法',
-    '失恋': '失恋乗り越え', '期待': '脈あり', '安心感': '幸せな恋愛',
-    '自己肯定感': '自己肯定感', '驚き': '衝撃事実',
+// ============================================================
+// 格言生成
+// ============================================================
+function generateQuote(emotion: EmotionType): string {
+  const quotes: Record<EmotionType, string[]> = {
+    '共感': [
+      '「同じ気持ちの人がいるだけで、\n心は少し軽くなる。」',
+      '「わかってもらえた瞬間、\n人はやっと前に進める。」',
+    ],
+    '恋愛不安': [
+      '「追いかける恋より、\n追いかけられる恋の方が\n心は穏やかになる。」',
+      '「不安になるほど好きなら、\nそれは本物の気持ち。」',
+    ],
+    '切なさ': [
+      '「届かない想いも、\nちゃんと誰かの心を動かしている。」',
+      '「切なさを知っている人は、\n人の痛みにやさしくなれる。」',
+    ],
+    '後悔': [
+      '「後悔は終わりじゃない。\n気づいた瞬間が、次の始まり。」',
+      '「あの時に戻れなくても、\n今から変えることはできる。」',
+    ],
+    '嫉妬': [
+      '「やきもちは愛情の裏返し。\nただ、燃やしすぎないことが大切。」',
+      '「比べるより、\n自分を磨く方が何倍も楽しい。」',
+    ],
+    '孤独': [
+      '「ひとりの時間は、\n自分と仲良くなるチャンス。」',
+      '「自分と向き合える人は、\nどこにいても強くなれる。」',
+    ],
+    '依存': [
+      '「手放す勇気が、\n新しい出会いを呼んでくる。」',
+      '「自分を満たせる人が、\n人を本当に愛せる。」',
+    ],
+    '片思い': [
+      '「全力で誰かを好きになれること、\nそれだけで十分すごいことだよ。」',
+      '「気持ちを伝えた勇気は、\n結果に関係なく宝物になる。」',
+    ],
+    '復縁願望': [
+      '「縁があるものは、\n離れてもまた戻ってくる。」',
+      '「忘れられない人がいるなら、\nそれだけ本気で愛せた証拠。」',
+    ],
+    '失恋': [
+      '「失恋は終わりじゃなく、\n本当の自分に戻るきっかけ。」',
+      '「傷ついた心は、\n必ず前より強く育っていく。」',
+    ],
+    '期待': [
+      '「ときめきを感じた瞬間、\n人生は少し輝き始める。」',
+      '「チャンスは動いた人のところへやってくる。」',
+    ],
+    '安心感': [
+      '「一緒にいて楽な人が、\n本当に合う人。」',
+      '「心が穏やかな恋愛が、\n一番長続きする。」',
+    ],
+    '自己肯定感': [
+      '「自分を好きでいられる人が、\n一番愛される。」',
+      '「あなたの価値は、\n誰かの評価では決まらない。」',
+    ],
+    '驚き': [
+      '「知らなかった事実が、\n見え方を変えることがある。」',
+      '「気づいた瞬間から、\n世界は少し違って見える。」',
+    ],
   };
-  base.push(emotionKw[emotion]);
-  base.push('TikTok', 'SNS');
-
-  // 重複除去して最大6個
-  return [...new Set(base)].slice(0, 6);
+  return pickRandom(quotes[emotion] ?? quotes['共感']);
 }
 
 // ============================================================
-// メタディスクリプション生成
+// TikTok記事本文生成
 // ============================================================
-function generateMetaDescription(text: string, emotion: EmotionType): string {
-  const hook = extractHook(text);
-  const templates = [
-    `${hook}。${emotion}に共感する人が続出。あなたの気持ちに寄り添う内容です。`,
-    `${hook}について詳しく解説。${emotion}を感じている人に読んでほしい内容。`,
-    `${hook}の真実を公開。多くの人が気づいていない${emotion}の話。`,
+function generateTikTokArticle(
+  articleText: string,
+  tiktokLength: number,
+  profileCta: string,
+  emotion: EmotionType,
+  postType: PostType,
+): string {
+  let base = articleText.trim();
+  const fillers = [
+    '\n\nこれを知っているだけで、恋愛の見え方が大きく変わります。焦らなくていい。自分のペースで進んでいきましょう。',
+    '\n\n大切なのは相手の反応より、自分の気持ちに正直でいること。自分を大切にしている人は、自然と相手からも大切にされます。',
+    '\n\n恋愛でうまくいかないときほど、自分を責めないでほしい。あなたは十分頑張っている。それだけで価値があります。',
+    '\n\n今日から少しだけ、自分を優先してみてください。自分が満たされていると、不思議と恋愛もうまく回り始めます。',
+    '\n\n完璧な人なんていない。傷ついた経験があるから、人の痛みがわかる。それがあなたの一番の強みになります。',
+    '\n\n焦る気持ちはよくわかる。でも焦りは必ず相手に伝わってしまう。深呼吸して、今この瞬間だけに集中してみて。',
+    '\n\n好きな人ができるたびに全力になれるあなたは、それだけ人を大切にできる証拠。その気持ちは絶対に報われます。',
+    '\n\n恋愛は結果だけじゃない。その過程で気づいたこと、成長したこと、全部が意味を持っています。',
+    '\n\n自分を好きになることが、全ての恋愛の基盤になります。今日一つだけ、自分を褒めることを忘れないでください。',
+    '\n\nどんな結果になっても、あなたの価値は変わらない。相手の反応で自分を測ることをやめると、恋愛が急に楽になります。',
+    '\n\n恋愛で一番大切なのは自己肯定感です。自分を好きでいられる人は、どんな恋愛でも前向きに進めます。',
+    '\n\n相手のことを考えすぎるとき、少しだけ自分のことを考えてみてください。あなたの気持ちも同じくらい大切です。',
   ];
-  const desc = pickRandom(templates);
-  // 120文字以内に収める
-  return desc.length > 120 ? desc.slice(0, 117) + '...' : desc;
+  let i = 0;
+  while (countTextChars(base) < tiktokLength && i < fillers.length) { base += fillers[i++]; }
+  // 格言追加
+  base += '\n\n' + generateQuote(emotion);
+  // 難読漢字置換
+  base = fixTikTokReading(base);
+  // CTAのみ付与（URLは含めない）
+  if (profileCta) base += '\n\n' + profileCta;
+  // TikTok改行処理
+  return addTikTokLineBreaks(base);
 }
 
 // ============================================================
-// 記事タイトル生成
+// バズ投稿文テンプレート
 // ============================================================
-function generateArticleTitle(text: string, emotion: EmotionType, postType: PostType): string {
-  const hook = extractHook(text);
-  const templates: string[] = [
-    `${hook}について`,
-    `${hook}の真実`,
-    `${hook}を経験したあなたへ`,
-    `${hook}：${emotion}を感じたら読む話`,
-    `なぜ${hook}になるのか`,
-  ];
-  return pickRandom(templates);
-}
+const BUZZ_POST_TEMPLATES: Record<PostType, string[]> = {
+  '共感型': [
+    '{hook}\n\nこれ、私だけじゃなかったんだって気づいた瞬間、すごく楽になった。\n\n{core}\n\n「そうそう、わかる」って感じた人、ぜひ保存してね。',
+    '{hook}\n\n同じ気持ちの人、絶対いると思って書いた。\n\n{core}\n\nコメントで「わかる」って教えてくれると嬉しいな。',
+  ],
+  '衝撃型': [
+    '{hook}\n\nこれ、ほとんどの人が知らないんだよね。\n\n{core}\n\n知ってるだけで全然違う。保存しておいて損はないよ。',
+    '{hook}\n\n正直、私も最近まで気づいてなかった。\n\n{core}\n\nこれを知ってから、見え方が変わった。',
+  ],
+  '切ない型': [
+    '{hook}\n\nずっとその気持ちを抱えてきた人に届いてほしい。\n\n{core}\n\nあなたの気持ち、ちゃんと誰かに届いてるよ。',
+    '{hook}\n\n言葉にできない気持ちって、あるよね。\n\n{core}\n\n同じ気持ちの人、ひとりじゃないよ。',
+  ],
+  '恋愛依存型': [
+    '{hook}\n\n頭ではわかってるのに、やめられない。\n\n{core}\n\n自分の気持ちに正直でいることが、最初の一歩だと思う。',
+    '{hook}\n\nこれが「好き」なのか「依存」なのか、わからなくなることってある。\n\n{core}\n\n自分の気持ちを大切にすることから始めてみて。',
+  ],
+  '暴露型': [
+    '{hook}\n\n誰も言わないけど、これが本音だと思う。\n\n{core}\n\n知ってほしかったから書いた。保存してね。',
+    '{hook}\n\n表向きとは全然違う話をするね。\n\n{core}\n\nこれ、友達にも教えてあげてほしい。',
+  ],
+  '心理学型': [
+    '{hook}\n\nこれ、心理学的に証明されてる話なんだけど。\n\n{core}\n\n人の行動には必ず理由がある。知っておくと、気持ちが楽になるよ。',
+    '{hook}\n\n無意識にやってることって、意外と多い。\n\n{core}\n\n自分のパターンを知るだけで、すごく変わる。',
+  ],
+  'ストーリー型': [
+    '{hook}\n\nあの時の自分に言ってあげたかった言葉がある。\n\n{core}\n\n同じ状況の人に、少しでも届いたら嬉しい。',
+    '{hook}\n\nある日気づいたんだよね。\n\n{core}\n\nあの経験があったから、今の自分がいる。',
+  ],
+};
 
 // ============================================================
-// サムネイル用タイトル生成
-// ============================================================
-function generateThumbnailTitle(text: string, postType: PostType): string {
-  const hook = extractHook(text);
-  // 短く・インパクト重視・15文字以内
-  const templates: Record<PostType, string[]> = {
-    '共感型':     [`共感しかない`, `これ私のこと？`, `わかりすぎる`],
-    '衝撃型':     [`え、知らなかった`, `衝撃の事実`, `まじか…`],
-    '切ない型':   [`切なすぎる`, `泣ける話`, `胸が痛い`],
-    '恋愛依存型': [`やめられない`, `手放せない理由`, `依存してた`],
-    '暴露型':     [`本音言うね`, `裏側を暴露`, `誰も言わない`],
-    '心理学型':   [`心理学的真実`, `脳の反応`, `科学的に証明`],
-    'ストーリー型':[`実話です`, `あの日のこと`, `忘れられない`],
-  };
-  return pickRandom(templates[postType]);
-}
-
-// ============================================================
-// プラットフォーム別SNS投稿文生成
+// プラットフォーム別SNS投稿文
 // ============================================================
 function generatePlatformPosts(
   basePost: string,
@@ -597,17 +352,15 @@ function generatePlatformPosts(
   postUrl: string,
   postType: PostType,
 ): { threads: string; xPost: string; instagram: string; youtube: string } {
-
   const lines = basePost.split('\n').filter((l: string) => l.trim());
   const hook = lines[0] ?? '';
   const body = lines.slice(1, 6).join('\n');
   const ctaSuffix = [profileCta, postUrl].filter(Boolean).join('\n');
 
-  // Threads：投稿文＋ハッシュタグ＋CTA＋URL（重複なし）
-  // basePostにURLは含まれないのでctaSuffixで1回だけ付与
+  // Threads
   const threads = basePost + '\n\n' + hashtagText + (ctaSuffix ? '\n\n' + ctaSuffix : '');
 
-  // X（旧Twitter）：冒頭フック＋4行＋CTA＋URL＋ハッシュタグ
+  // X
   const xLines = lines.slice(0, 4).join('\n');
   const xHashtags = hashtags.slice(0, 3).join(' ');
   const xPost = xLines
@@ -615,434 +368,231 @@ function generatePlatformPosts(
     + (postUrl ? '\n' + postUrl : '')
     + (xHashtags ? '\n\n' + xHashtags : '');
 
-  // Instagram：絵文字リッチ＋ハッシュタグ多め（全文）
+  // Instagram
   const igEmoji = postType === '共感型' ? '💕' : postType === '衝撃型' ? '😱' :
     postType === '切ない型' ? '🥺' : postType === '恋愛依存型' ? '💭' :
     postType === '暴露型' ? '🔥' : postType === '心理学型' ? '🧠' : '✨';
   const igHashtags = [...hashtags, '#恋愛', '#インスタ恋愛', '#恋愛あるある'].slice(0, 8).join(' ');
   const instagram = igEmoji + ' ' + hook + '\n\n' + body + '\n\n' + igHashtags + (ctaSuffix ? '\n\n' + ctaSuffix : '');
 
-  // YouTube Shorts：タイトル感のある冒頭＋説明文
+  // YouTube Shorts
   const ytPost = '【' + hook + '】\n\n' + body + '\n\n' + hashtagText + (ctaSuffix ? '\n\n' + ctaSuffix : '');
 
   return { threads, xPost, instagram, youtube: ytPost };
 }
 
-
-
 // ============================================================
-// TikTok画像生成指示文（1080×1920）
+// SEO・タイトル・画像指示文生成
 // ============================================================
+function generateSeoTitle(text: string, emotion: EmotionType, postType: PostType): string {
+  const hook = extractHook(text);
+  const templates: Record<PostType, string[]> = {
+    '共感型': ['【共感多数】' + hook, 'あなたも経験してる？' + hook],
+    '衝撃型': ['【衝撃】' + hook, '99%が知らない' + hook + 'の真実'],
+    '切ない型': [hook + '【切なすぎる恋愛の話】', '泣ける。' + hook],
+    '恋愛依存型': ['【恋愛依存】' + hook + 'から抜け出す方法', hook + 'になってしまう理由'],
+    '暴露型': ['【本音】' + hook, '誰も言わない' + hook],
+    '心理学型': ['【心理学】' + hook, '心理学的に証明！' + hook],
+    'ストーリー型': [hook + 'の話', 'ある日気づいた。' + hook],
+  };
+  return pickRandom(templates[postType]);
+}
+
+function generateSeoKeywords(text: string, emotion: EmotionType): string[] {
+  const candidates = ['恋愛', '片思い', '復縁', '失恋', '男性心理', '女性心理', 'LINE',
+    'マッチングアプリ', '婚活', '浮気', '職場恋愛', 'お金', '節約', '投資', '副業'];
+  const found = candidates.filter(kw => text.includes(kw)).slice(0, 4);
+  const emotionKw: Record<EmotionType, string> = {
+    '共感': 'あるある', '恋愛不安': '不安解消', '切なさ': '切ない恋愛',
+    '後悔': '後悔しない', '嫉妬': '嫉妬心', '孤独': '孤独感',
+    '依存': '恋愛依存', '片思い': '片思い', '復縁願望': '復縁方法',
+    '失恋': '失恋乗り越え', '期待': '脈あり', '安心感': '幸せな恋愛',
+    '自己肯定感': '自己肯定感', '驚き': '衝撃事実',
+  };
+  return [...new Set([...found, emotionKw[emotion], 'TikTok', 'SNS'])].slice(0, 6);
+}
+
+function generateMetaDescription(text: string, emotion: EmotionType): string {
+  const hook = extractHook(text);
+  const desc = hook + '。' + emotion + 'に共感する人が続出。あなたの気持ちに寄り添う内容です。';
+  return desc.length > 120 ? desc.slice(0, 117) + '...' : desc;
+}
+
+function generateArticleTitle(text: string, emotion: EmotionType, postType: PostType): string {
+  const hook = extractHook(text);
+  return pickRandom([
+    hook + 'について',
+    hook + 'の真実',
+    hook + 'を経験したあなたへ',
+    'なぜ' + hook + 'になるのか',
+  ]);
+}
+
+function generateThumbnailTitle(text: string, postType: PostType): string {
+  const templates: Record<PostType, string[]> = {
+    '共感型': ['共感しかない', 'これ私のこと？'],
+    '衝撃型': ['え、知らなかった', '衝撃の事実'],
+    '切ない型': ['切なすぎる', '泣ける話'],
+    '恋愛依存型': ['やめられない', '手放せない理由'],
+    '暴露型': ['本音言うね', '裏側を暴露'],
+    '心理学型': ['心理学的真実', '科学的に証明'],
+    'ストーリー型': ['実話です', 'あの日のこと'],
+  };
+  return pickRandom(templates[postType]);
+}
+
+function generateSeoSpecialTitle(text: string, emotion: EmotionType, postType: PostType): string {
+  const hook = extractHook(text);
+  const kwCandidates = ['恋愛', '片思い', '復縁', '失恋', '男性心理', '女性心理'];
+  const foundKw = kwCandidates.find(kw => text.includes(kw)) ?? String(emotion);
+  const templates: Record<PostType, string[]> = {
+    '共感型': ['【' + foundKw + 'あるある】' + hook + 'と感じる人が急増中', hook + 'と思う人必見｜' + foundKw + 'で共感多数の理由'],
+    '衝撃型': ['【衝撃】' + hook + '｜99%が知らない' + foundKw + 'の真実', '知らないと損する｜' + hook + 'の本当の理由'],
+    '切ない型': [hook + 'で涙する人へ｜' + foundKw + 'の切ない現実と対処法'],
+    '恋愛依存型': ['【' + foundKw + '依存】' + hook + 'から抜け出す具体的な方法'],
+    '暴露型': ['【本音暴露】' + hook + '｜' + foundKw + 'の裏側を公開'],
+    '心理学型': ['【心理学】' + hook + 'のメカニズム｜' + foundKw + 'の科学的根拠'],
+    'ストーリー型': [hook + 'という経験談｜' + foundKw + 'で人生が変わった話'],
+  };
+  const list = templates[postType] ?? templates['共感型'];
+  return pickRandom(list);
+}
+
 function generateThumbnailTikTok(text: string, emotion: EmotionType, postType: PostType): string {
   const hook = extractHook(text);
   const colorMap: Record<PostType, string> = {
-    '共感型':     'ピンク・ラベンダー系・温かみのある配色',
-    '衝撃型':     '赤・オレンジ系・インパクト重視の配色',
-    '切ない型':   '青・グレー系・切なさを表現する配色',
-    '恋愛依存型': 'パープル・ディープピンク系の配色',
-    '暴露型':     '黒・ゴールド系・シリアスな配色',
-    '心理学型':   'ネイビー・白系・信頼感のある配色',
-    'ストーリー型':'セピア・ウォームブラウン系の配色',
-  };
-  const styleMap: Record<PostType, string> = {
-    '共感型':     '共感を呼ぶ表情のイラスト・手書き風テキスト',
-    '衝撃型':     '驚いた表情・エフェクト線・太字インパクトフォント',
-    '切ない型':   '物悲しい雰囲気・涙や夜景のモチーフ',
-    '恋愛依存型': '依存・引き付けられる感情を表すイラスト',
-    '暴露型':     'マイク・スポットライト・暴露感のある演出',
-    '心理学型':   '脳・考える人・心理学的な図解風デザイン',
-    'ストーリー型':'映画風・回想シーン・ストーリー感のある構図',
+    '共感型': 'ピンク・ラベンダー系', '衝撃型': '赤・オレンジ系',
+    '切ない型': '青・グレー系', '恋愛依存型': 'パープル・ディープピンク系',
+    '暴露型': '黒・ゴールド系', '心理学型': 'ネイビー・白系',
+    'ストーリー型': 'セピア・ウォームブラウン系',
   };
   return [
     '【TikTok画像生成指示文】',
     'サイズ：1080 × 1920px（縦型 9:16）',
     '',
-    '■ メインテキスト（大きく中央に配置）',
-    `「${hook}」`,
+    '■ メインテキスト',
+    '「' + hook + '」',
     '',
-    '■ デザイン指示',
-    `・配色：${colorMap[postType]}`,
-    `・スタイル：${styleMap[postType]}`,
-    '・フォント：太字・視認性重視・文字に縁取り追加',
-    '・文字サイズ：メインテキストは画面幅の80%以上',
+    '■ デザイン',
+    '・配色：' + colorMap[postType],
+    '・フォント：太字・視認性重視・縁取りあり',
+    '・背景：グラデーションまたは単色',
     '',
-    '■ 感情トーン',
-    `・感情：${emotion}`,
-    `・投稿タイプ：${postType}`,
-    '',
-    '■ その他',
-    '・テキストは画面中央〜上部に配置',
-    '・背景はグラデーションまたは単色',
-    '・過度な装飾は避けシンプルに仕上げる',
+    '■ 感情：' + emotion + ' / ' + postType,
   ].join('\n');
 }
 
-// ============================================================
-// note画像生成指示文（1280×670）
-// ============================================================
-function generateThumbnailNote(text: string, emotion: EmotionType, postType: PostType): string {
-  const hook = extractHook(text);
-  const colorMap: Record<PostType, string> = {
-    '共感型':     'ピンク・ホワイト系・温かみのある配色',
-    '衝撃型':     'レッド・ホワイト系・メリハリのある配色',
-    '切ない型':   'ブルーグレー・ホワイト系・落ち着いた配色',
-    '恋愛依存型': 'パープル・ラベンダー系の配色',
-    '暴露型':     'ダークグレー・ゴールド系・洗練された配色',
-    '心理学型':   'ネイビー・ライトグレー系・知的な配色',
-    'ストーリー型':'ベージュ・ブラウン系・温かみのある配色',
-  };
-  return [
-    '【note画像生成指示文】',
-    'サイズ：1280 × 670px（横型 16:9）',
-    '',
-    '■ メインテキスト（左寄せまたは中央）',
-    `「${hook}」`,
-    '',
-    '■ デザイン指示',
-    `・配色：${colorMap[postType]}`,
-    '・スタイル：シンプル・洗練・読みやすいフォント',
-    '・フォント：明朝体またはゴシック体・読みやすさ重視',
-    '・文字サイズ：タイトルは大きく・サブテキストは小さめ',
-    '',
-    '■ レイアウト',
-    '・左側にテキスト・右側にイメージ画像（またはイラスト）',
-    '・または全面にテキストと背景のみのシンプル構成',
-    '・余白を十分に取りスッキリした印象に',
-    '',
-    '■ 感情トーン',
-    `・感情：${emotion}`,
-    `・投稿タイプ：${postType}`,
-  ].join('\n');
-}
-
-// ============================================================
-// SEO特化タイトル（検索流入・クリック率重視・30〜40文字）
-// ============================================================
-function generateSeoSpecialTitle(text: string, emotion: EmotionType, postType: PostType): string {
-  const hook = extractHook(text);
-  // キーワード候補を抽出
-  const kwCandidates = [
-    '恋愛', '片思い', '復縁', '失恋', '男性心理', '女性心理', 'LINE',
-    'マッチングアプリ', '婚活', '浮気', '職場恋愛', 'お金', '節約',
-    '投資', '副業', '転職', '美容', 'ダイエット', '育児', 'メンタル',
-  ];
-  const foundKw = kwCandidates.filter(kw => text.includes(kw))[0] ?? emotion;
-
-  const templates: Record<PostType, string[]> = {
-    '共感型': [
-      `【${foundKw}あるある】${hook}と感じる人が急増中`,
-      `${hook}と思う人必見｜${foundKw}で共感多数の理由`,
-      `なぜ${hook}になるのか｜${foundKw}の心理を徹底解説`,
-    ],
-    '衝撃型': [
-      `【衝撃】${hook}｜99%が知らない${foundKw}の真実`,
-      `${hook}の本当の理由｜${foundKw}で話題の新事実`,
-      `知らないと損する｜${hook}が起きる${foundKw}のメカニズム`,
-    ],
-    '切ない型': [
-      `${hook}で涙する人へ｜${foundKw}の切ない現実と対処法`,
-      `【${foundKw}】${hook}という経験を乗り越える方法`,
-      `${hook}が止まらないあなたへ｜${foundKw}の感情整理術`,
-    ],
-    '恋愛依存型': [
-      `【${foundKw}依存】${hook}から抜け出す具体的な方法`,
-      `${hook}になってしまう原因｜${foundKw}依存のメカニズム`,
-      `${foundKw}で${hook}と感じたら読む｜依存からの脱出法`,
-    ],
-    '暴露型': [
-      `【本音暴露】${hook}の真実｜${foundKw}の裏側を公開`,
-      `誰も言わない${foundKw}の本音｜${hook}の実態とは`,
-      `${hook}という${foundKw}の裏側｜知られていない真実`,
-    ],
-    '心理学型': [
-      `【心理学】${hook}のメカニズム｜${foundKw}の科学的根拠`,
-      `${foundKw}で${hook}になる心理学的理由と改善策`,
-      `心理学が証明｜${hook}が起きる${foundKw}の脳の仕組み`,
-    ],
-    'ストーリー型': [
-      `${hook}という経験談｜${foundKw}で人生が変わった話`,
-      `【実体験】${hook}から気づいた${foundKw}の大切なこと`,
-      `${hook}を経験したあなたへ｜${foundKw}の体験から学ぶ`,
-    ],
-  };
-
-  const candidates = templates[postType] ?? templates['共感型'];
-  // 30〜40文字に収まるものを優先
-  const suitable = candidates.find(t => t.length >= 28 && t.length <= 42);
-  return suitable ?? candidates[0];
-}
-
-
-
-// ============================================================
-// 記事内容に合った格言生成（記事終盤に配置・オリジナル）
-// ============================================================
-function generateQuote(emotion: EmotionType, postType: PostType): string {
-  const quotes: Record<EmotionType, string[]> = {
-    '共感': [
-      '「同じ気持ちの人がいるだけで、\n心は少し軽くなる。」',
-      '「わかってもらえた瞬間、\n人はやっと前に進める。」',
-      '「ひとりじゃないと気づいたとき、\n勇気が生まれる。」',
-    ],
-    '恋愛不安': [
-      '「不安になるほど好きなら、\nそれは本物の気持ち。」',
-      '「追いかける恋より、\n追いかけられる恋の方が\n心は穏やかになる。」',
-      '「返信を待つ時間が長いほど、\n自分の気持ちに気づく。」',
-    ],
-    '切なさ': [
-      '「届かない想いも、\nちゃんと誰かの心を動かしている。」',
-      '「切なさを知っている人は、\n人の痛みにやさしくなれる。」',
-      '「会えない時間が、\n本当に大切なものを教えてくれる。」',
-    ],
-    '後悔': [
-      '「後悔は終わりじゃない。\n気づいた瞬間が、次の始まり。」',
-      '「あの時に戻れなくても、\n今から変えることはできる。」',
-      '「後悔した数だけ、\n本気だった証拠がある。」',
-    ],
-    '嫉妬': [
-      '「やきもちは愛情の裏返し。\nただ、燃やしすぎないことが大切。」',
-      '「比べるより、\n自分を磨く方が何倍も楽しい。」',
-      '「嫉妬を感じたとき、\n自分が本当に欲しいものが見える。」',
-    ],
-    '孤独': [
-      '「ひとりの時間は、\n自分と仲良くなるチャンス。」',
-      '「孤独を感じる夜ほど、\n朝の光がやさしく見える。」',
-      '「自分と向き合える人は、\nどこにいても強くなれる。」',
-    ],
-    '依存': [
-      '「手放す勇気が、\n新しい出会いを呼んでくる。」',
-      '「自分を満たせる人が、\n人を本当に愛せる。」',
-      '「離れられない気持ちも、\nいつか自由に変わる日が来る。」',
-    ],
-    '片思い': [
-      '「片思いの痛みを知る人は、\n誰かの気持ちにやさしくなれる。」',
-      '「気持ちを伝えた勇気は、\n結果に関係なく宝物になる。」',
-      '「全力で誰かを好きになれること、\nそれだけで十分すごいことだよ。」',
-    ],
-    '復縁願望': [
-      '「過去に戻る勇気より、\n前に進む勇気の方が大切なこともある。」',
-      '「忘れられない人がいるなら、\nそれだけ本気で愛せた証拠。」',
-      '「縁があるものは、\n離れてもまた戻ってくる。」',
-    ],
-    '失恋': [
-      '「失恋は終わりじゃなく、\n本当の自分に戻るきっかけ。」',
-      '「泣けるうちに泣いていい。\n涙は心が洗われているサイン。」',
-      '「傷ついた心は、\n必ず前より強く育っていく。」',
-    ],
-    '期待': [
-      '「期待は可能性のもうひとつの名前。」',
-      '「ときめきを感じた瞬間、\n人生は少し輝き始める。」',
-      '「チャンスは動いた人のところへやってくる。」',
-    ],
-    '安心感': [
-      '「一緒にいて楽な人が、\n本当に合う人。」',
-      '「安心できる場所があると、\n人は自然と優しくなれる。」',
-      '「心が穏やかな恋愛が、\n一番長続きする。」',
-    ],
-    '自己肯定感': [
-      '「自分を好きでいられる人が、\n一番愛される。」',
-      '「あなたの価値は、\n誰かの評価では決まらない。」',
-      '「自分にやさしくできる人は、\n他人にもやさしくなれる。」',
-    ],
-    '驚き': [
-      '「知らなかった事実が、\n見え方を変えることがある。」',
-      '「気づいた瞬間から、\n世界は少し違って見える。」',
-      '「驚きの先に、\n本当の理解がある。」',
-    ],
-  };
-
-  const list = quotes[emotion] ?? quotes['共感'];
-  return pickRandom(list);
-}
-
-// ============================================================
-// TikTok記事本文生成（貼り付け記事を指定文字数で整形）
-// ============================================================
-function countTextChars(text: string): number {
-  return text.replace(/[\n\t\r]/g, '').length;
-}
-
-function generateTikTokArticle(
-  articleText: string,
-  tiktokLength: number,
-  profileCta: string,
-  postUrl: string,
-  emotion: EmotionType,
-  postType: PostType,
-): string {
-  // 記事本文をベースに使用（変更・要約しない）
-  let base = articleText.trim();
-
-  // 文字数フィラー（不足時に追加）
-  const fillers = [
-    '\n\nこれを知っているだけで、恋愛の見え方が大きく変わります。焦らなくていい。自分のペースで進んでいきましょう。',
-    '\n\n大切なのは相手の反応より、自分の気持ちに正直でいること。自分を大切にしている人は、自然と相手からも大切にされます。',
-    '\n\n恋愛でうまくいかないときほど、自分を責めないでほしい。あなたは十分頑張っている。それだけで価値があります。',
-    '\n\n今日から少しだけ、自分を優先してみてください。自分が満たされていると、不思議と恋愛もうまく回り始めます。',
-    '\n\n完璧な人なんていない。傷ついた経験があるから、人の痛みがわかる。それがあなたの一番の強みになります。',
-    '\n\n焦る気持ちはよくわかる。でも焦りは必ず相手に伝わってしまう。深呼吸して、今この瞬間だけに集中してみて。',
-    '\n\n好きな人ができるたびに全力になれるあなたは、それだけ人を大切にできる証拠。その気持ちは絶対に報われます。',
-    '\n\n恋愛は結果だけじゃない。その過程で気づいたこと、成長したこと、全部が意味を持っています。無駄な経験は一つもない。',
-    '\n\n自分を好きになることが、全ての恋愛の基盤になります。今日一つだけ、自分を褒めることを忘れないでください。',
-    '\n\nどんな結果になっても、あなたの価値は変わらない。相手の反応で自分を測ることをやめると、恋愛が急に楽になります。',
-    '\n\n恋愛で一番大切なのは自己肯定感です。自分を好きでいられる人は、どんな恋愛でも前向きに進めます。',
-    '\n\n相手のことを考えすぎるとき、少しだけ自分のことを考えてみてください。あなたの気持ちも同じくらい大切です。',
-  ];
-
-  // ①文字数確認（改行除外）・不足時にフィラーで補完
-  let i = 0;
-  while (countTextChars(base) < tiktokLength && i < fillers.length) {
-    base += fillers[i++];
-  }
-
-  // ②記事終盤にオリジナル格言を追加（感情を高める）
-  const quote = generateQuote(emotion, postType);
-  base += '\n\n' + quote;
-
-  // ③難読漢字→平易表現に置換（TikTok音声読み上げ対策）
-  base = fixTikTokReading(base);
-
-  // ④CTAのみ付与（URLは共用記事に含めない）
-  if (profileCta) base += '\n\n' + profileCta;
-
-  // ⑤TikTok向け20文字改行処理を適用（文字数確定後）
-  return addTikTokLineBreaks(base);
-}
-
-
-// ============================================================
-// TikTok人物画像生成指示文（CapCutテンプレート用・1080×1920）
-// ============================================================
 function generateThumbnailTikTokPerson(text: string, emotion: EmotionType, postType: PostType): string {
   const expressionMap: Record<EmotionType, string> = {
-    '共感':      'うんうんとうなずくような、共感している表情。口元がやわらかく微笑んでいる。',
-    '恋愛不安':  'スマホを見つめながら少し不安そうな表情。眉がかすかに寄っている。',
-    '切なさ':    '遠くを見つめるような、少し寂しそうな横顔。目に涙をこらえている様子。',
-    '後悔':      '下を向いて考え込むような表情。手を胸に当てている。',
-    '嫉妬':      'ちょっとムッとした表情。口をとがらせている。',
-    '孤独':      '窓の外を見ているような、ひとりでいる雰囲気。静かな表情。',
-    '依存':      '誰かにすがるようなしぐさ。少し心細そうな表情。',
-    '片思い':    'ぼんやりと微笑みながら考え込んでいる表情。夢を見ているよう。',
-    '復縁願望':  '過去を思い出しているような遠い目。やわらかく切ない表情。',
-    '失恋':      '泣いた後のような赤い目。でも前を向こうとしている表情。',
-    '期待':      'キラキラした目で前を見ている表情。少し口角が上がっている。',
-    '安心感':    'ほっとしたような、やわらかく温かい笑顔。',
-    '自己肯定感':'自信を持った表情。背筋がまっすぐで堂々としている。',
-    '驚き':      '目を少し大きく開けた、驚きと納得が混ざった表情。',
+    '共感': 'うんうんとうなずくような、共感している表情',
+    '恋愛不安': 'スマホを見つめながら少し不安そうな表情',
+    '切なさ': '遠くを見つめる、少し寂しそうな横顔',
+    '後悔': '下を向いて考え込むような表情',
+    '嫉妬': 'ちょっとムッとした表情',
+    '孤独': '窓の外を見ている静かな表情',
+    '依存': '誰かにすがるような、心細そうな表情',
+    '片思い': 'ぼんやりと微笑みながら考え込んでいる表情',
+    '復縁願望': '過去を思い出しているような遠い目',
+    '失恋': '泣いた後のような表情でも前を向こうとしている',
+    '期待': 'キラキラした目で前を見ている表情',
+    '安心感': 'ほっとしたような、やわらかく温かい笑顔',
+    '自己肯定感': '自信を持った表情、背筋がまっすぐ',
+    '驚き': '目を少し大きく開けた驚きと納得が混ざった表情',
   };
-
   const poseMap: Record<PostType, string> = {
-    '共感型':     '両手を軽く広げ、「そうそう！」というジェスチャー。',
-    '衝撃型':     '手を口元に当てて驚いているポーズ。',
-    '切ない型':   '膝を抱えて座っているか、壁にもたれかかっているポーズ。',
-    '恋愛依存型': 'スマホを両手で持ち、画面を見つめているポーズ。',
-    '暴露型':     'マイクを持っているか、口元に人差し指を当てているポーズ。',
-    '心理学型':   '腕を組んでいるか、あごに手を当てて考えているポーズ。',
-    'ストーリー型':'少し遠くを見ながら回想しているような自然なポーズ。',
+    '共感型': '両手を軽く広げ「そうそう！」というジェスチャー',
+    '衝撃型': '手を口元に当てて驚いているポーズ',
+    '切ない型': '膝を抱えて座っているポーズ',
+    '恋愛依存型': 'スマホを両手で持ち画面を見つめているポーズ',
+    '暴露型': 'マイクを持っているか口元に人差し指を当てているポーズ',
+    '心理学型': '腕を組んでいるかあごに手を当てて考えているポーズ',
+    'ストーリー型': '少し遠くを見ながら回想しているような自然なポーズ',
   };
-
-  const expression = expressionMap[emotion] ?? expressionMap['共感'];
-  const pose = poseMap[postType] ?? poseMap['共感型'];
-
   return [
     '【TikTok人物画像生成指示文】',
-    'サイズ：1080 × 1920px（縦型 9:16）',
-    'CapCutテンプレート用・文字スペース確保構図',
+    'サイズ：1080 × 1920px / CapCutテンプレート用',
     '',
     '■ 人物設定',
     '・日本人女性（20代〜30代）',
     '・清潔感のあるナチュラルな服装',
-    '・髪はミディアム〜ロング',
     '',
     '■ 表情',
-    `・${expression}`,
+    '・' + (expressionMap[emotion] ?? '自然な表情'),
     '',
     '■ ポーズ',
-    `・${pose}`,
+    '・' + (poseMap[postType] ?? '自然なポーズ'),
     '',
     '■ 構図',
     '・人物は画面の左側または右側に配置',
-    '・中央に文字を載せるスペースを確保',
-    '・人物は上半身〜全身（頭から腰まで）',
+    '・中央に文字スペースを確保',
+    '・背景はシンプルな単色',
     '',
-    '■ 背景',
-    '・シンプルな単色または淡いグラデーション',
-    '・過度な装飾なし',
-    '・文字が読みやすいように背景はシンプルに',
+    '■ 感情：' + emotion + ' / ' + postType,
+  ].join('\n');
+}
+
+function generateThumbnailNote(text: string, emotion: EmotionType, postType: PostType): string {
+  const hook = extractHook(text);
+  return [
+    '【note画像生成指示文】',
+    'サイズ：1280 × 670px（横型 16:9）',
     '',
-    `■ 感情トーン：${emotion} / ${postType}`,
+    '■ メインテキスト',
+    '「' + hook + '」',
+    '',
+    '■ デザイン',
+    '・スタイル：シンプル・洗練・読みやすいフォント',
+    '・左側にテキスト・右側にイメージ、または全面シンプル構成',
+    '・余白を十分に取る',
+    '',
+    '■ 感情：' + emotion + ' / ' + postType,
   ].join('\n');
 }
 
 // ============================================================
-// メイン生成関数（外部公開）
+// note記事生成
+// ============================================================
+function generateNoteArticle(articleText: string, emotion: EmotionType, postType: PostType): string {
+  const title = generateArticleTitle(articleText, emotion, postType);
+  return title + '\n\n' + articleText;
+}
+
+// ============================================================
+// メイン生成関数
 // ============================================================
 export function generateBuzzPost(params: {
-  articleText: string;    // ユーザーがコピペした記事本文（変更なし）
-  tiktokLength: number;   // 文字数設定（既存設定を流用）
-  profileCta: string;     // 既存プロフィール誘導文を流用
-  postUrl: string;        // 既存投稿URLを流用
+  articleText: string;
+  tiktokLength: number;
+  profileCta: string;
+  postUrl: string;
 }): BuzzPostResult {
   const { articleText, tiktokLength, profileCta, postUrl } = params;
 
-  // 1. 感情分析
   const emotion = analyzeEmotion(articleText);
-
-  // 2. 投稿タイプ選択
   const postType = selectPostType(articleText, emotion);
-
-  // 3. フック文・コア本文抽出（記事本文は変更しない）
   const hook = extractHook(articleText);
   const core = extractCore(articleText, tiktokLength);
 
-  // 4. 投稿文生成（テンプレートに挿入）
-  const templates = BUZZ_POST_TEMPLATES[postType];
-  const template = pickRandom(templates);
-  let postText = template
-    .replace('{hook}', hook)
-    .replace('{core}', core);
+  const template = pickRandom(BUZZ_POST_TEMPLATES[postType]);
+  const postText = template.replace('{hook}', hook).replace('{core}', core);
 
-  // 5. CTA・URLはgeneratePlatformPosts内でプラットフォーム別に付与
-  //    postText本体には含めない（重複防止）
-
-  // 6. 動的ハッシュタグ生成（記事ごとに最適な5個）
   const hashtags = generateDynamicHashtags(articleText, emotion, postType);
   const hashtagText = hashtags.join(' ');
 
-  // 7. BAZZ SCORE算出
   const score = calcBazzScore(postText, postType, emotion, profileCta, postUrl);
-
-  // 8. 改善提案生成（95点未満のみ）
   const improvement = generateImprovement(score);
 
-  // TikTok向け改行処理を適用（文字数カウント後の後処理）
   const postTextFormatted = addTikTokLineBreaks(postText);
+  const tiktokArticle = generateTikTokArticle(articleText, tiktokLength, profileCta, emotion, postType);
+  const noteArticle = generateNoteArticle(articleText, emotion, postType);
 
-  // TikTok記事本文生成（文字数確定→改行処理→CTA付与）
-  const tiktokArticle = generateTikTokArticle(articleText, tiktokLength, profileCta, postUrl, emotion, postType);
+  const platformPosts = generatePlatformPosts(postTextFormatted, hashtags, hashtagText, profileCta, postUrl, postType);
 
-  // note記事生成（記事本文をそのまま使用・TikTok改行なし）
-  const noteTitle = generateArticleTitle(articleText, emotion, postType);
-  const noteArticle = noteTitle + '\n\n' + articleText;
-
-  // 追加出力項目を生成
   const seoTitle = generateSeoTitle(articleText, emotion, postType);
   const seoKeywords = generateSeoKeywords(articleText, emotion);
   const metaDescription = generateMetaDescription(articleText, emotion);
   const articleTitle = generateArticleTitle(articleText, emotion, postType);
   const thumbnailTitle = generateThumbnailTitle(articleText, postType);
-
-  // プラットフォーム別SNS投稿文を生成
-  const platformPosts = generatePlatformPosts(
-    postTextFormatted,
-    hashtags,
-    hashtagText,
-    profileCta,
-    postUrl,
-    postType,
-  );
-
-  // 画像生成指示文・SEO特化タイトルを生成
   const thumbnailTikTok = generateThumbnailTikTok(articleText, emotion, postType);
   const thumbnailTikTokPerson = generateThumbnailTikTokPerson(articleText, emotion, postType);
   const thumbnailNote = generateThumbnailNote(articleText, emotion, postType);
