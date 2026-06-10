@@ -118,6 +118,8 @@ function OutputCard({ label, children, copyText, style: extraStyle }: {
 
 const BUZZ_SETTINGS_KEY = 'buzz_post_settings_v1';
 const BUZZ_KEYS_STORAGE_KEY = 'buzz_output_keys_v1';
+const BUZZ_ARTICLE_KEY = 'buzz_article_text_v1';
+const BUZZ_LENGTH_KEY = 'buzz_tiktok_length_v1';
 
 export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
   onGenerate,
@@ -165,6 +167,15 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
         if (Array.isArray(parsedKeys) && parsedKeys.length > 0) {
           setEnabledKeys(parsedKeys);
         }
+      }
+      // 記事本文復元
+      const savedArticle = localStorage.getItem(BUZZ_ARTICLE_KEY);
+      if (savedArticle) setArticleText(savedArticle);
+      // 文字数設定復元
+      const savedLength = localStorage.getItem(BUZZ_LENGTH_KEY);
+      if (savedLength) {
+        const len = Number(savedLength) as 300 | 500 | 600;
+        if ([300, 500, 600].includes(len)) setTiktokLength(len);
       }
     } catch {}
   }, []);
@@ -226,7 +237,10 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
         <div style={{ fontSize: '13px', fontWeight: '800', color: '#72243E', marginBottom: '8px' }}>📄 記事本文を貼り付け</div>
         <textarea
           value={articleText}
-          onChange={e => setArticleText(e.target.value)}
+          onChange={e => {
+          setArticleText(e.target.value);
+          try { localStorage.setItem(BUZZ_ARTICLE_KEY, e.target.value); } catch {}
+        }}
           placeholder={"作成済みの記事・台本をここに貼り付けてください\n\n例）\n片思いって、本当に消耗するよね。\n好きな人のことを考えるだけで...\n\n※記事本文は変更・削除・要約しません"}
           rows={8}
           style={{
@@ -246,7 +260,10 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
         <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700', marginBottom: '8px' }}>📏 投稿文字数を選択</div>
         <div style={{ display: 'flex', gap: '8px' }}>
           {([300, 500, 600] as (300 | 500 | 600)[]).map(len => (
-            <button key={len} onClick={() => setTiktokLength(len)} style={{
+            <button key={len} onClick={() => {
+              setTiktokLength(len);
+              try { localStorage.setItem(BUZZ_LENGTH_KEY, String(len)); } catch {}
+            }} style={{
               flex: 1, padding: '8px 0', borderRadius: '10px', border: '2px solid',
               fontSize: '13px', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s',
               backgroundColor: tiktokLength === len ? '#FFE0EC' : '#fff',
