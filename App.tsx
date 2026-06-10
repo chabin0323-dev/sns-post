@@ -136,7 +136,7 @@ const App: React.FC = () => {
       setTimeout(() => {
         buzzRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
-    } catch { /* エラーは無視 */ }
+    } catch (err) { console.error('BuzzPost生成エラー:', err); }
     finally { setIsBuzzLoading(false); }
   };
 
@@ -252,8 +252,6 @@ const App: React.FC = () => {
         {activeTab === 'buzz' && (
           <div ref={buzzRef}>
             <BuzzPostPanel
-              profileCta={currentSettings.profileCta}
-              postUrl={currentSettings.postUrl}
               onGenerate={handleBuzzGenerate}
               result={buzzResult}
               isLoading={isBuzzLoading}
