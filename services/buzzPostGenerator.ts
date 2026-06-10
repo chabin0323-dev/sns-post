@@ -172,11 +172,18 @@ function breakLine(text: string): string {
   const MAX = 25;
 
   // ① まず句読点・読点でセグメントに分割
+  // ※ 鍵カッコ内（「〜」）は改行しない
   const segs: string[] = [];
   let cur = '';
+  let inKakko = false; // 鍵カッコ内フラグ
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
     cur += ch;
+    // 鍵カッコの開閉を追跡
+    if (ch === '「') inKakko = true;
+    if (ch === '」') inKakko = false;
+    // 鍵カッコ内は区切らない
+    if (inKakko) continue;
     // 文末句読点の直後で区切る
     if ('。！？…'.includes(ch)) {
       segs.push(cur);
@@ -186,7 +193,7 @@ function breakLine(text: string): string {
       segs.push(cur);
       cur = '';
     // 長すぎる場合は助詞・接続詞の前で強制区切り
-    } else if (cur.length >= MAX) {
+    } else if (cur.length >= MAX && !inKakko) {
       const naturalEnds = ['が', 'を', 'に', 'は', 'で', 'と', 'も', 'から', 'けど', 'ので', 'なら'];
       let cut = false;
       for (const ne of naturalEnds) {
