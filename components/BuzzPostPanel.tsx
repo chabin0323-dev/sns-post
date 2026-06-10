@@ -386,8 +386,7 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
           <textarea
             value={tiktokCtaExtra}
             onChange={e => setTiktokCtaExtra(e.target.value)}
-            placeholder={'例）彼の本音が知りたい方は
-プロフィールのリンクから'}
+            placeholder={'例）彼の本音が知りたい方は\nプロフィールのリンクから'}
             rows={2}
             style={{
               width: '100%', padding: '8px 10px', borderRadius: '10px',
