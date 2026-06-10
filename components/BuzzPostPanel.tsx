@@ -364,9 +364,9 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
           {/* 雛型選択 */}
           <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>雛型を選択</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
-            {TIKTOK_CTA_TEMPLATES.map((tmpl, idx) => (
+            {TIKTOK_CTA_TEMPLATES.map((tmpl, i) => (
               <button
-                key={idx}
+                key={i}
                 onClick={() => setTiktokCtaTemplate(tmpl)}
                 style={{
                   padding: '8px 10px', borderRadius: '10px', border: '1px solid',
@@ -422,7 +422,6 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
         >
           {savedMsg ? '✅ 保存しました' : '💾 設定を保存'}
         </button>
-      </div>
 
       {/* 出力項目トグル */}
       <div style={{ backgroundColor: '#fdf2f8', borderRadius: '16px', padding: '12px', marginBottom: '12px', border: '1px solid #fce7f3' }}>
