@@ -158,7 +158,8 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result
   const handleTiktokCtaSave = () => {
     try { localStorage.setItem(BUZZ_TIKTOK_CTA_KEY, JSON.stringify({ template: tiktokCtaTemplate, extra: tiktokCtaExtra })); setTiktokCtaSaved(true); setTimeout(() => setTiktokCtaSaved(false), 2000); } catch {}
   };
-  const buildTiktokCta = () => [tiktokCtaTemplate, tiktokCtaExtra].filter(Boolean).join('\n');
+  // 追加誘導文があれば優先、空欄の場合はテンプレを使用
+  const buildTiktokCta = () => tiktokCtaExtra.trim() ? tiktokCtaExtra.trim() : tiktokCtaTemplate;
 
   const toggleKey = (key: BuzzOutputKey) => {
     setEnabledKeys(prev => {
