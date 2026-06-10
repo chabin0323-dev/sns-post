@@ -867,6 +867,8 @@ function generateTikTokArticle(
   tiktokLength: number,
   profileCta: string,
   postUrl: string,
+  emotion: EmotionType,
+  postType: PostType,
 ): string {
   // 記事本文をベースに使用（変更・要約しない）
   let base = articleText.trim();
@@ -1017,7 +1019,7 @@ export function generateBuzzPost(params: {
   const postTextFormatted = addTikTokLineBreaks(postText);
 
   // TikTok記事本文生成（文字数確定→改行処理→CTA付与）
-  const tiktokArticle = generateTikTokArticle(articleText, tiktokLength, profileCta, postUrl);
+  const tiktokArticle = generateTikTokArticle(articleText, tiktokLength, profileCta, postUrl, emotion, postType);
 
   // note記事生成（記事本文をそのまま使用・TikTok改行なし）
   const noteTitle = generateArticleTitle(articleText, emotion, postType);
