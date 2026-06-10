@@ -12,7 +12,7 @@ interface BuzzPostPanelProps {
 
 // 出力項目定義
 type BuzzOutputKey =
-  | 'tiktokArticle' | 'postText' | 'hashtags' | 'seoTitle' | 'seoKeywords'
+  | 'tiktokArticle' | 'hashtags' | 'seoTitle' | 'seoKeywords'
   | 'metaDescription' | 'articleTitle' | 'thumbnailTitle'
   | 'threadsPost' | 'xPost' | 'instagramPost' | 'youtubePost'
   | 'noteArticle' | 'score' | 'improvement'
@@ -21,7 +21,6 @@ type BuzzOutputKey =
 
 const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
   tiktokArticle:   '🎬 TikTok・YouTube Shorts・Instagram共用記事',
-  postText:        '🔥 バズる投稿文',
   hashtags:        '# ハッシュタグ',
   threadsPost:     '💬 Threads投稿文',
   xPost:           '✖️ X投稿文',
@@ -44,7 +43,7 @@ const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
 };
 
 const ALL_KEYS: BuzzOutputKey[] = [
-  'tiktokArticle', 'postText', 'hashtags', 'threadsPost', 'xPost', 'instagramPost', 'youtubePost',
+  'tiktokArticle', 'hashtags', 'threadsPost', 'xPost', 'instagramPost', 'youtubePost',
   'noteArticle',
   'profileCtaText', 'postUrlText',
   'thumbnailTikTok', 'thumbnailTikTokPerson', 'thumbnailNote',
@@ -388,13 +387,6 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({
               <p style={{ fontSize: '11px', color: '#9ca3af', margin: '6px 0 0' }}>
                 改行除外文字数：{result.tiktokArticle.replace(/\n/g, '').length}字
               </p>
-            </OutputCard>
-          )}
-
-          {/* バズる投稿文 */}
-          {isEnabled('postText') && (
-            <OutputCard label="🔥 バズる投稿文" copyText={result.postText}>
-              <pre style={preStyle}>{result.postText}</pre>
             </OutputCard>
           )}
 
