@@ -634,6 +634,57 @@ function generateNoteArticle(articleText: string, emotion: EmotionType, postType
   return title + '\n\n' + articleText;
 }
 
+
+// ============================================================
+// SEOハッシュタグ生成（note検索・Google検索最適化・10〜15個）
+// ============================================================
+function generateBuzzSeoHashtags(text: string, emotion: EmotionType, postType: PostType): string[] {
+  const tags: string[] = [];
+
+  // 記事内容からキーワード抽出
+  const kwMap: Record<string, string[]> = {
+    '返信': ['#LINE返信', '#既読スルー'],
+    'LINE': ['#LINEあるある', '#LINE恋愛'],
+    '片思い': ['#片思い', '#片思い中', '#片思いあるある'],
+    '復縁': ['#復縁', '#復縁したい', '#元彼'],
+    '失恋': ['#失恋', '#失恋した', '#失恋からの立ち直り'],
+    '婚活': ['#婚活', '#婚活女子', '#婚活あるある'],
+    '浮気': ['#浮気', '#浮気された'],
+    '依存': ['#恋愛依存', '#恋愛依存症'],
+    '不安': ['#恋愛不安', '#好きな人への不安'],
+    '自己肯定': ['#自己肯定感', '#自己肯定感を上げる'],
+  };
+
+  for (const [kw, kwTags] of Object.entries(kwMap)) {
+    if (text.includes(kw)) tags.push(...kwTags);
+  }
+
+  // 感情タイプ別タグ
+  const emotionTagMap: Partial<Record<EmotionType, string[]>> = {
+    '共感':      ['#恋愛あるある', '#共感する恋愛'],
+    '恋愛不安':  ['#恋愛不安', '#好きな人が怖い', '#恋愛の悩み'],
+    '切なさ':    ['#切ない恋愛', '#切ない', '#恋愛コラム'],
+    '後悔':      ['#後悔しない恋愛', '#恋愛の後悔'],
+    '依存':      ['#恋愛依存', '#手放せない恋愛'],
+    '片思い':    ['#片思い', '#片思い中', '#告白できない'],
+    '失恋':      ['#失恋', '#失恋乗り越え', '#失恋からの復活'],
+    '自己肯定感': ['#自己肯定感', '#自分を好きになる'],
+  };
+  const eTags = emotionTagMap[emotion] ?? ['#恋愛コラム', '#恋愛の悩み'];
+  tags.push(...eTags);
+
+  // 必須SEOタグ
+  const baseTags = [
+    '#恋愛', '#恋愛心理学', '#男性心理', '#女性心理',
+    '#恋愛相談', '#大人の恋愛', '#恋愛テクニック',
+    '#恋愛成就', '#婚活', '#自己肯定感',
+  ];
+  tags.push(...baseTags);
+
+  // 重複除去・15個に絞る
+  return [...new Set(tags)].slice(0, 15);
+}
+
 // ============================================================
 // メイン生成関数
 // ============================================================
@@ -676,9 +727,13 @@ export function generateBuzzPost(params: {
   const thumbnailNote = generateThumbnailNote(articleText, emotion, postType);
   const seoSpecialTitle = generateSeoSpecialTitle(articleText, emotion, postType);
 
+  // SEOハッシュタグ生成
+  const seoHashtags = generateBuzzSeoHashtags(articleText, emotion, postType);
+
   return {
     postText: postTextFormatted,
     tiktokArticle,
+    seoHashtags,
     hashtags,
     hashtagText,
     emotionType: emotion,
