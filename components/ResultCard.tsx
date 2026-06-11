@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import type { GeneratedContent, OutputKey } from '../types';
 
@@ -175,6 +176,29 @@ export const ResultCard: React.FC<Props> = ({ content, enabledKeys }) => {
             ))}
           </div>
         </Section>
+      )}
+
+      {/* SEOハッシュタグ専用枠（note検索・Google検索最適化） */}
+      {enabledKeys.includes('hashtags') && content.seoHashtags && content.seoHashtags.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-purple-100 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3" style={{ background: '#7C3AED15', borderBottom: '2px solid #7C3AED30' }}>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🔍</span>
+              <span className="font-bold text-sm text-gray-800">SEOハッシュタグ（note・Google検索最適化）</span>
+            </div>
+            <CopyButton text={content.seoHashtags.join(' ')} />
+          </div>
+          <div className="px-5 py-4">
+            <p className="text-xs text-purple-600 font-bold mb-3">📌 note記事・ブログに貼り付けてSEO流入を最大化</p>
+            <div className="flex flex-wrap gap-2">
+              {content.seoHashtags.map((tag, i) => (
+                <span key={i} className="px-3 py-1 rounded-full text-xs font-bold" style={{ background: '#7C3AED20', color: '#7C3AED', border: '1px solid #7C3AED40' }}>
+                  {tag.startsWith('#') ? tag : `#${tag}`}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Threads */}
