@@ -1127,7 +1127,8 @@ export function generateContent(params: {
   }
 
   // 文字数確定後にTikTok改行を適用（改行は文字数に含めない）
-  const mainContentRaw = adjustLength(mainScriptBase, tiktokLength, profileCta);
+  // mainContentはTikTok台本本文のみ（CTA・URLは含めない）
+  const mainContentRaw = adjustLength(mainScriptBase, tiktokLength, '');
   const mainContent = addTikTokLineBreaks(mainContentRaw);
 
   const hashtags = generateHashtags(effectiveTheme, genre);
@@ -1167,8 +1168,8 @@ export function generateContent(params: {
     : threadsPost;
   const xPost = mainScriptBase.split('\n').slice(0, 8).join('\n') + urlCta;
 
-  // note記事はTikTok改行なしのオリジナル文章を使用（読みやすさ重視）
-  const noteArticleBase = adjustLength(mainScriptBase, tiktokLength, profileCta);
+  // note記事はCTA・URLなしの本文のみ（読みやすさ重視）
+  const noteArticleBase = adjustLength(mainScriptBase, tiktokLength, '');
   const noteArticle = `${effectiveTheme}について知っておくべきこと\n\n${noteArticleBase}`;
 
   const seoSet = {
