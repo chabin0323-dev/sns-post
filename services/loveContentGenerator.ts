@@ -74,6 +74,95 @@ function generateHashtags(theme: Theme, genre: Genre): string[] {
 }
 
 // ============================================================
+// SEO特化ハッシュタグ生成（note検索・Google・Yahoo検索流入最大化）
+// 記事内容を解析して毎回変化させる・10〜15個生成
+// ============================================================
+function generateSeoHashtags(theme: Theme, genre: Genre, mainContent: string): string[] {
+  const tags: string[] = [];
+
+  // ① テーマ直接タグ（最重要・必ず含める）
+  tags.push(`#${theme}`);
+  tags.push(`#${theme}相談`);
+
+  // ② ジャンル別SEO特化タグプール（note検索・長尾キーワード重視）
+  const SEO_TAGS: Record<Genre, string[]> = {
+    '恋愛': [
+      '#恋愛', '#恋愛心理学', '#恋愛相談', '#男性心理', '#女性心理',
+      '#片思い', '#復縁', '#恋愛成就', '#婚活', '#恋愛コラム',
+      '#恋愛テクニック', '#大人の恋愛', '#恋愛の悩み', '#自己肯定感', '#脈ありサイン',
+      '#恋愛依存', '#好きな人', '#告白', '#恋愛アドバイス', '#恋愛観',
+    ],
+    'お金・資産': [
+      '#お金の話', '#節約術', '#投資初心者', '#NISA活用', '#資産形成',
+      '#お金の勉強', '#貯金方法', '#副収入', '#経済的自由', '#家計管理',
+      '#マネーリテラシー', '#節約生活', '#FIREを目指す', '#投資信託', '#老後資金',
+    ],
+    '副業・稼ぐ': [
+      '#副業', '#副業初心者', '#在宅ワーク', '#フリーランス', '#SNS副業',
+      '#コンテンツ販売', '#note副業', '#月5万副業', '#稼ぐ方法', '#在宅で稼ぐ',
+      '#個人事業主', '#脱サラ', '#SNS収益化', '#副業成功', '#TikTok副業',
+    ],
+    '美容・ダイエット': [
+      '#ダイエット方法', '#スキンケア', '#美肌', '#ダイエット記録', '#痩せる方法',
+      '#プチプラコスメ', '#垢抜け', '#美容習慣', '#ファスティング', '#むくみ解消',
+      '#美容オタク', '#ダイエット食事', '#美容知識', '#30代美容', '#スキンケア習慣',
+    ],
+    '育児・子育て': [
+      '#育児', '#子育て', '#ママ', '#イヤイヤ期', '#寝かしつけ方法',
+      '#育児あるある', '#子育て支援', '#ワンオペ育児', '#産後うつ', '#知育',
+      '#離乳食レシピ', '#子育てブログ', '#育児疲れ', '#ママの悩み', '#子どもの成長',
+    ],
+    '健康・メンタル': [
+      '#メンタルヘルス', '#自律神経', '#睡眠改善', '#ストレス解消', '#腸活',
+      '#マインドフルネス', '#うつ予防', '#心が楽になる', '#健康習慣', '#自己肯定感',
+      '#HSP', '#疲れない体', '#メンタルケア', '#心理学', '#幸福感',
+    ],
+    '転職・キャリア': [
+      '#転職', '#転職活動', '#年収アップ', '#キャリアアップ', '#転職成功',
+      '#仕事術', '#働き方改革', '#副業から独立', '#スキルアップ', '#面接対策',
+      '#リモートワーク', '#フリーランス転向', '#30代転職', '#仕事の悩み', '#職場環境',
+    ],
+    '人間関係': [
+      '#人間関係', '#自己肯定感', '#HSP', '#コミュ力', '#毒親',
+      '#職場の人間関係', '#断り方', '#人付き合い', '#ストレス', '#人間関係リセット',
+      '#ママ友', '#友達関係', '#コミュニケーション', '#メンタル', '#自分らしく生きる',
+    ],
+    'ビジネス・起業': [
+      '#起業', '#個人ブランディング', '#SNS運用', '#集客', '#マーケティング',
+      '#ChatGPT活用', '#コンテンツマーケ', '#起業家', '#副業起業', '#ビジネス思考',
+      '#フリーランス', '#SNSマーケ', '#価格設定', '#脱サラ起業', '#オンラインビジネス',
+    ],
+    'ライフスタイル': [
+      '#ミニマリスト', '#朝活', '#習慣化', '#ライフハック', '#自分磨き',
+      '#丁寧な暮らし', '#シンプルライフ', '#読書習慣', '#暮らしの工夫', '#一人暮らし',
+      '#ルーティン', '#おうち時間', '#サウナ好き', '#旅行好き', '#手帳術',
+    ],
+  };
+
+  const pool = SEO_TAGS[genre] ?? SEO_TAGS['恋愛'];
+
+  // ③ 記事内容からキーワードを抽出して関連タグを優先
+  const contentKeywords = [
+    '返信', 'LINE', '既読', '脈', '告白', '片思い', '復縁', '別れ', '失恋',
+    '婚活', 'マッチング', '職場', '遠距離', '浮気', '嫉妬', '依存',
+    '自信', '自己肯定', '不安', '孤独', '幸せ',
+  ];
+  const matched = contentKeywords.filter(kw => mainContent.includes(kw));
+  const priorityTags = pool.filter(t => matched.some(kw => t.includes(kw)));
+  const otherTags = pool.filter(t => !priorityTags.includes(t));
+
+  // ④ 優先タグ→残りタグの順でシャッフルして結合
+  const shuffledPriority = [...priorityTags].sort(() => Math.random() - 0.5);
+  const shuffledOther = [...otherTags].sort(() => Math.random() - 0.5);
+  const combined = [...shuffledPriority, ...shuffledOther];
+
+  // ⑤ 合計12〜15個になるよう調整（テーマタグ2個 + プールから10〜13個）
+  const fromPool = combined.slice(0, 13);
+  const result = [...new Set([...tags, ...fromPool])].slice(0, 15);
+  return result;
+}
+
+// ============================================================
 // 恋愛テンプレート（300字）
 // ============================================================
 const TEMPLATES_300: Record<string, string[]> = {
@@ -1049,29 +1138,33 @@ export function generateContent(params: {
     ? `\n\n${pickRandom(URL_CTA_PATTERNS[genre] ?? URL_CTA_PATTERNS['恋愛'])}\n${postUrl}`
     : '';
 
-  // Threads：500文字制限に収める
-  // 本文→ハッシュタグ→URLの順で組み立て、超過分は本文を削る
-  const THREADS_MAX = 490; // 余裕を持って490文字
+  // Threads：改行含む500文字制限（Threads公式仕様）
+  const THREADS_HARD_MAX = 498; // 改行込みで498文字以内
   const threadsSuffix = `\n\n${hashtagText}${urlCta}`;
-  const threadsSuffixLen = threadsSuffix.replace(/\n/g, '').length;
-  const threadsBodyMax = THREADS_MAX - threadsSuffixLen;
-  // mainScriptBase（改行なし版）から本文を切り出す
+  const threadsSuffixCharCount = threadsSuffix.length; // 改行込みでカウント
+  const threadsBodyMax = THREADS_HARD_MAX - threadsSuffixCharCount;
   let threadsBody = mainScriptBase;
-  if (threadsBody.replace(/\n/g, '').length > threadsBodyMax) {
-    // 文字数超過の場合、文を削りながら調整
+  // 改行込み文字数でチェック
+  if (threadsBody.length > threadsBodyMax) {
     const threadsLines = mainScriptBase.split('\n').filter(l => l.trim());
     let truncated = '';
     for (const line of threadsLines) {
       const candidate = truncated ? truncated + '\n' + line : line;
-      if (candidate.replace(/\n/g, '').length <= threadsBodyMax - 3) {
+      if (candidate.length <= threadsBodyMax - 3) {
         truncated = candidate;
       } else {
         break;
       }
     }
-    threadsBody = truncated || threadsLines[0].slice(0, threadsBodyMax - 3) + '…';
+    threadsBody = truncated
+      ? truncated
+      : mainScriptBase.slice(0, threadsBodyMax - 3) + '…';
   }
   const threadsPost = threadsBody + threadsSuffix;
+  // 最終チェック：それでも超過する場合は強制カット
+  const threadsPostFinal = threadsPost.length > THREADS_HARD_MAX
+    ? threadsPost.slice(0, THREADS_HARD_MAX - 3) + '…'
+    : threadsPost;
   const xPost = mainScriptBase.split('\n').slice(0, 8).join('\n') + urlCta;
 
   // note記事はTikTok改行なしのオリジナル文章を使用（読みやすさ重視）
@@ -1147,6 +1240,9 @@ export function generateContent(params: {
     .sort(() => Math.random() - 0.5)
     .slice(0, 3);
 
+  // SEOハッシュタグ生成（note検索・Google検索最適化）
+  const seoHashtags = generateSeoHashtags(effectiveTheme, genre, mainScriptBase);
+
   return {
     genre,
     theme: effectiveTheme,
@@ -1155,7 +1251,7 @@ export function generateContent(params: {
     mainContent,
     hashtags,
     hashtagText,
-    threadsPost,
+    threadsPost: threadsPostFinal,
     xPost,
     noteArticle,
     noteUrl: postUrl,
@@ -1165,6 +1261,7 @@ export function generateContent(params: {
     thumbnailNote,
     buzzScore,
     nextTitles,
+    seoHashtags,
     timestamp: new Date().toLocaleString('ja-JP'),
   };
 }
