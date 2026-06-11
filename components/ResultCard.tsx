@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import type { GeneratedContent, OutputKey } from '../types';
 
