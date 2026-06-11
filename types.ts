@@ -114,4 +114,5 @@ export interface BuzzPostResult {
   thumbnailTikTokPerson: string; // TikTok人物画像生成指示文（CapCut用）
   thumbnailNote: string;      // note画像生成指示文（1280×670）
   seoSpecialTitle: string;    // SEO特化タイトル（検索流入・クリック率重視）
+  seoHashtags: string[];      // SEOハッシュタグ（note・Google検索最適化）
 }
