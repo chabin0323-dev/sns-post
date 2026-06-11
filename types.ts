@@ -115,3 +115,4 @@ export interface BuzzPostResult {
   thumbnailNote: string;      // note画像生成指示文（1280×670）
   seoSpecialTitle: string;    // SEO特化タイトル（検索流入・クリック率重視）
 }
+
