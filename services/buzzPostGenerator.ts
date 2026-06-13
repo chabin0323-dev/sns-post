@@ -432,10 +432,22 @@ function generatePlatformPosts(
   const body = lines.slice(1, 6).join('\n');
   const ctaSuffix = [profileCta, postUrl].filter(Boolean).join('\n');
 
-  // Threads：投稿文 → CTA・URL → ハッシュタグ の順
-  const threads = basePost
-    + (ctaSuffix ? '\n\n' + ctaSuffix : '')
-    + '\n\n' + hashtagText;
+  // Threads：300文字以内に収める
+  const THREADS_MAX = 300;
+  const threadsSuffix = (ctaSuffix ? '\n\n' + ctaSuffix : '') + '\n\n' + hashtagText;
+  let threadsBody = basePost;
+  if ((threadsBody + threadsSuffix).length > THREADS_MAX) {
+    const bodyMax = THREADS_MAX - threadsSuffix.length - 3;
+    const bodyLines = basePost.split('\n').filter((l: string) => l.trim());
+    let truncated = '';
+    for (const line of bodyLines) {
+      const candidate = truncated ? truncated + '\n' + line : line;
+      if (candidate.length <= bodyMax) truncated = candidate;
+      else break;
+    }
+    threadsBody = truncated || basePost.slice(0, bodyMax) + '…';
+  }
+  const threads = threadsBody + threadsSuffix;
 
   // X
   const xLines = lines.slice(0, 4).join('\n');
