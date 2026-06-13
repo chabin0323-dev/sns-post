@@ -14,8 +14,7 @@ type BuzzOutputKey =
   | 'threadsPost' | 'xPost' | 'instagramPost' | 'youtubePost'
   | 'noteArticle' | 'score' | 'improvement'
   | 'profileCtaText' | 'postUrlText'
-  | 'thumbnailTikTok' | 'thumbnailTikTokPerson' | 'thumbnailNote' | 'seoSpecialTitle'
-  | 'seoHashtags';
+  | 'thumbnailTikTok' | 'thumbnailTikTokPerson' | 'thumbnailNote' | 'seoSpecialTitle';
 
 const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
   tiktokArticle:        '🎬 TikTok・YouTube Shorts・Instagram共用記事',
@@ -31,7 +30,6 @@ const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
   thumbnailTikTokPerson:'👤 TikTok人物画像生成指示文',
   thumbnailNote:        '📝 note画像生成指示文',
   seoSpecialTitle:      '🔍 SEO特化タイトル',
-  seoHashtags:          '🔍 SEOハッシュタグ',
   seoTitle:             '🔍 SEOタイトル',
   seoKeywords:          '🏷️ SEOキーワード',
   metaDescription:      '📄 メタディスクリプション',
@@ -45,7 +43,7 @@ const ALL_KEYS: BuzzOutputKey[] = [
   'tiktokArticle', 'hashtags', 'threadsPost', 'xPost', 'instagramPost', 'youtubePost',
   'noteArticle', 'profileCtaText', 'postUrlText',
   'thumbnailTikTok', 'thumbnailTikTokPerson', 'thumbnailNote',
-  'seoHashtags', 'seoSpecialTitle', 'seoTitle', 'seoKeywords', 'metaDescription', 'articleTitle', 'thumbnailTitle',
+  'seoSpecialTitle', 'seoTitle', 'seoKeywords', 'metaDescription', 'articleTitle', 'thumbnailTitle',
   'score', 'improvement',
 ];
 
@@ -200,8 +198,18 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result
           rows={8}
           style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #fce7f3', fontSize: '13px', lineHeight: '1.7', resize: 'vertical', outline: 'none', fontFamily: 'inherit', color: '#374151', backgroundColor: '#fffafa', boxSizing: 'border-box' }}
         />
-        <div style={{ marginTop: '6px', textAlign: 'right', fontSize: '11px', color: '#9ca3af' }}>
-          {articleText.replace(/\n/g, '').length}文字（改行除外）／ 設定：{tiktokLength}字
+        <div style={{ marginTop: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button
+            onClick={() => { setArticleText(''); try { localStorage.setItem(BUZZ_ARTICLE_KEY, ''); } catch {} }}
+            style={{
+              padding: '4px 12px', borderRadius: '8px', border: '1px solid #fce7f3',
+              fontSize: '11px', fontWeight: '700', cursor: 'pointer',
+              backgroundColor: '#fff', color: '#D4537E',
+            }}
+          >🗑️ 全て削除</button>
+          <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+            {articleText.replace(/\n/g, '').length}文字（改行除外）／ 設定：{tiktokLength}字
+          </span>
         </div>
       </div>
 
@@ -350,22 +358,6 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result
           {isEnabled('thumbnailTikTok') && <OutputCard label="🎨 TikTok画像生成指示文（1080×1920）" copyText={result.thumbnailTikTok}><pre style={pre}>{result.thumbnailTikTok}</pre></OutputCard>}
           {isEnabled('thumbnailTikTokPerson') && <OutputCard label="👤 TikTok人物画像生成指示文（CapCutテンプレート用）" copyText={result.thumbnailTikTokPerson}><pre style={pre}>{result.thumbnailTikTokPerson}</pre></OutputCard>}
           {isEnabled('thumbnailNote') && <OutputCard label="📝 note画像生成指示文（1280×670）" copyText={result.thumbnailNote}><pre style={pre}>{result.thumbnailNote}</pre></OutputCard>}
-          {isEnabled('seoHashtags') && result.seoHashtags && result.seoHashtags.length > 0 && (
-            <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '16px', marginBottom: '12px', border: '1px solid #ede9fe' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '800', color: '#5B21B6' }}>{'🔍 SEOハッシュタグ（note・Google検索最適化）'}</div>
-                <CopyButton text={result.seoHashtags.join(' ')} />
-              </div>
-              <p style={{ fontSize: '11px', color: '#7C3AED', fontWeight: '700', marginBottom: '8px' }}>{'📌 note記事・ブログに貼り付けてSEO流入を最大化'}</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {result.seoHashtags.map((tag, i) => (
-                  <span key={i} style={{ fontSize: '12px', fontWeight: '700', backgroundColor: '#EDE9FE', color: '#5B21B6', padding: '4px 10px', borderRadius: '20px' }}>
-                    {tag.startsWith('#') ? tag : '#' + tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
           {isEnabled('seoSpecialTitle') && <OutputCard label="🔍 SEO特化タイトル（検索流入・クリック率重視）" copyText={result.seoSpecialTitle}><p style={{ fontSize: '15px', fontWeight: '900', color: '#1e40af', margin: 0 }}>{result.seoSpecialTitle}</p><p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0' }}>{result.seoSpecialTitle.length}文字</p></OutputCard>}
           {isEnabled('seoTitle') && <OutputCard label="🔍 SEOタイトル" copyText={result.seoTitle}><p style={{ fontSize: '14px', fontWeight: '800', color: '#1e40af', margin: 0 }}>{result.seoTitle}</p></OutputCard>}
           {isEnabled('seoKeywords') && (
