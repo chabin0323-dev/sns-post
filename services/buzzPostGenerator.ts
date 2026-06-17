@@ -438,6 +438,25 @@ function generateTikTokArticle(
   const ctaChars = tiktokCta ? countTextChars('\n\n' + tiktokCta) : 0;
   const bodyTarget = tiktokLength - quoteChars - ctaChars;
 
+  // ② 元記事を行単位で処理
+  let base = articleText.trim();
+
+  // 元記事がbodyTargetを超えている場合は行単位で削る
+  if (countTextChars(base) > bodyTarget + 50) {
+    const lines = base.split('\n').filter(l => l.trim());
+    let truncated = '';
+    for (const line of lines) {
+      const candidate = truncated ? truncated + '\n' + line : line;
+      if (countTextChars(candidate) <= bodyTarget) {
+        truncated = candidate;
+      } else {
+        break;
+      }
+    }
+    base = truncated || lines[0] || base;
+  }
+
+  // ③ bodyTargetに達するまでフィラーを追加
   const fillers = [
     '\n\nこれを知っているだけで、恋愛の見え方が大きく変わります。焦らなくていい。自分のペースで進んでいきましょう。',
     '\n\n大切なのは相手の反応より、自分の気持ちに正直でいること。自分を大切にしている人は、自然と相手からも大切にされます。',
@@ -461,27 +480,24 @@ function generateTikTokArticle(
     '\n\n恋愛で傷ついた経験は、誰かの痛みに寄り添える力になります。あなたの経験は無駄じゃない。',
   ];
 
-  // ② 本文のみでbodyTargetに達するまでフィラーを追加
-  let base = articleText.trim();
   let i = 0;
   while (countTextChars(base) < bodyTarget && i < fillers.length) {
     base += fillers[i++];
   }
-  // 最終補完（まだ足りない場合）
   if (countTextChars(base) < bodyTarget) {
     base += '\n\n今日もあなたの恋愛が少しでも楽になりますように。自分を大切に、自分のペースで進んでいきましょう。';
   }
 
-  // ③ 格言追加
+  // ④ 格言追加
   base += '\n\n' + quote;
 
-  // ④ 難読漢字置換
+  // ⑤ 難読漢字置換
   base = fixTikTokReading(base);
 
-  // ⑤ CTA付与
+  // ⑥ CTA付与
   if (tiktokCta) base += '\n\n' + tiktokCta;
 
-  // ⑥ TikTok改行処理
+  // ⑦ TikTok改行処理
   return addTikTokLineBreaks(base);
 }
 
