@@ -649,29 +649,12 @@ function generateSeoSpecialTitle(text: string, emotion: EmotionType, postType: P
   return pickRandom(list);
 }
 
-function generateThumbnailTikTok(text: string, emotion: EmotionType, postType: PostType): string {
-  const rawHook = extractHook(text);
-
-  const shortText = (() => {
-    const cleaned = rawHook.replace(/[。、！？「」]/g, '').trim();
-    if (cleaned.length <= 8) return cleaned;
-    const keywords: [string, string][] = [
-      ['距離を取る', '急に冷たい理由'], ['急に冷たい', '急に冷たい理由'],
-      ['返信が遅い', '返信が遅い理由'], ['既読スルー', '既読スルーの真実'],
-      ['脈あり', '本命だけの行動'], ['本命', '本命だけの行動'],
-      ['好きな人', '好きな人への本音'], ['片思い', '片思いの終わらせ方'],
-      ['失恋', '失恋から立ち直る'], ['復縁', '復縁できる理由'],
-      ['男性心理', '男の本音'], ['女性心理', '女の本音'],
-      ['LINE', 'LINEでわかる本音'], ['不安', '不安を消す方法'],
-      ['嫌われ', '嫌われた理由'], ['冷める', '冷める瞬間'],
-      ['告白', '告白が成功する理由'], ['デート', 'デートで差がつく'],
-      ['浮気', '浮気のサイン'], ['依存', '依存を断ち切る'],
-    ];
-    const matched = keywords.find(([kw]) => rawHook.includes(kw));
-    if (matched) return matched[1];
-    return cleaned.slice(0, 8);
-  })();
-
+function generateThumbnailTikTok(
+  text: string,
+  emotion: EmotionType,
+  postType: PostType,
+  thumbnailTitle: string, // ★ generateThumbnailTitle の結果を受け取る（TikTok・noteで完全一致）
+): string {
   const colorMap: Record<PostType, string> = {
     '共感型': 'ソフトピンク・ラベンダー系（明るく温かみのあるトーン）',
     '衝撃型': 'ビビッドレッド・オレンジ系（明るく鮮やか、ホラー風は禁止）',
@@ -687,7 +670,7 @@ function generateThumbnailTikTok(text: string, emotion: EmotionType, postType: P
     'サイズ：1080 × 1920px（縦型 9:16）',
     '',
     '■ メインテキスト（5〜8文字・画面中央に大きく配置）',
-    '「' + shortText + '」',
+    '「' + thumbnailTitle + '」',
     '・画面全体の50〜60％を文字が占めるサイズ',
     '・スマホ一覧画面でも瞬時に読める大きさ',
     '・1〜2行以内に収める',
@@ -939,7 +922,7 @@ export function generateBuzzPost(params: {
 
   // ★ 修正箇所②：thumbnailTitle を先に生成し、generateThumbnailNote に渡す
   const thumbnailTitle = generateThumbnailTitle(articleText, postType);
-  const thumbnailTikTok = generateThumbnailTikTok(articleText, emotion, postType);
+  const thumbnailTikTok = generateThumbnailTikTok(articleText, emotion, postType, thumbnailTitle);
   const thumbnailTikTokPerson = generateThumbnailTikTokPerson(articleText, emotion, postType);
   const thumbnailNote = generateThumbnailNote(articleText, emotion, postType, thumbnailTitle); // ← thumbnailTitle を渡す
   const seoSpecialTitle = generateSeoSpecialTitle(articleText, emotion, postType);
