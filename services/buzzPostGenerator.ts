@@ -108,12 +108,8 @@ function extractCore(text: string, tiktokLength: number): string {
 // ハッシュタグ生成
 // ============================================================
 function generateDynamicHashtags(text: string, emotion: EmotionType, postType: PostType): string[] {
-  // 記事内容から検索需要の高いハッシュタグを生成
-  // 固定タグ禁止・記事キーワード最優先・SEO・感情ワード重視
-
   const result: string[] = [];
 
-  // ① 記事内容キーワードマップ（検索需要優先・具体的なワード）
   const keywordTagMap: [string, string[]][] = [
     ['返信が遅い', ['#返信が遅い', '#返信が来ない理由', '#好きな人の心理']],
     ['返信', ['#返信が遅い', '#返信待ち', '#好きな人の心理']],
@@ -153,7 +149,6 @@ function generateDynamicHashtags(text: string, emotion: EmotionType, postType: P
     ['職場', ['#職場恋愛', '#社内恋愛あるある', '#職場の好きな人']],
   ];
 
-  // キーワードにマッチしたタグを追加（優先度高）
   for (const [kw, tags] of keywordTagMap) {
     if (text.includes(kw)) {
       for (const tag of tags) {
@@ -164,7 +159,6 @@ function generateDynamicHashtags(text: string, emotion: EmotionType, postType: P
     }
   }
 
-  // ② 感情タグで補完（検索需要の高い感情ワード）
   const emotionTagMap: Record<EmotionType, string[]> = {
     '共感':      ['#恋愛あるある', '#共感した人いる？', '#片思いあるある'],
     '恋愛不安':  ['#恋愛の不安', '#好きな人への不安', '#恋愛で不安になる'],
@@ -187,7 +181,6 @@ function generateDynamicHashtags(text: string, emotion: EmotionType, postType: P
     if (!result.includes(tag) && result.length < 5) result.push(tag);
   }
 
-  // ③ 投稿タイプ補完タグ（検索需要重視）
   const postTypeTags: Record<PostType, string> = {
     '共感型':     '#恋愛あるある',
     '衝撃型':     '#知らなかった恋愛の真実',
@@ -200,7 +193,6 @@ function generateDynamicHashtags(text: string, emotion: EmotionType, postType: P
   const ptTag = postTypeTags[postType];
   if (!result.includes(ptTag) && result.length < 5) result.push(ptTag);
 
-  // 必ず5個
   const fallbacks = ['#恋愛の悩み', '#好きな人への気持ち', '#恋愛相談', '#片思い中', '#恋愛がつらい'];
   for (const fb of fallbacks) {
     if (!result.includes(fb) && result.length < 5) result.push(fb);
@@ -248,28 +240,21 @@ function breakLine(text: string): string {
   const TARGET = 20;
   const MAX = 25;
 
-  // ① まず句読点・読点でセグメントに分割
-  // ※ 鍵カッコ内（「〜」）は改行しない
   const segs: string[] = [];
   let cur = '';
-  let inKakko = false; // 鍵カッコ内フラグ
+  let inKakko = false;
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
     cur += ch;
-    // 鍵カッコの開閉を追跡
     if (ch === '「') inKakko = true;
     if (ch === '」') inKakko = false;
-    // 鍵カッコ内は区切らない
     if (inKakko) continue;
-    // 文末句読点の直後で区切る
     if ('。！？…'.includes(ch)) {
       segs.push(cur);
       cur = '';
-    // 読点は一定文字数以上になったら区切る
     } else if (ch === '、' && cur.length >= 10) {
       segs.push(cur);
       cur = '';
-    // 長すぎる場合は助詞・接続詞の前で強制区切り
     } else if (cur.length >= MAX && !inKakko) {
       const naturalEnds = ['が', 'を', 'に', 'は', 'で', 'と', 'も', 'から', 'けど', 'ので', 'なら'];
       let cut = false;
@@ -281,12 +266,10 @@ function breakLine(text: string): string {
           break;
         }
       }
-      // 助詞も見つからない場合はそのまま続ける（次の句読点まで待つ）
     }
   }
   if (cur) segs.push(cur);
 
-  // ② セグメントを結合しながら TARGET 文字前後で改行
   let result = '';
   let lineLen = 0;
 
@@ -301,24 +284,19 @@ function breakLine(text: string): string {
       result += '\n' + seg;
       lineLen = seg.length;
     }
-    // 文末句読点の後は必ず改行
     if ('。！？…'.includes(seg.slice(-1)) && lineLen >= 8) {
       result += '\n';
       lineLen = 0;
     }
   }
 
-  // ③ それでも25文字超の行が残っていたら強制的に分割
   const finalLines = result.replace(/\n$/, '').split('\n');
   const processed = finalLines.map(line => {
     if (line.length <= MAX) return line;
-    // 25文字超の行を強制分割
     const chunks: string[] = [];
     let remaining = line;
     while (remaining.length > MAX) {
-      // TARGET付近で切れる場所を探す
       let cutAt = TARGET;
-      // 少し前後を見て自然な区切りを探す
       for (let offset = 0; offset <= 5; offset++) {
         const pos = TARGET - offset;
         if (pos > 0 && pos < remaining.length) {
@@ -432,16 +410,13 @@ function generateTikTokArticle(
   emotion: EmotionType,
   postType: PostType,
 ): string {
-  // ① 格言・CTAの文字数を事前計算し本文の目標文字数を決定
   const quote = generateQuote(emotion);
   const quoteChars = countTextChars('\n\n' + quote);
   const ctaChars = tiktokCta ? countTextChars('\n\n' + tiktokCta) : 0;
   const bodyTarget = tiktokLength - quoteChars - ctaChars;
 
-  // ② 元記事を行単位で処理
   let base = articleText.trim();
 
-  // 元記事がbodyTargetを超えている場合は行単位で削る
   if (countTextChars(base) > bodyTarget + 50) {
     const lines = base.split('\n').filter(l => l.trim());
     let truncated = '';
@@ -456,7 +431,6 @@ function generateTikTokArticle(
     base = truncated || lines[0] || base;
   }
 
-  // ③ bodyTargetに達するまでフィラーを追加
   const fillers = [
     '\n\nこれを知っているだけで、恋愛の見え方が大きく変わります。焦らなくていい。自分のペースで進んでいきましょう。',
     '\n\n大切なのは相手の反応より、自分の気持ちに正直でいること。自分を大切にしている人は、自然と相手からも大切にされます。',
@@ -488,16 +462,10 @@ function generateTikTokArticle(
     base += '\n\n今日もあなたの恋愛が少しでも楽になりますように。自分を大切に、自分のペースで進んでいきましょう。';
   }
 
-  // ④ 格言追加
   base += '\n\n' + quote;
-
-  // ⑤ 難読漢字置換
   base = fixTikTokReading(base);
-
-  // ⑥ CTA付与
   if (tiktokCta) base += '\n\n' + tiktokCta;
 
-  // ⑦ TikTok改行処理
   return addTikTokLineBreaks(base);
 }
 
@@ -545,7 +513,6 @@ function generatePlatformPosts(
   const body = lines.slice(1, 6).join('\n');
   const ctaSuffix = [profileCta, postUrl].filter(Boolean).join('\n');
 
-  // Threads：300文字以内に収める
   const THREADS_MAX = 300;
   const threadsSuffix = (ctaSuffix ? '\n\n' + ctaSuffix : '') + '\n\n' + hashtagText;
   let threadsBody = basePost;
@@ -562,7 +529,6 @@ function generatePlatformPosts(
   }
   const threads = threadsBody + threadsSuffix;
 
-  // X
   const xLines = lines.slice(0, 4).join('\n');
   const xHashtags = hashtags.slice(0, 3).join(' ');
   const xPost = xLines
@@ -570,14 +536,12 @@ function generatePlatformPosts(
     + (postUrl ? '\n' + postUrl : '')
     + (xHashtags ? '\n\n' + xHashtags : '');
 
-  // Instagram
   const igEmoji = postType === '共感型' ? '💕' : postType === '衝撃型' ? '😱' :
     postType === '切ない型' ? '🥺' : postType === '恋愛依存型' ? '💭' :
     postType === '暴露型' ? '🔥' : postType === '心理学型' ? '🧠' : '✨';
   const igHashtags = [...hashtags, '#恋愛', '#インスタ恋愛', '#恋愛あるある'].slice(0, 8).join(' ');
   const instagram = igEmoji + ' ' + hook + '\n\n' + body + '\n\n' + igHashtags + (ctaSuffix ? '\n\n' + ctaSuffix : '');
 
-  // YouTube Shorts
   const ytPost = '【' + hook + '】\n\n' + body + '\n\n' + hashtagText + (ctaSuffix ? '\n\n' + ctaSuffix : '');
 
   return { threads, xPost, instagram, youtube: ytPost };
@@ -688,13 +652,9 @@ function generateSeoSpecialTitle(text: string, emotion: EmotionType, postType: P
 function generateThumbnailTikTok(text: string, emotion: EmotionType, postType: PostType): string {
   const rawHook = extractHook(text);
 
-  // メインテキストを5〜8文字の短いフレーズに変換
   const shortText = (() => {
-    // 句読点・助詞で分割して短いフレーズを抽出
     const cleaned = rawHook.replace(/[。、！？「」]/g, '').trim();
-    // 8文字以内ならそのまま使用
     if (cleaned.length <= 8) return cleaned;
-    // キーワードを抽出して短縮
     const keywords: [string, string][] = [
       ['距離を取る', '急に冷たい理由'], ['急に冷たい', '急に冷たい理由'],
       ['返信が遅い', '返信が遅い理由'], ['既読スルー', '既読スルーの真実'],
@@ -709,7 +669,6 @@ function generateThumbnailTikTok(text: string, emotion: EmotionType, postType: P
     ];
     const matched = keywords.find(([kw]) => rawHook.includes(kw));
     if (matched) return matched[1];
-    // マッチしない場合は先頭8文字
     return cleaned.slice(0, 8);
   })();
 
@@ -750,10 +709,8 @@ function generateThumbnailTikTok(text: string, emotion: EmotionType, postType: P
 }
 
 function generateThumbnailTikTokPerson(text: string, emotion: EmotionType, postType: PostType): string {
-  // 記事の冒頭テーマを抽出
   const firstLine = text.split('\n').filter(l => l.trim().length > 5)[0]?.trim().slice(0, 40) ?? '';
 
-  // 背景を記事内容から決定
   const bgCandidates: [string, string][] = [
     ['夜', '夜の薄暗い部屋。スマホの画面の青白い光が顔を照らす'],
     ['朝', '朝日が差し込む明るい部屋。清々しく希望を感じる光'],
@@ -777,11 +734,9 @@ function generateThumbnailTikTokPerson(text: string, emotion: EmotionType, postT
   ];
   const matchedBg = bgCandidates.find(([kw]) => text.includes(kw));
 
-  // 全デフォルト背景を明るく華やかに統一
   const background = matchedBg ? matchedBg[1]
     : '昼下がりの太陽の光がたっぷりと差し込むおしゃれなカフェのテラス席。背景には満開の桜や色鮮やかな花々（バラ・チューリップ・ラベンダー）が咲き誇る明るい庭園。木漏れ日が柔らかく注ぎ楽しいひとときを過ごす雰囲気。光の粒子と花びらが舞う華やかな演出';
 
-  // ポーズを記事内容から決定
   const poseCandidates: [string, string][] = [
     ['LINE', 'スマホを両手で持ち、画面を見て笑顔になっているポーズ'],
     ['返信', '彼氏（見切れている）と一緒にスマホの画面を見せ合い、大笑いしている瞬間。彼氏の手だけが端に写っている'],
@@ -794,7 +749,6 @@ function generateThumbnailTikTokPerson(text: string, emotion: EmotionType, postT
   const pose = matchedPose ? matchedPose[1]
     : '彼氏（見切れている）と手を繋ぎ、楽しそうにスマホの画面を見せ合っているポーズ。もう片方の手でスマホを持ち、一緒に画面を見て大笑いしている瞬間。彼氏の手だけが画面の端に写っている';
 
-  // 表情
   const expressionMap: Record<EmotionType, string> = {
     '共感': '心から楽しそうに笑っている満面の笑み。目がキラキラと輝き幸せそうな表情',
     '恋愛不安': '心から楽しそうに笑っている満面の笑み（不安な記事内容でも「幸せだった頃」として明るく描く）',
@@ -812,7 +766,6 @@ function generateThumbnailTikTokPerson(text: string, emotion: EmotionType, postT
     '驚き': '目を大きく開けた、驚きと嬉しさが混ざった明るい表情',
   };
 
-  // 服装
   const outfit = emotion === '期待' || emotion === '安心感'
     ? '明るいパステルカラー（ベビーピンク・ライトブルー・ホワイト）の可愛らしいワンピース'
     : emotion === '自己肯定感'
@@ -858,19 +811,36 @@ function generateThumbnailTikTokPerson(text: string, emotion: EmotionType, postT
   ].join('\n');
 }
 
-function generateThumbnailNote(text: string, emotion: EmotionType, postType: PostType): string {
-  const hook = extractHook(text);
+// ============================================================
+// ★ 修正箇所①：generateThumbnailNote に thumbnailTitle 引数を追加
+// TikTokとnoteのサムネイルタイトルを完全一致させる
+// ============================================================
+function generateThumbnailNote(
+  text: string,
+  emotion: EmotionType,
+  postType: PostType,
+  thumbnailTitle: string, // TikTokのメインテキストをそのまま受け取る
+): string {
   return [
     '【note画像生成指示文】',
     'サイズ：1280 × 670px（横型 16:9）',
     '',
-    '■ メインテキスト',
-    '「' + hook + '」',
+    '■ メインテキスト（TikTokと完全一致・5〜8文字）',
+    '「' + thumbnailTitle + '」',
+    '・TikTokサムネイルと同一テキストを使用（完全一致）',
+    '・長文タイトル・記事内容の説明は画像内に入れない',
+    '・スマホ一覧画面で0.5秒以内に読めるサイズ',
+    '・補足はサブタイトル・記事タイトル・本文冒頭で表現する',
     '',
     '■ デザイン',
     '・スタイル：シンプル・洗練・読みやすいフォント',
     '・左側にテキスト・右側にイメージ、または全面シンプル構成',
     '・余白を十分に取る',
+    '・記事内容の説明文は画像内に入れない',
+    '',
+    '■ 優先順位',
+    '①TikTokとのタイトル完全一致　②5〜8文字　③視認性　④感情を刺激する言葉　⑤デザイン性',
+    'クリック率最優先。',
     '',
     '■ 感情：' + emotion + ' / ' + postType,
   ].join('\n');
@@ -884,14 +854,12 @@ function generateNoteArticle(articleText: string, emotion: EmotionType, postType
   return title + '\n\n' + articleText;
 }
 
-
 // ============================================================
 // SEOハッシュタグ生成（note検索・Google検索最適化・10〜15個）
 // ============================================================
 function generateBuzzSeoHashtags(text: string, emotion: EmotionType, postType: PostType): string[] {
   const tags: string[] = [];
 
-  // 記事内容からキーワード抽出
   const kwMap: Record<string, string[]> = {
     '返信': ['#LINE返信', '#既読スルー'],
     'LINE': ['#LINEあるある', '#LINE恋愛'],
@@ -909,7 +877,6 @@ function generateBuzzSeoHashtags(text: string, emotion: EmotionType, postType: P
     if (text.includes(kw)) tags.push(...kwTags);
   }
 
-  // 感情タイプ別タグ
   const emotionTagMap: Partial<Record<EmotionType, string[]>> = {
     '共感':      ['#恋愛あるある', '#共感する恋愛'],
     '恋愛不安':  ['#恋愛不安', '#好きな人が怖い', '#恋愛の悩み'],
@@ -923,7 +890,6 @@ function generateBuzzSeoHashtags(text: string, emotion: EmotionType, postType: P
   const eTags = emotionTagMap[emotion] ?? ['#恋愛コラム', '#恋愛の悩み'];
   tags.push(...eTags);
 
-  // 必須SEOタグ
   const baseTags = [
     '#恋愛', '#恋愛心理学', '#男性心理', '#女性心理',
     '#恋愛相談', '#大人の恋愛', '#恋愛テクニック',
@@ -931,7 +897,6 @@ function generateBuzzSeoHashtags(text: string, emotion: EmotionType, postType: P
   ];
   tags.push(...baseTags);
 
-  // 重複除去・15個に絞る
   return [...new Set(tags)].slice(0, 15);
 }
 
@@ -971,13 +936,14 @@ export function generateBuzzPost(params: {
   const seoKeywords = generateSeoKeywords(articleText, emotion);
   const metaDescription = generateMetaDescription(articleText, emotion);
   const articleTitle = generateArticleTitle(articleText, emotion, postType);
+
+  // ★ 修正箇所②：thumbnailTitle を先に生成し、generateThumbnailNote に渡す
   const thumbnailTitle = generateThumbnailTitle(articleText, postType);
   const thumbnailTikTok = generateThumbnailTikTok(articleText, emotion, postType);
   const thumbnailTikTokPerson = generateThumbnailTikTokPerson(articleText, emotion, postType);
-  const thumbnailNote = generateThumbnailNote(articleText, emotion, postType);
+  const thumbnailNote = generateThumbnailNote(articleText, emotion, postType, thumbnailTitle); // ← thumbnailTitle を渡す
   const seoSpecialTitle = generateSeoSpecialTitle(articleText, emotion, postType);
 
-  // SEOハッシュタグ生成
   const seoHashtags = generateBuzzSeoHashtags(articleText, emotion, postType);
 
   return {
