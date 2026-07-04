@@ -32,7 +32,7 @@ const App: React.FC = () => {
 
   const handleBuzzGenerate = async (
     articleText: string,
-    length: 300 | 500 | 600,
+    length: 300 | 400 | 500 | 600,
     profileCta: string,
     postUrl: string,
     tiktokCta: string,
