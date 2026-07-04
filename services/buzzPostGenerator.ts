@@ -89,7 +89,7 @@ function extractCore(text: string, tiktokLength: number): string {
   const lines = text.split('\n').filter(l => l.trim().length > 0);
   const bodyLines = lines.slice(1);
   let core = bodyLines.join('\n');
-  const maxChars = tiktokLength === 300 ? 280 : tiktokLength === 500 ? 480 : 580;
+  const maxChars = tiktokLength === 300 ? 280 : tiktokLength === 400 ? 380 : tiktokLength === 500 ? 480 : 580;
   const coreChars = countTextChars(core);
   if (coreChars > maxChars) {
     let trimmed = '';
