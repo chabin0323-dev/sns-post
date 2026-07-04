@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import type { BuzzPostResult } from '../types';
 
 interface BuzzPostPanelProps {
-  onGenerate: (articleText: string, length: 300 | 500 | 600, profileCta: string, postUrl: string, tiktokCta: string) => void;
+  onGenerate: (articleText: string, length: 300 | 400 | 500 | 600, profileCta: string, postUrl: string, tiktokCta: string) => void;
   result: BuzzPostResult | null;
   isLoading: boolean;
 }
@@ -109,7 +109,7 @@ function OutputCard({ label, children, copyText, style: extraStyle }: {
 
 export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result, isLoading }) => {
   const [articleText, setArticleText]         = useState('');
-  const [tiktokLength, setTiktokLength]       = useState<300 | 500 | 600>(300);
+  const [tiktokLength, setTiktokLength]       = useState<300 | 400 | 500 | 600>(300);
   const [enabledKeys, setEnabledKeys]         = useState<BuzzOutputKey[]>([...ALL_KEYS]);
   const [profileCta, setProfileCta]           = useState('');
   const [postUrl, setPostUrl]                 = useState('');
@@ -134,7 +134,7 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result
       const savedArticle = localStorage.getItem(BUZZ_ARTICLE_KEY);
       if (savedArticle) setArticleText(savedArticle);
       const savedLen = localStorage.getItem(BUZZ_LENGTH_KEY);
-      if (savedLen) { const l = Number(savedLen) as 300|500|600; if ([300,500,600].includes(l)) setTiktokLength(l); }
+      if (savedLen) { const l = Number(savedLen) as 300|400|500|600; if ([300,400,500,600].includes(l)) setTiktokLength(l); }
       const savedTiktokCta = localStorage.getItem(BUZZ_TIKTOK_CTA_KEY);
       if (savedTiktokCta) {
         const tc = JSON.parse(savedTiktokCta);
@@ -217,7 +217,7 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result
       <div style={{ backgroundColor: '#fdf2f8', borderRadius: '16px', padding: '12px', marginBottom: '12px', border: '1px solid #fce7f3' }}>
         <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700', marginBottom: '8px' }}>📏 投稿文字数を選択</div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          {([300, 500, 600] as (300|500|600)[]).map(len => (
+          {([300, 400, 500, 600] as (300|400|500|600)[]).map(len => (
             <button key={len} onClick={() => { setTiktokLength(len); try { localStorage.setItem(BUZZ_LENGTH_KEY, String(len)); } catch {}; }} style={{
               flex: 1, padding: '8px 0', borderRadius: '10px', border: '2px solid',
               fontSize: '13px', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s',
