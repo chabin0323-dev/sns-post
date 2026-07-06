@@ -355,7 +355,7 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result
           {isEnabled('youtubePost') && <OutputCard label="▶️ YouTube Shorts投稿文" copyText={result.youtubePost}><pre style={pre}>{result.youtubePost}</pre></OutputCard>}
           {isEnabled('noteArticle') && <OutputCard label="📝 note記事" copyText={result.noteArticle}><pre style={pre}>{result.noteArticle}</pre></OutputCard>}
           {isEnabled('noteArticle') && result.noteArticle && (
-            <WordPressPublishPanel postContent={result.noteArticle} />
+            <WordPressPublishPanel postContent={result.noteArticle} suggestedTitle={result.articleTitle} />
           )}
           {isEnabled('profileCtaText') && result.profileCtaText && <OutputCard label="👤 プロフィール誘導文" copyText={result.profileCtaText}><p style={{ fontSize: '14px', fontWeight: '700', color: '#374151', margin: 0 }}>{result.profileCtaText}</p></OutputCard>}
           {isEnabled('postUrlText') && result.postUrlText && <OutputCard label="🔗 投稿URL" copyText={result.postUrlText}><p style={{ fontSize: '13px', color: '#2563eb', margin: 0, wordBreak: 'break-all' }}>{result.postUrlText}</p></OutputCard>}
