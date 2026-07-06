@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 
 interface WordPressPublishPanelProps {
   postContent: string;
+  suggestedTitle?: string;
 }
 
 const WP_SETTINGS_KEY = 'wp_publish_settings_v1';
 
-export const WordPressPublishPanel: React.FC<WordPressPublishPanelProps> = ({ postContent }) => {
+export const WordPressPublishPanel: React.FC<WordPressPublishPanelProps> = ({ postContent, suggestedTitle }) => {
   const [siteUrl, setSiteUrl] = useState('');
   const [username, setUsername] = useState('');
   const [appPassword, setAppPassword] = useState('');
@@ -15,6 +16,7 @@ export const WordPressPublishPanel: React.FC<WordPressPublishPanelProps> = ({ po
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string; link?: string } | null>(null);
 
+  // サイトURL・ユーザー名・アプリケーションパスワードだけ記憶する（タイトルは記事ごとに変わるため記憶しない）
   React.useEffect(() => {
     try {
       const saved = localStorage.getItem(WP_SETTINGS_KEY);
@@ -23,12 +25,19 @@ export const WordPressPublishPanel: React.FC<WordPressPublishPanelProps> = ({ po
         if (p.siteUrl) setSiteUrl(p.siteUrl);
         if (p.username) setUsername(p.username);
         if (p.appPassword) setAppPassword(p.appPassword);
-        if (p.title) setTitle(p.title);
       }
     } catch {}
   }, []);
 
-  const saveSettings = (next: Partial<{ siteUrl: string; username: string; appPassword: string; title: string }>) => {
+  // 新しい記事が生成されるたびに、自動生成されたタイトル案でタイトル欄を更新する
+  React.useEffect(() => {
+    if (suggestedTitle) {
+      setTitle(suggestedTitle);
+      setResult(null);
+    }
+  }, [suggestedTitle]);
+
+  const saveSettings = (next: Partial<{ siteUrl: string; username: string; appPassword: string }>) => {
     try {
       const current = JSON.parse(localStorage.getItem(WP_SETTINGS_KEY) || '{}');
       localStorage.setItem(WP_SETTINGS_KEY, JSON.stringify({ ...current, ...next }));
@@ -38,7 +47,7 @@ export const WordPressPublishPanel: React.FC<WordPressPublishPanelProps> = ({ po
   const handleSiteUrlChange = (val: string) => { setSiteUrl(val); saveSettings({ siteUrl: val }); };
   const handleUsernameChange = (val: string) => { setUsername(val); saveSettings({ username: val }); };
   const handleAppPasswordChange = (val: string) => { setAppPassword(val); saveSettings({ appPassword: val }); };
-  const handleTitleChange = (val: string) => { setTitle(val); saveSettings({ title: val }); };
+  const handleTitleChange = (val: string) => { setTitle(val); };
 
   const handlePublish = async () => {
     if (!siteUrl || !username || !appPassword || !title) {
@@ -78,6 +87,7 @@ export const WordPressPublishPanel: React.FC<WordPressPublishPanelProps> = ({ po
         <input type="text" placeholder="ユーザー名" value={username} onChange={(e) => handleUsernameChange(e.target.value)} className="w-full px-3 py-2 border rounded text-sm" />
         <input type="password" placeholder="アプリケーションパスワード" value={appPassword} onChange={(e) => handleAppPasswordChange(e.target.value)} className="w-full px-3 py-2 border rounded text-sm" />
         <input type="text" placeholder="タイトル" value={title} onChange={(e) => handleTitleChange(e.target.value)} className="w-full px-3 py-2 border rounded text-sm" />
+        <p className="text-xs text-gray-400 -mt-1">記事生成のたびに自動でタイトル案が入ります。投稿前に自由に書き換えてください。</p>
         <div className="flex items-center gap-4 text-sm">
           <label className="flex items-center gap-1"><input type="radio" checked={status === 'draft'} onChange={() => setStatus('draft')} />下書き保存</label>
           <label className="flex items-center gap-1"><input type="radio" checked={status === 'publish'} onChange={() => setStatus('publish')} />すぐ公開</label>
