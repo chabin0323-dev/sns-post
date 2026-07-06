@@ -31,7 +31,16 @@ export default async function handler(req, res) {
     const data = await wpRes.json();
 
     if (!wpRes.ok) {
-      return res.status(wpRes.status).json({ error: data?.message || 'WordPressへの投稿に失敗しました', detail: data });
+      let diagnostic = null;
+      try {
+        const diagRes = await fetch(`${normalizedUrl}/test-auth.php`, {
+          headers: { 'Authorization': authHeader },
+        });
+        diagnostic = await diagRes.text();
+      } catch (diagErr) {
+        diagnostic = 'diagnostic fetch failed: ' + String(diagErr);
+      }
+      return res.status(wpRes.status).json({ error: data?.message || 'WordPressへの投稿に失敗しました', detail: data, diagnostic });
     }
 
     return res.status(200).json({
