@@ -15,7 +15,8 @@ type BuzzOutputKey =
   | 'threadsPost' | 'xPost' | 'instagramPost' | 'youtubePost'
   | 'noteArticle' | 'score' | 'improvement'
   | 'profileCtaText' | 'postUrlText'
-  | 'thumbnailTikTok' | 'thumbnailTikTokPerson' | 'thumbnailNote' | 'seoSpecialTitle';
+  | 'thumbnailTikTok' | 'thumbnailTikTokPerson' | 'thumbnailNote' | 'seoSpecialTitle'
+  | 'wordpressPublish';
 
 const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
   tiktokArticle:        '🎬 TikTok・YouTube Shorts・Instagram共用記事',
@@ -38,6 +39,7 @@ const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
   thumbnailTitle:       '🖼️ サムネイル用タイトル',
   score:                '⚡ BAZZ SCORE',
   improvement:          '💡 改善提案',
+  wordpressPublish:     '🌐 WordPress投稿',
 };
 
 const ALL_KEYS: BuzzOutputKey[] = [
@@ -45,7 +47,7 @@ const ALL_KEYS: BuzzOutputKey[] = [
   'noteArticle', 'profileCtaText', 'postUrlText',
   'thumbnailTikTok', 'thumbnailTikTokPerson', 'thumbnailNote',
   'seoSpecialTitle', 'seoTitle', 'seoKeywords', 'metaDescription', 'articleTitle', 'thumbnailTitle',
-  'score', 'improvement',
+  'score', 'improvement', 'wordpressPublish',
 ];
 
 const TIKTOK_CTA_TEMPLATES = [
@@ -354,7 +356,7 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result
           {isEnabled('instagramPost') && <OutputCard label="📸 Instagram投稿文" copyText={result.instagramPost}><pre style={pre}>{result.instagramPost}</pre></OutputCard>}
           {isEnabled('youtubePost') && <OutputCard label="▶️ YouTube Shorts投稿文" copyText={result.youtubePost}><pre style={pre}>{result.youtubePost}</pre></OutputCard>}
           {isEnabled('noteArticle') && <OutputCard label="📝 note記事" copyText={result.noteArticle}><pre style={pre}>{result.noteArticle}</pre></OutputCard>}
-          {isEnabled('noteArticle') && result.noteArticle && (
+          {isEnabled('wordpressPublish') && result.noteArticle && (
             <WordPressPublishPanel postContent={result.noteArticle} suggestedTitle={result.articleTitle} />
           )}
           {isEnabled('profileCtaText') && result.profileCtaText && <OutputCard label="👤 プロフィール誘導文" copyText={result.profileCtaText}><p style={{ fontSize: '14px', fontWeight: '700', color: '#374151', margin: 0 }}>{result.profileCtaText}</p></OutputCard>}
