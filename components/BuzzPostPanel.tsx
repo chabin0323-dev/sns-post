@@ -4,7 +4,7 @@ import type { BuzzPostResult } from '../types';
 import { WordPressPublishPanel } from './WordPressPublishPanel';
 
 interface BuzzPostPanelProps {
-  onGenerate: (articleText: string, length: 300 | 400 | 500 | 600, profileCta: string, postUrl: string, tiktokCta: string) => void;
+  onGenerate: (articleText: string, length: 300 | 400 | 500 | 600, profileCta: string, postUrl: string, tiktokCta: string, userTitle: string) => void;
   result: BuzzPostResult | null;
   isLoading: boolean;
 }
@@ -15,8 +15,7 @@ type BuzzOutputKey =
   | 'threadsPost' | 'xPost' | 'instagramPost' | 'youtubePost'
   | 'noteArticle' | 'score' | 'improvement'
   | 'profileCtaText' | 'postUrlText'
-  | 'thumbnailTikTok' | 'thumbnailTikTokPerson' | 'thumbnailNote' | 'seoSpecialTitle'
-  | 'wordpressPublish';
+  | 'thumbnailTikTok' | 'thumbnailTikTokPerson' | 'thumbnailNote' | 'seoSpecialTitle';
 
 const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
   tiktokArticle:        '🎬 TikTok・YouTube Shorts・Instagram共用記事',
@@ -39,7 +38,6 @@ const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
   thumbnailTitle:       '🖼️ サムネイル用タイトル',
   score:                '⚡ BAZZ SCORE',
   improvement:          '💡 改善提案',
-  wordpressPublish:     '🌐 WordPress投稿',
 };
 
 const ALL_KEYS: BuzzOutputKey[] = [
@@ -47,7 +45,7 @@ const ALL_KEYS: BuzzOutputKey[] = [
   'noteArticle', 'profileCtaText', 'postUrlText',
   'thumbnailTikTok', 'thumbnailTikTokPerson', 'thumbnailNote',
   'seoSpecialTitle', 'seoTitle', 'seoKeywords', 'metaDescription', 'articleTitle', 'thumbnailTitle',
-  'score', 'improvement', 'wordpressPublish',
+  'score', 'improvement',
 ];
 
 const TIKTOK_CTA_TEMPLATES = [
@@ -63,6 +61,7 @@ const BUZZ_KEYS_KEY       = 'buzz_output_keys_v1';
 const BUZZ_ARTICLE_KEY    = 'buzz_article_text_v1';
 const BUZZ_LENGTH_KEY     = 'buzz_tiktok_length_v1';
 const BUZZ_TIKTOK_CTA_KEY = 'buzz_tiktok_cta_v1';
+const BUZZ_TITLE_KEY      = 'buzz_user_title_v1';
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -112,6 +111,7 @@ function OutputCard({ label, children, copyText, style: extraStyle }: {
 
 export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result, isLoading }) => {
   const [articleText, setArticleText]         = useState('');
+  const [userTitle, setUserTitle]             = useState('');
   const [tiktokLength, setTiktokLength]       = useState<300 | 400 | 500 | 600>(300);
   const [enabledKeys, setEnabledKeys]         = useState<BuzzOutputKey[]>([...ALL_KEYS]);
   const [profileCta, setProfileCta]           = useState('');
@@ -136,6 +136,8 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result
       }
       const savedArticle = localStorage.getItem(BUZZ_ARTICLE_KEY);
       if (savedArticle) setArticleText(savedArticle);
+      const savedTitle = localStorage.getItem(BUZZ_TITLE_KEY);
+      if (savedTitle) setUserTitle(savedTitle);
       const savedLen = localStorage.getItem(BUZZ_LENGTH_KEY);
       if (savedLen) { const l = Number(savedLen) as 300|400|500|600; if ([300,400,500,600].includes(l)) setTiktokLength(l); }
       const savedTiktokCta = localStorage.getItem(BUZZ_TIKTOK_CTA_KEY);
@@ -177,7 +179,7 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result
 
   const handleClick = () => {
     if (!articleText.trim()) return;
-    onGenerate(articleText, tiktokLength, profileCta, postUrl, buildTiktokCta());
+    onGenerate(articleText, tiktokLength, profileCta, postUrl, buildTiktokCta(), userTitle);
   };
 
   const pre: React.CSSProperties = { fontSize: '13px', lineHeight: '1.8', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#374151', fontFamily: 'inherit' };
@@ -189,6 +191,19 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result
       <div style={{ marginBottom: '16px' }}>
         <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#72243E', margin: 0 }}>✍️ バズる投稿生成</h3>
         <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0' }}>作成済みの記事をそのまま貼り付けてください</p>
+      </div>
+
+      {/* タイトル入力エリア */}
+      <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '16px', marginBottom: '12px', border: '1px solid #fce7f3' }}>
+        <div style={{ fontSize: '13px', fontWeight: '800', color: '#72243E', marginBottom: '4px' }}>📌 タイトル（任意）</div>
+        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 8px' }}>入力すると、TikTok画像生成指示文のメインテキストに反映されます（未入力なら記事内容から自動生成）</p>
+        <input
+          type="text"
+          value={userTitle}
+          onChange={e => { setUserTitle(e.target.value); try { localStorage.setItem(BUZZ_TITLE_KEY, e.target.value); } catch {} }}
+          placeholder="例）好きな人ができた瞬間"
+          style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #fce7f3', fontSize: '13px', outline: 'none', fontFamily: 'inherit', color: '#374151', backgroundColor: '#fffafa', boxSizing: 'border-box' }}
+        />
       </div>
 
       {/* 記事貼り付けエリア */}
@@ -356,8 +371,8 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result
           {isEnabled('instagramPost') && <OutputCard label="📸 Instagram投稿文" copyText={result.instagramPost}><pre style={pre}>{result.instagramPost}</pre></OutputCard>}
           {isEnabled('youtubePost') && <OutputCard label="▶️ YouTube Shorts投稿文" copyText={result.youtubePost}><pre style={pre}>{result.youtubePost}</pre></OutputCard>}
           {isEnabled('noteArticle') && <OutputCard label="📝 note記事" copyText={result.noteArticle}><pre style={pre}>{result.noteArticle}</pre></OutputCard>}
-          {isEnabled('wordpressPublish') && result.noteArticle && (
-            <WordPressPublishPanel postContent={result.noteArticle} suggestedTitle={result.articleTitle} />
+          {isEnabled('noteArticle') && result.noteArticle && (
+            <WordPressPublishPanel postContent={result.noteArticle} />
           )}
           {isEnabled('profileCtaText') && result.profileCtaText && <OutputCard label="👤 プロフィール誘導文" copyText={result.profileCtaText}><p style={{ fontSize: '14px', fontWeight: '700', color: '#374151', margin: 0 }}>{result.profileCtaText}</p></OutputCard>}
           {isEnabled('postUrlText') && result.postUrlText && <OutputCard label="🔗 投稿URL" copyText={result.postUrlText}><p style={{ fontSize: '13px', color: '#2563eb', margin: 0, wordBreak: 'break-all' }}>{result.postUrlText}</p></OutputCard>}
