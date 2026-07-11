@@ -653,7 +653,7 @@ function generateThumbnailTikTok(
   text: string,
   emotion: EmotionType,
   postType: PostType,
-  thumbnailTitle: string, // ★ ユーザー入力タイトル、または generateThumbnailTitle の結果
+  thumbnailTitle: string, // ★ generateThumbnailTitle の結果を受け取る（TikTok・noteで完全一致）
 ): string {
   const colorMap: Record<PostType, string> = {
     '共感型': 'ソフトピンク・ラベンダー系（明るく温かみのあるトーン）',
@@ -665,36 +665,11 @@ function generateThumbnailTikTok(
     'ストーリー型': 'ウォームベージュ・ピンク系（温かく共感を呼ぶトーン）',
   };
 
-  // ★ 毎回生成結果が変わるよう、複数パターンからランダムに選ぶ
-  const layoutVariants = [
-    '画面中央に大きく配置',
-    '画面上部3分の1に大きく配置し、下部に余白を残す',
-    '画面下部3分の1に大きく配置し、上部に余白を残す',
-    '文字を少し斜めに傾けてダイナミックに配置',
-  ];
-  const layout = pickRandom(layoutVariants);
-
-  const bgStyleVariants = [
-    '・背景は単色グラデーションでシンプルに',
-    '・背景にぼかしたイメージ（風景・部屋など）を薄く敷く',
-    '・背景に淡いパターン（ドット・波線など）を敷く',
-    '・背景は上下でトーンが変わる2色グラデーションに',
-  ];
-  const bgStyle = pickRandom(bgStyleVariants);
-
-  const accentVariants = [
-    '・矢印や吹き出しなど、視線誘導の装飾を1つ添える',
-    '・キラキラ・ハートなどの装飾アイコンを控えめに添える',
-    '・下線や囲み枠で文字を強調する',
-    '・装飾は最小限にし、文字の視認性を最優先する',
-  ];
-  const accent = pickRandom(accentVariants);
-
   return [
     '【TikTok画像生成指示文】',
     'サイズ：1080 × 1920px（縦型 9:16）',
     '',
-    '■ メインテキスト（5〜8文字・' + layout + '）',
+    '■ メインテキスト（5〜8文字・画面中央に大きく配置）',
     '「' + thumbnailTitle + '」',
     '・画面全体の50〜60％を文字が占めるサイズ',
     '・スマホ一覧画面でも瞬時に読める大きさ',
@@ -703,8 +678,6 @@ function generateThumbnailTikTok(
     '',
     '■ デザイン・明るさ',
     '・配色：' + colorMap[postType],
-    bgStyle,
-    accent,
     '・明るさ：通常より＋10〜20％明るく設定',
     '・暗すぎる表現は禁止・ホラー風演出は禁止',
     '・柔らかく自然光が入る明るい雰囲気を優先',
@@ -1096,9 +1069,8 @@ export function generateBuzzPost(params: {
   profileCta: string;
   postUrl: string;
   tiktokCta: string;
-  userTitle?: string;
 }): BuzzPostResult {
-  const { articleText, tiktokLength, profileCta, postUrl, tiktokCta, userTitle } = params;
+  const { articleText, tiktokLength, profileCta, postUrl, tiktokCta } = params;
 
   const emotion = analyzeEmotion(articleText);
   const postType = selectPostType(articleText, emotion);
@@ -1126,9 +1098,7 @@ export function generateBuzzPost(params: {
   const articleTitle = generateArticleTitle(articleText, emotion, postType);
 
   // ★ 修正箇所②：thumbnailTitle を先に生成し、generateThumbnailNote に渡す
-  // ユーザーがタイトルを入力していれば、そちらを最優先で使用する
-  const autoThumbnailTitle = generateThumbnailTitle(articleText, postType);
-  const thumbnailTitle = userTitle && userTitle.trim() ? userTitle.trim() : autoThumbnailTitle;
+  const thumbnailTitle = generateThumbnailTitle(articleText, postType);
   const thumbnailTikTok = generateThumbnailTikTok(articleText, emotion, postType, thumbnailTitle);
   const thumbnailTikTokPerson = generateThumbnailTikTokPerson(articleText, emotion, postType);
   const thumbnailNote = generateThumbnailNote(articleText, emotion, postType, thumbnailTitle); // ← thumbnailTitle を渡す
