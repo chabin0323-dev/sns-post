@@ -36,6 +36,7 @@ const App: React.FC = () => {
     profileCta: string,
     postUrl: string,
     tiktokCta: string,
+    userTitle: string,
   ) => {
     setIsBuzzLoading(true);
     await new Promise(r => setTimeout(r, 400));
@@ -46,6 +47,7 @@ const App: React.FC = () => {
         profileCta,
         postUrl,
         tiktokCta,
+        userTitle,
       });
       setBuzzResult(result);
       try {
