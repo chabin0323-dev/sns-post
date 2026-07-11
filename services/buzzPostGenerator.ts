@@ -1,436 +1,1166 @@
-// components/BuzzPostPanel.tsx
-import React, { useState } from 'react';
-import type { BuzzPostResult } from '../types';
-import { WordPressPublishPanel } from './WordPressPublishPanel';
+// services/buzzPostGenerator.ts
+import type { BuzzPostResult, BuzzPostScore, BuzzImprovement } from '../types';
 
-interface BuzzPostPanelProps {
-  onGenerate: (articleText: string, length: 300 | 400 | 500 | 600, profileCta: string, postUrl: string, tiktokCta: string, userTitle: string) => void;
-  result: BuzzPostResult | null;
-  isLoading: boolean;
+type EmotionType =
+  | '共感' | '恋愛不安' | '切なさ' | '後悔' | '嫉妬'
+  | '孤独' | '依存' | '片思い' | '復縁願望' | '失恋'
+  | '期待' | '安心感' | '自己肯定感' | '驚き';
+
+type PostType =
+  | '共感型' | '衝撃型' | '切ない型' | '恋愛依存型'
+  | '暴露型' | '心理学型' | 'ストーリー型';
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
-type BuzzOutputKey =
-  | 'tiktokArticle' | 'hashtags' | 'seoTitle' | 'seoKeywords'
-  | 'metaDescription' | 'articleTitle' | 'thumbnailTitle'
-  | 'threadsPost' | 'xPost' | 'instagramPost' | 'youtubePost'
-  | 'noteArticle' | 'score' | 'improvement'
-  | 'profileCtaText' | 'postUrlText'
-  | 'thumbnailTikTok' | 'thumbnailTikTokPerson' | 'thumbnailNote' | 'seoSpecialTitle';
+function countTextChars(text: string): number {
+  return text.replace(/[\n\t\r]/g, '').length;
+}
 
-const OUTPUT_LABELS: Record<BuzzOutputKey, string> = {
-  tiktokArticle:        '🎬 TikTok・YouTube Shorts・Instagram共用記事',
-  hashtags:             '# ハッシュタグ',
-  threadsPost:          '💬 Threads投稿文',
-  xPost:                '✖️ X投稿文',
-  instagramPost:        '📸 Instagram投稿文',
-  youtubePost:          '▶️ YouTube Shorts',
-  noteArticle:          '📝 note記事',
-  profileCtaText:       '👤 プロフィール誘導文',
-  postUrlText:          '🔗 投稿URL',
-  thumbnailTikTok:      '🎨 TikTok画像生成指示文',
-  thumbnailTikTokPerson:'👤 TikTok人物画像生成指示文',
-  thumbnailNote:        '📝 note画像生成指示文',
-  seoSpecialTitle:      '🔍 SEO特化タイトル',
-  seoTitle:             '🔍 SEOタイトル',
-  seoKeywords:          '🏷️ SEOキーワード',
-  metaDescription:      '📄 メタディスクリプション',
-  articleTitle:         '📰 記事タイトル',
-  thumbnailTitle:       '🖼️ サムネイル用タイトル',
-  score:                '⚡ BAZZ SCORE',
-  improvement:          '💡 改善提案',
+// ============================================================
+// 感情分析
+// ============================================================
+const EMOTION_KEYWORDS: Record<EmotionType, string[]> = {
+  '共感': ['わかる', '同じ', 'あるある', '私だけ', 'みんな', 'そうだよね', '経験', '共感'],
+  '恋愛不安': ['不安', '心配', '怖い', '嫌われ', '脈', 'LINEが来ない', '既読スルー', '返信'],
+  '切なさ': ['切ない', '寂しい', '会いたい', '会えない', '好きなのに', 'もどかしい', '届かない'],
+  '後悔': ['後悔', 'あの時', 'もっと早く', '気づかなかった', '逃した', '失った'],
+  '嫉妬': ['他の女', '他の男', '浮気', 'ヤキモチ', '羨ましい', '悔しい'],
+  '孤独': ['一人', '誰もいない', '理解されない', '孤立', '話せない', '頼れない'],
+  '依存': ['離れられない', 'ないと無理', '必要', 'すがる', '手放せない', 'やめられない'],
+  '片思い': ['片思い', '好きな人', '告白', '気持ちを伝え', '両想い', '振られ', '勇気がなく'],
+  '復縁願望': ['復縁', '元彼', '元カノ', '戻りたい', 'もう一度', 'やり直し', '忘れられない'],
+  '失恋': ['失恋', '振られ', '別れ', 'フラれ', '終わった', '好きだったのに', '泣いた'],
+  '期待': ['期待', 'もしかして', 'チャンス', '脈あり', '好意', 'アピール', 'サイン'],
+  '安心感': ['安心', 'ほっとした', '大丈夫', '信じ', '大切にされ', '愛されてる', '幸せ'],
+  '自己肯定感': ['自分を好き', '自信', '自己肯定', '自分を大切', '変わった', '成長'],
+  '驚き': ['実は', 'まさか', '知らなかった', '衝撃', 'びっくり', '意外', '真実'],
 };
 
-const ALL_KEYS: BuzzOutputKey[] = [
-  'tiktokArticle', 'hashtags', 'threadsPost', 'xPost', 'instagramPost', 'youtubePost',
-  'noteArticle', 'profileCtaText', 'postUrlText',
-  'thumbnailTikTok', 'thumbnailTikTokPerson', 'thumbnailNote',
-  'seoSpecialTitle', 'seoTitle', 'seoKeywords', 'metaDescription', 'articleTitle', 'thumbnailTitle',
-  'score', 'improvement',
-];
-
-const TIKTOK_CTA_TEMPLATES = [
-  '❤️ 気になる方は\nプロフィールのリンクから',
-  '❤️ 続きが気になる方は\nプロフィールのリンクから',
-  '❤️ もっと詳しく知りたい方は\nプロフィールのリンクから',
-  '❤️ 共感した方は\nプロフィールのリンクから',
-  '❤️ 保存してゆっくり読んでね\nプロフィールのリンクから',
-];
-
-const BUZZ_SETTINGS_KEY   = 'buzz_post_settings_v1';
-const BUZZ_KEYS_KEY       = 'buzz_output_keys_v1';
-const BUZZ_ARTICLE_KEY    = 'buzz_article_text_v1';
-const BUZZ_LENGTH_KEY     = 'buzz_tiktok_length_v1';
-const BUZZ_TIKTOK_CTA_KEY = 'buzz_tiktok_cta_v1';
-const BUZZ_TITLE_KEY      = 'buzz_user_title_v1';
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button onClick={async () => {
-      try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {}
-    }} style={{
-      padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold',
-      border: '1px solid', cursor: 'pointer', transition: 'all 0.2s',
-      backgroundColor: copied ? '#D1FAE5' : '#fff',
-      borderColor: copied ? '#6EE7B7' : '#e5e7eb',
-      color: copied ? '#065F46' : '#6b7280',
-    }}>
-      {copied ? '✅ コピー済み' : '📋 コピー'}
-    </button>
-  );
+function analyzeEmotion(text: string): EmotionType {
+  const scores: Partial<Record<EmotionType, number>> = {};
+  for (const [emotion, keywords] of Object.entries(EMOTION_KEYWORDS) as [EmotionType, string[]][]) {
+    scores[emotion] = keywords.filter(kw => text.includes(kw)).length;
+  }
+  const sorted = (Object.entries(scores) as [EmotionType, number][]).sort((a, b) => b[1] - a[1]);
+  return sorted[0][1] > 0 ? sorted[0][0] : '共感';
 }
 
-function ScoreBar({ label, value }: { label: string; value: number }) {
-  const color = value >= 85 ? '#10B981' : value >= 70 ? '#F59E0B' : '#EF4444';
-  return (
-    <div style={{ marginBottom: '8px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-        <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '600' }}>{label}</span>
-        <span style={{ fontSize: '12px', fontWeight: 'bold', color }}>{value}</span>
-      </div>
-      <div style={{ height: '6px', backgroundColor: '#f3f4f6', borderRadius: '3px', overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${value}%`, backgroundColor: color, borderRadius: '3px', transition: 'width 0.6s ease' }} />
-      </div>
-    </div>
-  );
-}
-
-function OutputCard({ label, children, copyText, style: extraStyle }: {
-  label: string; children: React.ReactNode; copyText?: string; style?: React.CSSProperties;
-}) {
-  return (
-    <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '16px', marginBottom: '12px', border: '1px solid #fce7f3', boxShadow: '0 2px 8px rgba(212,83,126,0.06)', ...extraStyle }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <div style={{ fontSize: '13px', fontWeight: '800', color: '#72243E' }}>{label}</div>
-        {copyText && <CopyButton text={copyText} />}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result, isLoading }) => {
-  const [articleText, setArticleText]         = useState('');
-  const [userTitle, setUserTitle]             = useState('');
-  const [tiktokLength, setTiktokLength]       = useState<300 | 400 | 500 | 600>(300);
-  const [enabledKeys, setEnabledKeys]         = useState<BuzzOutputKey[]>([...ALL_KEYS]);
-  const [profileCta, setProfileCta]           = useState('');
-  const [postUrl, setPostUrl]                 = useState('');
-  const [savedMsg, setSavedMsg]               = useState(false);
-  const [tiktokCtaTemplate, setTiktokCtaTemplate] = useState(TIKTOK_CTA_TEMPLATES[0]);
-  const [tiktokCtaExtra, setTiktokCtaExtra]   = useState('');
-  const [tiktokCtaSaved, setTiktokCtaSaved]   = useState(false);
-
-  React.useEffect(() => {
-    try {
-      const saved = localStorage.getItem(BUZZ_SETTINGS_KEY);
-      if (saved) {
-        const p = JSON.parse(saved);
-        if (p.profileCta) setProfileCta(p.profileCta);
-        if (p.postUrl)    setPostUrl(p.postUrl);
-      }
-      const savedKeys = localStorage.getItem(BUZZ_KEYS_KEY);
-      if (savedKeys) {
-        const pk = JSON.parse(savedKeys) as BuzzOutputKey[];
-        if (Array.isArray(pk) && pk.length > 0) setEnabledKeys(pk);
-      }
-      const savedArticle = localStorage.getItem(BUZZ_ARTICLE_KEY);
-      if (savedArticle) setArticleText(savedArticle);
-      const savedTitle = localStorage.getItem(BUZZ_TITLE_KEY);
-      if (savedTitle) setUserTitle(savedTitle);
-      const savedLen = localStorage.getItem(BUZZ_LENGTH_KEY);
-      if (savedLen) { const l = Number(savedLen) as 300|400|500|600; if ([300,400,500,600].includes(l)) setTiktokLength(l); }
-      const savedTiktokCta = localStorage.getItem(BUZZ_TIKTOK_CTA_KEY);
-      if (savedTiktokCta) {
-        const tc = JSON.parse(savedTiktokCta);
-        if (tc.template) setTiktokCtaTemplate(tc.template);
-        if (tc.extra)    setTiktokCtaExtra(tc.extra);
-      }
-    } catch {}
-  }, []);
-
-  const handleProfileCtaChange = (val: string) => {
-    setProfileCta(val);
-    try { const c = JSON.parse(localStorage.getItem(BUZZ_SETTINGS_KEY) || '{}'); localStorage.setItem(BUZZ_SETTINGS_KEY, JSON.stringify({ ...c, profileCta: val })); } catch {}
-  };
-  const handlePostUrlChange = (val: string) => {
-    setPostUrl(val);
-    try { const c = JSON.parse(localStorage.getItem(BUZZ_SETTINGS_KEY) || '{}'); localStorage.setItem(BUZZ_SETTINGS_KEY, JSON.stringify({ ...c, postUrl: val })); } catch {}
-  };
-  const handleSave = () => {
-    try { localStorage.setItem(BUZZ_SETTINGS_KEY, JSON.stringify({ profileCta, postUrl })); setSavedMsg(true); setTimeout(() => setSavedMsg(false), 2000); } catch {}
-  };
-  const handleTiktokCtaSave = () => {
-    try { localStorage.setItem(BUZZ_TIKTOK_CTA_KEY, JSON.stringify({ template: tiktokCtaTemplate, extra: tiktokCtaExtra })); setTiktokCtaSaved(true); setTimeout(() => setTiktokCtaSaved(false), 2000); } catch {}
-  };
-  // 追加誘導文があれば優先、空欄の場合はテンプレを使用
-  const buildTiktokCta = () => tiktokCtaExtra.trim() ? tiktokCtaExtra.trim() : tiktokCtaTemplate;
-
-  const toggleKey = (key: BuzzOutputKey) => {
-    setEnabledKeys(prev => {
-      const next = prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key];
-      try { localStorage.setItem(BUZZ_KEYS_KEY, JSON.stringify(next)); } catch {}
-      return next;
-    });
-  };
-  const handleSelectAll = () => { setEnabledKeys([...ALL_KEYS]); try { localStorage.setItem(BUZZ_KEYS_KEY, JSON.stringify([...ALL_KEYS])); } catch {} };
-  const handleClearAll  = () => { setEnabledKeys([]); try { localStorage.setItem(BUZZ_KEYS_KEY, JSON.stringify([])); } catch {} };
-  const isEnabled = (key: BuzzOutputKey) => enabledKeys.includes(key);
-
-  const handleClick = () => {
-    if (!articleText.trim()) return;
-    onGenerate(articleText, tiktokLength, profileCta, postUrl, buildTiktokCta(), userTitle);
-  };
-
-  const pre: React.CSSProperties = { fontSize: '13px', lineHeight: '1.8', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#374151', fontFamily: 'inherit' };
-
-  return (
-    <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '20px', border: '2px solid #fce7f3', boxShadow: '0 4px 20px rgba(212,83,126,0.08)' }}>
-
-      {/* タイトル */}
-      <div style={{ marginBottom: '16px' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#72243E', margin: 0 }}>✍️ バズる投稿生成</h3>
-        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0' }}>作成済みの記事をそのまま貼り付けてください</p>
-      </div>
-
-      {/* タイトル入力エリア */}
-      <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '16px', marginBottom: '12px', border: '1px solid #fce7f3' }}>
-        <div style={{ fontSize: '13px', fontWeight: '800', color: '#72243E', marginBottom: '4px' }}>📌 タイトル（任意）</div>
-        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 8px' }}>入力すると、TikTok画像生成指示文のメインテキストに反映されます（未入力なら記事内容から自動生成）</p>
-        <input
-          type="text"
-          value={userTitle}
-          onChange={e => { setUserTitle(e.target.value); try { localStorage.setItem(BUZZ_TITLE_KEY, e.target.value); } catch {} }}
-          placeholder="例）好きな人ができた瞬間"
-          style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #fce7f3', fontSize: '13px', outline: 'none', fontFamily: 'inherit', color: '#374151', backgroundColor: '#fffafa', boxSizing: 'border-box' }}
-        />
-      </div>
-
-      {/* 記事貼り付けエリア */}
-      <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '16px', marginBottom: '12px', border: '1px solid #fce7f3' }}>
-        <div style={{ fontSize: '13px', fontWeight: '800', color: '#72243E', marginBottom: '8px' }}>📄 記事本文を貼り付け</div>
-        <textarea
-          value={articleText}
-          onChange={e => { setArticleText(e.target.value); try { localStorage.setItem(BUZZ_ARTICLE_KEY, e.target.value); } catch {} }}
-          placeholder={'作成済みの記事・台本をここに貼り付けてください\n\n※記事本文は変更・削除・要約しません'}
-          rows={8}
-          style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #fce7f3', fontSize: '13px', lineHeight: '1.7', resize: 'vertical', outline: 'none', fontFamily: 'inherit', color: '#374151', backgroundColor: '#fffafa', boxSizing: 'border-box' }}
-        />
-        <div style={{ marginTop: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button
-            onClick={() => { setArticleText(''); try { localStorage.setItem(BUZZ_ARTICLE_KEY, ''); } catch {} }}
-            style={{
-              padding: '4px 12px', borderRadius: '8px', border: '1px solid #fce7f3',
-              fontSize: '11px', fontWeight: '700', cursor: 'pointer',
-              backgroundColor: '#fff', color: '#D4537E',
-            }}
-          >🗑️ 全て削除</button>
-          <span style={{ fontSize: '11px', color: '#9ca3af' }}>
-            {articleText.replace(/\n/g, '').length}文字（改行除外）／ 設定：{tiktokLength}字
-          </span>
-        </div>
-      </div>
-
-      {/* 文字数選択 */}
-      <div style={{ backgroundColor: '#fdf2f8', borderRadius: '16px', padding: '12px', marginBottom: '12px', border: '1px solid #fce7f3' }}>
-        <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700', marginBottom: '8px' }}>📏 投稿文字数を選択</div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {([300, 400, 500, 600] as (300|400|500|600)[]).map(len => (
-            <button key={len} onClick={() => { setTiktokLength(len); try { localStorage.setItem(BUZZ_LENGTH_KEY, String(len)); } catch {}; }} style={{
-              flex: 1, padding: '8px 0', borderRadius: '10px', border: '2px solid',
-              fontSize: '13px', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s',
-              backgroundColor: tiktokLength === len ? '#FFE0EC' : '#fff',
-              borderColor: tiktokLength === len ? '#D4537E' : '#e5e7eb',
-              color: tiktokLength === len ? '#72243E' : '#6b7280',
-            }}>{len}字</button>
-          ))}
-        </div>
-      </div>
-
-      {/* 設定エリア */}
-      <div style={{ backgroundColor: '#fdf2f8', borderRadius: '16px', padding: '14px', marginBottom: '12px', border: '1px solid #fce7f3' }}>
-        <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700', marginBottom: '10px' }}>⚙️ 設定（保存するとアプリ再起動後も保持）</div>
-
-        {/* プロフィール誘導文 */}
-        <div style={{ marginBottom: '10px' }}>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: '#72243E', marginBottom: '4px' }}>👤 プロフィール誘導文</div>
-          <input type="text" value={profileCta} onChange={e => handleProfileCtaChange(e.target.value)}
-            placeholder="例）プロフのリンクから詳細を確認してね💕"
-            style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #fce7f3', fontSize: '13px', outline: 'none', fontFamily: 'inherit', color: '#374151', backgroundColor: '#fffafa', boxSizing: 'border-box' }}
-          />
-        </div>
-
-        {/* 投稿URL */}
-        <div style={{ marginBottom: '10px' }}>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: '#72243E', marginBottom: '4px' }}>🔗 投稿URL</div>
-          <input type="text" value={postUrl} onChange={e => handlePostUrlChange(e.target.value)}
-            placeholder="例）https://note.com/yourname/n/xxxxx"
-            style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #fce7f3', fontSize: '13px', outline: 'none', fontFamily: 'inherit', color: '#374151', backgroundColor: '#fffafa', boxSizing: 'border-box' }}
-          />
-        </div>
-
-        {/* TikTok専用誘導文 */}
-        <div style={{ borderTop: '1px solid #fce7f3', paddingTop: '10px', marginTop: '4px', marginBottom: '10px' }}>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: '#72243E', marginBottom: '6px' }}>🎬 TikTok専用誘導文（他SNSには反映されません）</div>
-          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>雛型を選択</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
-            {TIKTOK_CTA_TEMPLATES.map((tmpl, i) => (
-              <button key={i} onClick={() => setTiktokCtaTemplate(tmpl)} style={{
-                padding: '8px 10px', borderRadius: '10px', border: '1px solid',
-                fontSize: '12px', cursor: 'pointer', textAlign: 'left', lineHeight: '1.5',
-                backgroundColor: tiktokCtaTemplate === tmpl ? '#FFE0EC' : '#fff',
-                borderColor: tiktokCtaTemplate === tmpl ? '#D4537E' : '#e5e7eb',
-                color: tiktokCtaTemplate === tmpl ? '#72243E' : '#6b7280',
-                fontWeight: tiktokCtaTemplate === tmpl ? '700' : '400',
-              }}>{tmpl}</button>
-            ))}
-          </div>
-          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>TikTok追加誘導文（自由入力）</div>
-          <textarea value={tiktokCtaExtra} onChange={e => {
-            setTiktokCtaExtra(e.target.value);
-            try { localStorage.setItem(BUZZ_TIKTOK_CTA_KEY, JSON.stringify({ template: tiktokCtaTemplate, extra: e.target.value })); } catch {}
-          }}
-            placeholder={'例）彼の本音が知りたい方は\nプロフィールのリンクから'}
-            rows={2}
-            style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #fce7f3', fontSize: '12px', lineHeight: '1.6', outline: 'none', fontFamily: 'inherit', color: '#374151', backgroundColor: '#fffafa', boxSizing: 'border-box', resize: 'none' }}
-          />
-          <button onClick={handleTiktokCtaSave} style={{
-            marginTop: '6px', padding: '6px 16px', borderRadius: '10px', border: 'none',
-            fontSize: '12px', fontWeight: '800', cursor: 'pointer',
-            backgroundColor: tiktokCtaSaved ? '#D1FAE5' : '#FFE0EC',
-            color: tiktokCtaSaved ? '#065F46' : '#72243E', transition: 'all 0.2s',
-          }}>{tiktokCtaSaved ? '✅ 保存しました' : '💾 TikTok誘導文を保存'}</button>
-        </div>
-
-        {/* 設定保存ボタン */}
-        <button onClick={handleSave} style={{
-          padding: '8px 20px', borderRadius: '10px', border: 'none',
-          fontSize: '12px', fontWeight: '800', cursor: 'pointer',
-          backgroundColor: savedMsg ? '#D1FAE5' : '#FFE0EC',
-          color: savedMsg ? '#065F46' : '#72243E', transition: 'all 0.2s',
-        }}>{savedMsg ? '✅ 保存しました' : '💾 設定を保存'}</button>
-      </div>
-
-      {/* 出力項目トグル */}
-      <div style={{ backgroundColor: '#fdf2f8', borderRadius: '16px', padding: '12px', marginBottom: '12px', border: '1px solid #fce7f3' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700' }}>📋 出力する項目を選択（初期：全選択）</div>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <button onClick={handleSelectAll} style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', border: '1px solid #D4537E', backgroundColor: '#FFE0EC', color: '#72243E', cursor: 'pointer', fontWeight: '700' }}>全選択</button>
-            <button onClick={handleClearAll}  style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', border: '1px solid #e5e7eb', backgroundColor: '#fff', color: '#6b7280', cursor: 'pointer', fontWeight: '700' }}>全解除</button>
-          </div>
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-          {ALL_KEYS.map(key => (
-            <button key={key} onClick={() => toggleKey(key)} style={{
-              fontSize: '11px', padding: '4px 10px', borderRadius: '20px',
-              border: '1px solid', cursor: 'pointer', transition: 'all 0.15s', fontWeight: '700',
-              backgroundColor: isEnabled(key) ? '#FFE0EC' : '#f9fafb',
-              borderColor: isEnabled(key) ? '#D4537E' : '#e5e7eb',
-              color: isEnabled(key) ? '#72243E' : '#9ca3af',
-            }}>{OUTPUT_LABELS[key]}</button>
-          ))}
-        </div>
-      </div>
-
-      {/* 生成ボタン */}
-      <button onClick={handleClick} disabled={isLoading || !articleText.trim()} style={{
-        width: '100%', padding: '14px', borderRadius: '14px', border: 'none',
-        fontSize: '15px', fontWeight: '900', letterSpacing: '0.5px', marginBottom: '20px',
-        cursor: !articleText.trim() || isLoading ? 'not-allowed' : 'pointer',
-        background: !articleText.trim() || isLoading ? '#ccc' : 'linear-gradient(135deg, #F472B6 0%, #D4537E 50%, #9333EA 100%)',
-        color: '#fff',
-        boxShadow: !articleText.trim() || isLoading ? 'none' : '0 4px 20px rgba(212,83,126,0.4)',
-        transition: 'all 0.2s',
-      }}>{isLoading ? '⟳ 分析・生成中...' : '🔥 バズる投稿を生成する'}</button>
-
-      {/* 生成結果 */}
-      {result && (
-        <div>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '12px', fontWeight: '800', backgroundColor: '#EDE9FE', color: '#5B21B6', padding: '4px 12px', borderRadius: '20px' }}>感情：{result.emotionType}</span>
-            <span style={{ fontSize: '12px', fontWeight: '800', backgroundColor: '#FCE7F3', color: '#9D174D', padding: '4px 12px', borderRadius: '20px' }}>タイプ：{result.postType}</span>
-          </div>
-
-          {isEnabled('tiktokArticle') && (
-            <OutputCard label="🎬 TikTok・YouTube Shorts・Instagram共用記事（20文字改行）" copyText={result.tiktokArticle}>
-              <pre style={pre}>{result.tiktokArticle}</pre>
-              <p style={{ fontSize: '11px', color: '#9ca3af', margin: '6px 0 0' }}>改行除外文字数：{result.tiktokArticle.replace(/\n/g, '').length}字</p>
-            </OutputCard>
-          )}
-          {isEnabled('hashtags') && (
-            <OutputCard label="# ハッシュタグ（TikTok / Instagram / Threads / X / YouTube対応）" copyText={result.hashtags.join(' ')}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
-                {result.hashtags.map((tag, i) => <span key={i} style={{ fontSize: '12px', fontWeight: '700', backgroundColor: '#EDE9FE', color: '#5B21B6', padding: '4px 10px', borderRadius: '20px' }}>{tag}</span>)}
-              </div>
-              <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>記事内容を分析して生成した動的ハッシュタグです</p>
-            </OutputCard>
-          )}
-          {isEnabled('threadsPost') && <OutputCard label="💬 Threads投稿文" copyText={result.threadsPost}><pre style={pre}>{result.threadsPost}</pre></OutputCard>}
-          {isEnabled('xPost') && <OutputCard label="✖️ X投稿文" copyText={result.xPost}><pre style={pre}>{result.xPost}</pre><p style={{ fontSize: '11px', color: '#9ca3af', margin: '6px 0 0' }}>※冒頭4行＋CTA＋URL＋ハッシュタグ</p></OutputCard>}
-          {isEnabled('instagramPost') && <OutputCard label="📸 Instagram投稿文" copyText={result.instagramPost}><pre style={pre}>{result.instagramPost}</pre></OutputCard>}
-          {isEnabled('youtubePost') && <OutputCard label="▶️ YouTube Shorts投稿文" copyText={result.youtubePost}><pre style={pre}>{result.youtubePost}</pre></OutputCard>}
-          {isEnabled('noteArticle') && <OutputCard label="📝 note記事" copyText={result.noteArticle}><pre style={pre}>{result.noteArticle}</pre></OutputCard>}
-          {isEnabled('noteArticle') && result.noteArticle && (
-            <WordPressPublishPanel postContent={result.noteArticle} />
-          )}
-          {isEnabled('profileCtaText') && result.profileCtaText && <OutputCard label="👤 プロフィール誘導文" copyText={result.profileCtaText}><p style={{ fontSize: '14px', fontWeight: '700', color: '#374151', margin: 0 }}>{result.profileCtaText}</p></OutputCard>}
-          {isEnabled('postUrlText') && result.postUrlText && <OutputCard label="🔗 投稿URL" copyText={result.postUrlText}><p style={{ fontSize: '13px', color: '#2563eb', margin: 0, wordBreak: 'break-all' }}>{result.postUrlText}</p></OutputCard>}
-          {isEnabled('thumbnailTikTok') && <OutputCard label="🎨 TikTok画像生成指示文（1080×1920）" copyText={result.thumbnailTikTok}><pre style={pre}>{result.thumbnailTikTok}</pre></OutputCard>}
-          {isEnabled('thumbnailTikTokPerson') && <OutputCard label="👤 TikTok人物画像生成指示文（CapCutテンプレート用）" copyText={result.thumbnailTikTokPerson}><pre style={pre}>{result.thumbnailTikTokPerson}</pre></OutputCard>}
-          {isEnabled('thumbnailNote') && <OutputCard label="📝 note画像生成指示文（1280×670）" copyText={result.thumbnailNote}><pre style={pre}>{result.thumbnailNote}</pre></OutputCard>}
-          {isEnabled('seoSpecialTitle') && <OutputCard label="🔍 SEO特化タイトル（検索流入・クリック率重視）" copyText={result.seoSpecialTitle}><p style={{ fontSize: '15px', fontWeight: '900', color: '#1e40af', margin: 0 }}>{result.seoSpecialTitle}</p><p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0' }}>{result.seoSpecialTitle.length}文字</p></OutputCard>}
-          {isEnabled('seoTitle') && <OutputCard label="🔍 SEOタイトル" copyText={result.seoTitle}><p style={{ fontSize: '14px', fontWeight: '800', color: '#1e40af', margin: 0 }}>{result.seoTitle}</p></OutputCard>}
-          {isEnabled('seoKeywords') && (
-            <OutputCard label="🏷️ SEOキーワード" copyText={result.seoKeywords.join(', ')}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {result.seoKeywords.map((kw, i) => <span key={i} style={{ fontSize: '12px', fontWeight: '700', backgroundColor: '#DBEAFE', color: '#1e40af', padding: '4px 10px', borderRadius: '20px' }}>{kw}</span>)}
-              </div>
-            </OutputCard>
-          )}
-          {isEnabled('metaDescription') && <OutputCard label="📄 メタディスクリプション" copyText={result.metaDescription}><p style={{ fontSize: '13px', color: '#374151', lineHeight: '1.7', margin: 0 }}>{result.metaDescription}</p><p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0' }}>{result.metaDescription.length}文字</p></OutputCard>}
-          {isEnabled('articleTitle') && <OutputCard label="📰 記事タイトル" copyText={result.articleTitle}><p style={{ fontSize: '15px', fontWeight: '800', color: '#374151', margin: 0 }}>{result.articleTitle}</p></OutputCard>}
-          {isEnabled('thumbnailTitle') && <OutputCard label="🖼️ サムネイル用タイトル" copyText={result.thumbnailTitle}><p style={{ fontSize: '18px', fontWeight: '900', color: '#D4537E', margin: 0 }}>{result.thumbnailTitle}</p></OutputCard>}
-          {isEnabled('score') && (
-            <OutputCard label="⚡ BAZZ SCORE（推定）">
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
-                <span style={{ fontSize: '22px', fontWeight: '900', color: result.score.total >= 85 ? '#10B981' : result.score.total >= 70 ? '#F59E0B' : '#EF4444' }}>
-                  {result.score.total}<span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 'normal' }}>/100</span>
-                </span>
-              </div>
-              <ScoreBar label="共感力"          value={result.score.empathy} />
-              <ScoreBar label="保存率"          value={result.score.saveRate} />
-              <ScoreBar label="クリック率"      value={result.score.clickRate} />
-              <ScoreBar label="拡散率"          value={result.score.spreadRate} />
-              <ScoreBar label="コメント率"      value={result.score.commentRate} />
-              <ScoreBar label="プロフィール誘導力" value={result.score.profileRate} />
-              <p style={{ fontSize: '10px', color: '#9ca3af', margin: '10px 0 0', textAlign: 'right' }}>※推定スコアです</p>
-            </OutputCard>
-          )}
-          {isEnabled('improvement') && result.improvement && (
-            <OutputCard label="💡 改善提案" style={{ backgroundColor: '#FFFBEB', border: '1px solid #FDE68A' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {[
-                  { label: 'フック改善',    text: result.improvement.hookSuggestion },
-                  { label: '感情強化',      text: result.improvement.emotionSuggestion },
-                  { label: '保存率UP',      text: result.improvement.saveSuggestion },
-                  { label: 'クリック率UP',  text: result.improvement.clickSuggestion },
-                ].map(({ label, text }) => (
-                  <div key={label} style={{ backgroundColor: '#fff', padding: '10px 12px', borderRadius: '10px', border: '1px solid #FDE68A' }}>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: '#92400E', marginRight: '6px' }}>{label}</span>
-                    <span style={{ fontSize: '12px', color: '#374151', lineHeight: '1.6' }}>{text}</span>
-                  </div>
-                ))}
-              </div>
-            </OutputCard>
-          )}
-          {isEnabled('improvement') && !result.improvement && (
-            <div style={{ backgroundColor: '#D1FAE5', borderRadius: '16px', padding: '16px', border: '1px solid #6EE7B7', textAlign: 'center', marginBottom: '12px' }}>
-              <p style={{ fontSize: '14px', fontWeight: '900', color: '#065F46', margin: 0 }}>🎉 スコア95点以上！このまま投稿GO!</p>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
+// ============================================================
+// 投稿タイプ選択
+// ============================================================
+const POST_TYPE_KEYWORDS: Record<PostType, string[]> = {
+  '共感型': ['わかる', '同じ', 'あるある', 'そうだよね', '私も'],
+  '衝撃型': ['実は', '知らなかった', '驚き', '衝撃', 'まさか', '意外'],
+  '切ない型': ['切ない', '寂しい', '会いたい', 'もどかしい', '届かない'],
+  '恋愛依存型': ['離れられない', '必要', '手放せない', 'すがる'],
+  '暴露型': ['本音', '裏側', '本当のこと', '真実', '本当は'],
+  '心理学型': ['心理', '無意識', '脳', '行動', 'パターン'],
+  'ストーリー型': ['ある日', 'あの時', 'そこから', 'ある出来事'],
 };
+
+function selectPostType(text: string, emotion: EmotionType): PostType {
+  const scores: Partial<Record<PostType, number>> = {};
+  for (const [type, keywords] of Object.entries(POST_TYPE_KEYWORDS) as [PostType, string[]][]) {
+    scores[type] = keywords.filter(kw => text.includes(kw)).length;
+  }
+  const bonus: Partial<Record<EmotionType, PostType>> = {
+    '共感': '共感型', '驚き': '衝撃型', '切なさ': '切ない型',
+    '依存': '恋愛依存型', '後悔': 'ストーリー型',
+    '恋愛不安': '心理学型', '嫉妬': '暴露型',
+  };
+  const b = bonus[emotion];
+  if (b) scores[b] = (scores[b] || 0) + 2;
+  const sorted = (Object.entries(scores) as [PostType, number][]).sort((a, b) => b[1] - a[1]);
+  return sorted[0][1] > 0 ? sorted[0][0] : '共感型';
+}
+
+// ============================================================
+// フック・コア抽出
+// ============================================================
+function extractHook(text: string): string {
+  const lines = text.split('\n').filter(l => l.trim().length > 0);
+  const first = lines[0]?.trim() ?? '';
+  return first.length <= 40 ? first : first.slice(0, 38) + '…';
+}
+
+function extractCore(text: string, tiktokLength: number): string {
+  const lines = text.split('\n').filter(l => l.trim().length > 0);
+  const bodyLines = lines.slice(1);
+  let core = bodyLines.join('\n');
+  const maxChars = tiktokLength === 300 ? 280 : tiktokLength === 400 ? 380 : tiktokLength === 500 ? 480 : 580;
+  const coreChars = countTextChars(core);
+  if (coreChars > maxChars) {
+    let trimmed = '';
+    let count = 0;
+    for (const ch of core) {
+      if (ch !== '\n') count++;
+      trimmed += ch;
+      if (count >= maxChars - 3) { trimmed += '…'; break; }
+    }
+    core = trimmed;
+  }
+  return core || lines[0]?.slice(0, maxChars) || '';
+}
+
+// ============================================================
+// ハッシュタグ生成
+// ============================================================
+function generateDynamicHashtags(text: string, emotion: EmotionType, postType: PostType): string[] {
+  const result: string[] = [];
+
+  const keywordTagMap: [string, string[]][] = [
+    ['返信が遅い', ['#返信が遅い', '#返信が来ない理由', '#好きな人の心理']],
+    ['返信', ['#返信が遅い', '#返信待ち', '#好きな人の心理']],
+    ['既読スルー', ['#既読スルー', '#既読無視', '#好きな人の本音']],
+    ['既読', ['#既読スルー', '#既読無視の理由', '#片思いあるある']],
+    ['LINE', ['#LINEの返信', '#LINEの頻度', '#好きな人とのLINE']],
+    ['沈黙', ['#急に連絡が来ない', '#返信が来ない理由', '#好きな人の本音']],
+    ['急に連絡', ['#急に連絡が来ない', '#突然の沈黙', '#恋愛の悩み']],
+    ['突然', ['#急に冷たくなった理由', '#突然の沈黙', '#恋愛の不安']],
+    ['距離を取', ['#急に距離を置く男', '#冷たくなった理由', '#男性心理']],
+    ['冷たく', ['#急に冷たくなった', '#距離を置く男心理', '#恋愛の悩み']],
+    ['脈あり', ['#脈ありサイン', '#本命だけにする行動', '#好き避け']],
+    ['本命', ['#本命だけにする行動', '#本命と遊び相手の違い', '#男性心理']],
+    ['好き避け', ['#好き避け', '#好き避け男子', '#脈あり行動']],
+    ['片思い', ['#片思い中', '#片思いあるある', '#片思い女子']],
+    ['告白', ['#告白のタイミング', '#告白が成功する方法', '#恋愛相談']],
+    ['失恋', ['#失恋した', '#失恋から立ち直る', '#失恋あるある']],
+    ['別れ', ['#別れた後', '#別れを乗り越える', '#失恋あるある']],
+    ['復縁', ['#復縁したい', '#復縁できる人の特徴', '#元彼が忘れられない']],
+    ['浮気', ['#浮気のサイン', '#浮気を疑うとき', '#恋愛の悩み']],
+    ['嫉妬', ['#やきもち', '#嫉妬する心理', '#好きな人への独占欲']],
+    ['不安', ['#恋愛の不安', '#恋愛不安あるある', '#好きな人への不安']],
+    ['依存', ['#恋愛依存', '#手放せない恋', '#執着をやめたい']],
+    ['男性心理', ['#男性心理', '#男の本音', '#男が好きな人にする行動']],
+    ['男の本音', ['#男の本音', '#男性心理', '#好きな人への本音']],
+    ['女性心理', ['#女性心理', '#女の本音', '#女が求める恋愛']],
+    ['自己肯定', ['#自己肯定感', '#自分を好きになる', '#自分磨き']],
+    ['追いかけ', ['#追いかける恋', '#追われる女になる', '#恋愛の駆け引き']],
+    ['デート', ['#デートあるある', '#デートで失敗しない', '#好きな人とのデート']],
+    ['気持ち', ['#あの人の気持ち', '#好きな人の気持ち', '#恋愛の悩み']],
+    ['気になる', ['#気になる人', '#好きな人ができた', '#片思い中']],
+    ['分からない', ['#好きな人の気持ちが分からない', '#脈ありなのか', '#恋愛相談']],
+    ['連絡が減', ['#急に連絡が減った', '#返信が来ない理由', '#恋愛の不安']],
+    ['マッチング', ['#マッチングアプリあるある', '#マッチングの本音', '#恋活']],
+    ['婚活', ['#婚活あるある', '#婚活の本音', '#結婚したい']],
+    ['年上', ['#年上好き', '#年の差恋愛', '#大人の恋愛']],
+    ['職場', ['#職場恋愛', '#社内恋愛あるある', '#職場の好きな人']],
+  ];
+
+  for (const [kw, tags] of keywordTagMap) {
+    if (text.includes(kw)) {
+      for (const tag of tags) {
+        if (!result.includes(tag)) result.push(tag);
+        if (result.length >= 5) break;
+      }
+      if (result.length >= 5) break;
+    }
+  }
+
+  const emotionTagMap: Record<EmotionType, string[]> = {
+    '共感':      ['#恋愛あるある', '#共感した人いる？', '#片思いあるある'],
+    '恋愛不安':  ['#恋愛の不安', '#好きな人への不安', '#恋愛で不安になる'],
+    '切なさ':    ['#切ない恋愛', '#届かない気持ち', '#片思いが辛い'],
+    '後悔':      ['#恋愛の後悔', '#あの時に戻りたい', '#後悔しない恋愛'],
+    '嫉妬':      ['#やきもち', '#独占欲が強い', '#嫉妬する恋愛'],
+    '孤独':      ['#恋愛で孤独', '#一人で抱える恋愛', '#誰にも言えない恋'],
+    '依存':      ['#恋愛依存', '#執着をやめたい', '#手放せない恋'],
+    '片思い':    ['#片思い中', '#片思いあるある', '#好きな人ができた'],
+    '復縁願望':  ['#復縁したい', '#元彼が忘れられない', '#やり直したい恋'],
+    '失恋':      ['#失恋した', '#失恋あるある', '#失恋から立ち直る'],
+    '期待':      ['#脈ありかも', '#もしかして好かれてる？', '#恋愛のドキドキ'],
+    '安心感':    ['#好きな人と両想い', '#幸せな恋愛', '#大切にされてる'],
+    '自己肯定感':['#自分を好きになる', '#自己肯定感を上げる', '#自分磨き恋愛'],
+    '驚き':      ['#知らなかった恋愛の話', '#恋愛の真実', '#衝撃の恋愛あるある'],
+  };
+
+  const eTags = emotionTagMap[emotion] ?? ['#恋愛の悩み', '#片思いあるある'];
+  for (const tag of eTags) {
+    if (!result.includes(tag) && result.length < 5) result.push(tag);
+  }
+
+  const postTypeTags: Record<PostType, string> = {
+    '共感型':     '#恋愛あるある',
+    '衝撃型':     '#知らなかった恋愛の真実',
+    '切ない型':   '#切ない恋愛の話',
+    '恋愛依存型': '#恋愛依存あるある',
+    '暴露型':     '#恋愛の本音',
+    '心理学型':   '#男性心理を読む',
+    'ストーリー型':'#実話の恋愛エピソード',
+  };
+  const ptTag = postTypeTags[postType];
+  if (!result.includes(ptTag) && result.length < 5) result.push(ptTag);
+
+  const fallbacks = ['#恋愛の悩み', '#好きな人への気持ち', '#恋愛相談', '#片思い中', '#恋愛がつらい'];
+  for (const fb of fallbacks) {
+    if (!result.includes(fb) && result.length < 5) result.push(fb);
+  }
+
+  return result.slice(0, 5);
+}
+
+function calcBazzScore(text: string, postType: PostType, emotion: EmotionType, profileCta: string, postUrl: string): BuzzPostScore {
+  const hasStructure = /[\d①②③]|・|□/.test(text);
+  const hasQuestion = /？|\?|どう思う|あなたは/.test(text);
+  const hasHookWord = /実は|知らなかった|衝撃|まさか/.test(text);
+  const hasShareWord = /友達|シェア|教えて|広めて/.test(text);
+  const empathy = Math.min(100, 60 + (postType === '共感型' ? 15 : 8) + Math.floor(Math.random() * 8));
+  const saveRate = Math.min(100, 60 + (hasStructure ? 15 : 0) + Math.floor(Math.random() * 8));
+  const clickRate = Math.min(100, 58 + (hasQuestion ? 12 : 0) + (hasHookWord ? 15 : 0) + Math.floor(Math.random() * 8));
+  const spreadRate = Math.min(100, 55 + (hasShareWord ? 20 : 0) + Math.floor(Math.random() * 8));
+  const commentRate = Math.min(100, 55 + (hasQuestion ? 15 : 0) + Math.floor(Math.random() * 8));
+  const profileRate = Math.min(100, 50 + (profileCta ? 25 : 0) + (postUrl ? 20 : 0));
+  const total = Math.round(empathy * 0.2 + saveRate * 0.2 + clickRate * 0.2 + spreadRate * 0.15 + commentRate * 0.1 + profileRate * 0.15);
+  return { empathy, saveRate, clickRate, spreadRate, commentRate, profileRate, total };
+}
+
+function generateImprovement(score: BuzzPostScore): BuzzImprovement | null {
+  if (score.total >= 95) return null;
+  return {
+    hookSuggestion: '冒頭に「これ知ってる？」「実は〇〇だった」など疑問・驚きで始めると開封率UP',
+    emotionSuggestion: '「そう、それ私だ」と感じさせる具体的なシーンを1つ追加するとより刺さる',
+    saveSuggestion: '「保存しておくといい」などの明示的な保存誘導を入れる',
+    clickSuggestion: '「続きはプロフィールから」より「詳しくは今すぐプロフへ→」の方が誘導率が高い',
+  };
+}
+
+// ============================================================
+// TikTok改行処理（約20文字・句読点優先・強制改行対応）
+// ============================================================
+function addTikTokLineBreaks(text: string): string {
+  return text.split('\n').map(para => {
+    if (!para.trim() || para.length <= 20) return para;
+    return breakLine(para);
+  }).join('\n');
+}
+
+function breakLine(text: string): string {
+  const TARGET = 20;
+  const MAX = 25;
+
+  const segs: string[] = [];
+  let cur = '';
+  let inKakko = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    cur += ch;
+    if (ch === '「') inKakko = true;
+    if (ch === '」') inKakko = false;
+    if (inKakko) continue;
+    if ('。！？…'.includes(ch)) {
+      segs.push(cur);
+      cur = '';
+    } else if (ch === '、' && cur.length >= 10) {
+      segs.push(cur);
+      cur = '';
+    } else if (cur.length >= MAX && !inKakko) {
+      const naturalEnds = ['が', 'を', 'に', 'は', 'で', 'と', 'も', 'から', 'けど', 'ので', 'なら'];
+      let cut = false;
+      for (const ne of naturalEnds) {
+        if (text.slice(i + 1).startsWith(ne)) {
+          segs.push(cur);
+          cur = '';
+          cut = true;
+          break;
+        }
+      }
+    }
+  }
+  if (cur) segs.push(cur);
+
+  let result = '';
+  let lineLen = 0;
+
+  for (const seg of segs) {
+    if (lineLen === 0) {
+      result += seg;
+      lineLen += seg.length;
+    } else if (lineLen + seg.length <= TARGET + 5) {
+      result += seg;
+      lineLen += seg.length;
+    } else {
+      result += '\n' + seg;
+      lineLen = seg.length;
+    }
+    if ('。！？…'.includes(seg.slice(-1)) && lineLen >= 8) {
+      result += '\n';
+      lineLen = 0;
+    }
+  }
+
+  const finalLines = result.replace(/\n$/, '').split('\n');
+  const processed = finalLines.map(line => {
+    if (line.length <= MAX) return line;
+    const chunks: string[] = [];
+    let remaining = line;
+    while (remaining.length > MAX) {
+      let cutAt = TARGET;
+      for (let offset = 0; offset <= 5; offset++) {
+        const pos = TARGET - offset;
+        if (pos > 0 && pos < remaining.length) {
+          const ch = remaining[pos - 1];
+          if ('。！？…、'.includes(ch) || ['が','を','に','は','で','と','も'].includes(remaining[pos])) {
+            cutAt = pos;
+            break;
+          }
+        }
+      }
+      chunks.push(remaining.slice(0, cutAt));
+      remaining = remaining.slice(cutAt);
+    }
+    if (remaining) chunks.push(remaining);
+    return chunks.join('\n');
+  });
+
+  return processed.join('\n');
+}
+
+// ============================================================
+// 難読漢字置換（TikTok読み上げ対策）
+// ============================================================
+function fixTikTokReading(text: string): string {
+  const r: [RegExp, string][] = [
+    [/高鳴り/g, 'ドキドキ'], [/高鳴る/g, 'ドキドキする'],
+    [/募る/g, '大きくなる'], [/葛藤/g, '心の迷い'],
+    [/曖昧/g, 'はっきりしない'], [/嫉妬/g, 'やきもち'],
+    [/孤独/g, 'ひとり'], [/脆い/g, '弱い'],
+    [/躊躇/g, 'ためらい'], [/諦め/g, 'あきらめ'],
+    [/執着/g, 'こだわり'], [/焦燥/g, 'あせり'],
+    [/喪失/g, '失った気持ち'], [/虚無/g, '空っぽな気持ち'],
+  ];
+  let result = text;
+  for (const [p, rep] of r) result = result.replace(p, rep);
+  return result;
+}
+
+// ============================================================
+// 格言生成
+// ============================================================
+function generateQuote(emotion: EmotionType): string {
+  const quotes: Record<EmotionType, string[]> = {
+    '共感': [
+      '「同じ気持ちの人がいるだけで、\n心は少し軽くなる。」',
+      '「わかってもらえた瞬間、\n人はやっと前に進める。」',
+    ],
+    '恋愛不安': [
+      '「追いかける恋より、\n追いかけられる恋の方が\n心は穏やかになる。」',
+      '「不安になるほど好きなら、\nそれは本物の気持ち。」',
+    ],
+    '切なさ': [
+      '「届かない想いも、\nちゃんと誰かの心を動かしている。」',
+      '「切なさを知っている人は、\n人の痛みにやさしくなれる。」',
+    ],
+    '後悔': [
+      '「後悔は終わりじゃない。\n気づいた瞬間が、次の始まり。」',
+      '「あの時に戻れなくても、\n今から変えることはできる。」',
+    ],
+    '嫉妬': [
+      '「やきもちは愛情の裏返し。\nただ、燃やしすぎないことが大切。」',
+      '「比べるより、\n自分を磨く方が何倍も楽しい。」',
+    ],
+    '孤独': [
+      '「ひとりの時間は、\n自分と仲良くなるチャンス。」',
+      '「自分と向き合える人は、\nどこにいても強くなれる。」',
+    ],
+    '依存': [
+      '「手放す勇気が、\n新しい出会いを呼んでくる。」',
+      '「自分を満たせる人が、\n人を本当に愛せる。」',
+    ],
+    '片思い': [
+      '「全力で誰かを好きになれること、\nそれだけで十分すごいことだよ。」',
+      '「気持ちを伝えた勇気は、\n結果に関係なく宝物になる。」',
+    ],
+    '復縁願望': [
+      '「縁があるものは、\n離れてもまた戻ってくる。」',
+      '「忘れられない人がいるなら、\nそれだけ本気で愛せた証拠。」',
+    ],
+    '失恋': [
+      '「失恋は終わりじゃなく、\n本当の自分に戻るきっかけ。」',
+      '「傷ついた心は、\n必ず前より強く育っていく。」',
+    ],
+    '期待': [
+      '「ときめきを感じた瞬間、\n人生は少し輝き始める。」',
+      '「チャンスは動いた人のところへやってくる。」',
+    ],
+    '安心感': [
+      '「一緒にいて楽な人が、\n本当に合う人。」',
+      '「心が穏やかな恋愛が、\n一番長続きする。」',
+    ],
+    '自己肯定感': [
+      '「自分を好きでいられる人が、\n一番愛される。」',
+      '「あなたの価値は、\n誰かの評価では決まらない。」',
+    ],
+    '驚き': [
+      '「知らなかった事実が、\n見え方を変えることがある。」',
+      '「気づいた瞬間から、\n世界は少し違って見える。」',
+    ],
+  };
+  return pickRandom(quotes[emotion] ?? quotes['共感']);
+}
+
+// ============================================================
+// TikTok記事本文生成
+// ============================================================
+function generateTikTokArticle(
+  articleText: string,
+  tiktokLength: number,
+  tiktokCta: string,
+  emotion: EmotionType,
+  postType: PostType,
+): string {
+  const quote = generateQuote(emotion);
+  const quoteChars = countTextChars('\n\n' + quote);
+  const ctaChars = tiktokCta ? countTextChars('\n\n' + tiktokCta) : 0;
+  const bodyTarget = tiktokLength - quoteChars - ctaChars;
+
+  let base = articleText.trim();
+
+  if (countTextChars(base) > bodyTarget + 50) {
+    const lines = base.split('\n').filter(l => l.trim());
+    let truncated = '';
+    for (const line of lines) {
+      const candidate = truncated ? truncated + '\n' + line : line;
+      if (countTextChars(candidate) <= bodyTarget) {
+        truncated = candidate;
+      } else {
+        break;
+      }
+    }
+    base = truncated || lines[0] || base;
+  }
+
+  const fillers = [
+    '\n\nこれを知っているだけで、恋愛の見え方が大きく変わります。焦らなくていい。自分のペースで進んでいきましょう。',
+    '\n\n大切なのは相手の反応より、自分の気持ちに正直でいること。自分を大切にしている人は、自然と相手からも大切にされます。',
+    '\n\n恋愛でうまくいかないときほど、自分を責めないでほしい。あなたは十分頑張っている。それだけで価値があります。',
+    '\n\n今日から少しだけ、自分を優先してみてください。自分が満たされていると、不思議と恋愛もうまく回り始めます。',
+    '\n\n完璧な人なんていない。傷ついた経験があるから、人の痛みがわかる。それがあなたの一番の強みになります。',
+    '\n\n焦る気持ちはよくわかる。でも焦りは必ず相手に伝わってしまう。深呼吸して、今この瞬間だけに集中してみて。',
+    '\n\n好きな人ができるたびに全力になれるあなたは、それだけ人を大切にできる証拠。その気持ちは絶対に報われます。',
+    '\n\n恋愛は結果だけじゃない。その過程で気づいたこと、成長したこと、全部が意味を持っています。無駄な経験は一つもない。',
+    '\n\n自分を好きになることが、全ての恋愛の基盤になります。今日一つだけ、自分を褒めることを忘れないでください。',
+    '\n\nどんな結果になっても、あなたの価値は変わらない。相手の反応で自分を測ることをやめると、恋愛が急に楽になります。',
+    '\n\n恋愛で一番大切なのは自己肯定感です。自分を好きでいられる人は、どんな恋愛でも前向きに進めます。',
+    '\n\n相手のことを考えすぎるとき、少しだけ自分のことを考えてみてください。あなたの気持ちも同じくらい大切です。',
+    '\n\n一人でずっと抱えてきた気持ち、誰かに話せるだけで少し楽になります。あなたは一人じゃないから。',
+    '\n\n恋愛がうまくいかないと感じるとき、それは次のステージへの準備期間かもしれません。焦らず待てる人が最後に笑います。',
+    '\n\n好きな人の前では自然体でいることが一番の武器になります。作った自分より本当の自分の方が、ずっと魅力的に映ります。',
+    '\n\n恋愛の悩みはつきないけれど、悩める自分を責めないで。悩むのは本気だから。その真剣さが必ず伝わる日が来ます。',
+    '\n\n返信が遅くても、あなたの価値は変わらない。既読スルーされても、あなたはちゃんと素敵なんだから。',
+    '\n\nうまくいかない恋愛ほど、自分と向き合う時間をくれる。その時間を無駄にしないで。必ず次に活かされるから。',
+    '\n\n好きな気持ちは本物。それだけは絶対に間違いない。その気持ちを大切にしながら、自分のことも同じくらい大切にしてほしい。',
+    '\n\n恋愛で傷ついた経験は、誰かの痛みに寄り添える力になります。あなたの経験は無駄じゃない。',
+  ];
+
+  let i = 0;
+  while (countTextChars(base) < bodyTarget && i < fillers.length) {
+    base += fillers[i++];
+  }
+  if (countTextChars(base) < bodyTarget) {
+    base += '\n\n今日もあなたの恋愛が少しでも楽になりますように。自分を大切に、自分のペースで進んでいきましょう。';
+  }
+
+  base += '\n\n' + quote;
+  base = fixTikTokReading(base);
+  if (tiktokCta) base += '\n\n' + tiktokCta;
+
+  return addTikTokLineBreaks(base);
+}
+
+const BUZZ_POST_TEMPLATES: Record<PostType, string[]> = {
+  '共感型': [
+    '{hook}\n\nこれ、私だけじゃなかったんだって気づいた瞬間、すごく楽になった。\n\n{core}\n\n「そうそう、わかる」って感じた人、ぜひ保存してね。',
+    '{hook}\n\n同じ気持ちの人、絶対いると思って書いた。\n\n{core}\n\nコメントで「わかる」って教えてくれると嬉しいな。',
+  ],
+  '衝撃型': [
+    '{hook}\n\nこれ、ほとんどの人が知らないんだよね。\n\n{core}\n\n知ってるだけで全然違う。保存しておいて損はないよ。',
+    '{hook}\n\n正直、私も最近まで気づいてなかった。\n\n{core}\n\nこれを知ってから、見え方が変わった。',
+  ],
+  '切ない型': [
+    '{hook}\n\nずっとその気持ちを抱えてきた人に届いてほしい。\n\n{core}\n\nあなたの気持ち、ちゃんと誰かに届いてるよ。',
+    '{hook}\n\n言葉にできない気持ちって、あるよね。\n\n{core}\n\n同じ気持ちの人、ひとりじゃないよ。',
+  ],
+  '恋愛依存型': [
+    '{hook}\n\n頭ではわかってるのに、やめられない。\n\n{core}\n\n自分の気持ちに正直でいることが、最初の一歩だと思う。',
+    '{hook}\n\nこれが「好き」なのか「依存」なのか、わからなくなることってある。\n\n{core}\n\n自分の気持ちを大切にすることから始めてみて。',
+  ],
+  '暴露型': [
+    '{hook}\n\n誰も言わないけど、これが本音だと思う。\n\n{core}\n\n知ってほしかったから書いた。保存してね。',
+    '{hook}\n\n表向きとは全然違う話をするね。\n\n{core}\n\nこれ、友達にも教えてあげてほしい。',
+  ],
+  '心理学型': [
+    '{hook}\n\nこれ、心理学的に証明されてる話なんだけど。\n\n{core}\n\n人の行動には必ず理由がある。知っておくと、気持ちが楽になるよ。',
+    '{hook}\n\n無意識にやってることって、意外と多い。\n\n{core}\n\n自分のパターンを知るだけで、すごく変わる。',
+  ],
+  'ストーリー型': [
+    '{hook}\n\nあの時の自分に言ってあげたかった言葉がある。\n\n{core}\n\n同じ状況の人に、少しでも届いたら嬉しい。',
+    '{hook}\n\nある日気づいたんだよね。\n\n{core}\n\nあの経験があったから、今の自分がいる。',
+  ],
+};
+
+function generatePlatformPosts(
+  basePost: string,
+  hashtags: string[],
+  hashtagText: string,
+  profileCta: string,
+  postUrl: string,
+  postType: PostType,
+): { threads: string; xPost: string; instagram: string; youtube: string } {
+  const lines = basePost.split('\n').filter((l: string) => l.trim());
+  const hook = lines[0] ?? '';
+  const body = lines.slice(1, 6).join('\n');
+  const ctaSuffix = [profileCta, postUrl].filter(Boolean).join('\n');
+
+  const THREADS_MAX = 300;
+  const threadsSuffix = (ctaSuffix ? '\n\n' + ctaSuffix : '') + '\n\n' + hashtagText;
+  let threadsBody = basePost;
+  if ((threadsBody + threadsSuffix).length > THREADS_MAX) {
+    const bodyMax = THREADS_MAX - threadsSuffix.length - 3;
+    const bodyLines = basePost.split('\n').filter((l: string) => l.trim());
+    let truncated = '';
+    for (const line of bodyLines) {
+      const candidate = truncated ? truncated + '\n' + line : line;
+      if (candidate.length <= bodyMax) truncated = candidate;
+      else break;
+    }
+    threadsBody = truncated || basePost.slice(0, bodyMax) + '…';
+  }
+  const threads = threadsBody + threadsSuffix;
+
+  const xLines = lines.slice(0, 4).join('\n');
+  const xHashtags = hashtags.slice(0, 3).join(' ');
+  const xPost = xLines
+    + (profileCta ? '\n\n' + profileCta : '')
+    + (postUrl ? '\n' + postUrl : '')
+    + (xHashtags ? '\n\n' + xHashtags : '');
+
+  const igEmoji = postType === '共感型' ? '💕' : postType === '衝撃型' ? '😱' :
+    postType === '切ない型' ? '🥺' : postType === '恋愛依存型' ? '💭' :
+    postType === '暴露型' ? '🔥' : postType === '心理学型' ? '🧠' : '✨';
+  const igHashtags = [...hashtags, '#恋愛', '#インスタ恋愛', '#恋愛あるある'].slice(0, 8).join(' ');
+  const instagram = igEmoji + ' ' + hook + '\n\n' + body + '\n\n' + igHashtags + (ctaSuffix ? '\n\n' + ctaSuffix : '');
+
+  const ytPost = '【' + hook + '】\n\n' + body + '\n\n' + hashtagText + (ctaSuffix ? '\n\n' + ctaSuffix : '');
+
+  return { threads, xPost, instagram, youtube: ytPost };
+}
+
+// ============================================================
+// SEO・タイトル・画像指示文生成
+// ============================================================
+function generateSeoTitle(text: string, emotion: EmotionType, postType: PostType): string {
+  const hook = extractHook(text);
+  const templates: Record<PostType, string[]> = {
+    '共感型': ['【共感多数】' + hook, 'あなたも経験してる？' + hook],
+    '衝撃型': ['【衝撃】' + hook, '99%が知らない' + hook + 'の真実'],
+    '切ない型': [hook + '【切なすぎる恋愛の話】', '泣ける。' + hook],
+    '恋愛依存型': ['【恋愛依存】' + hook + 'から抜け出す方法', hook + 'になってしまう理由'],
+    '暴露型': ['【本音】' + hook, '誰も言わない' + hook],
+    '心理学型': ['【心理学】' + hook, '心理学的に証明！' + hook],
+    'ストーリー型': [hook + 'の話', 'ある日気づいた。' + hook],
+  };
+  return pickRandom(templates[postType]);
+}
+
+function generateSeoKeywords(text: string, emotion: EmotionType): string[] {
+  const candidates = ['恋愛', '片思い', '復縁', '失恋', '男性心理', '女性心理', 'LINE',
+    'マッチングアプリ', '婚活', '浮気', '職場恋愛', 'お金', '節約', '投資', '副業'];
+  const found = candidates.filter(kw => text.includes(kw)).slice(0, 4);
+  const emotionKw: Record<EmotionType, string> = {
+    '共感': 'あるある', '恋愛不安': '不安解消', '切なさ': '切ない恋愛',
+    '後悔': '後悔しない', '嫉妬': '嫉妬心', '孤独': '孤独感',
+    '依存': '恋愛依存', '片思い': '片思い', '復縁願望': '復縁方法',
+    '失恋': '失恋乗り越え', '期待': '脈あり', '安心感': '幸せな恋愛',
+    '自己肯定感': '自己肯定感', '驚き': '衝撃事実',
+  };
+  return [...new Set([...found, emotionKw[emotion], 'TikTok', 'SNS'])].slice(0, 6);
+}
+
+function generateMetaDescription(text: string, emotion: EmotionType): string {
+  const hook = extractHook(text);
+  const desc = hook + '。' + emotion + 'に共感する人が続出。あなたの気持ちに寄り添う内容です。';
+  return desc.length > 120 ? desc.slice(0, 117) + '...' : desc;
+}
+
+function generateArticleTitle(text: string, emotion: EmotionType, postType: PostType): string {
+  const hook = extractHook(text);
+  return pickRandom([
+    hook + 'について',
+    hook + 'の真実',
+    hook + 'を経験したあなたへ',
+    'なぜ' + hook + 'になるのか',
+  ]);
+}
+
+function generateThumbnailTitle(text: string, postType: PostType): string {
+  // 記事内容から5〜8文字のSEO最適サムネイルタイトルを生成
+  const keywordTitles: [string, string][] = [
+    ['返信が遅い', '返信が遅い理由'], ['既読スルー', '既読スルーの真実'],
+    ['既読無視', '既読無視の本音'], ['LINE', 'LINEの本音'],
+    ['距離を取る', '急に冷たい理由'], ['急に冷たい', '急に冷たい理由'],
+    ['沈黙', '突然の沈黙の理由'], ['突然', '急に変わった理由'],
+    ['連絡が減', '連絡が減る理由'], ['冷たく', '急に冷たい理由'],
+    ['脈あり', '本命だけの行動'], ['本命', '本命への接し方'],
+    ['好きな人', '好きな人の本音'], ['片思い', '片思いの終わり方'],
+    ['告白', '告白が成功する理由'], ['両想い', '両想いのサイン'],
+    ['失恋', '失恋から立つ方法'], ['別れ', '別れの乗り越え方'],
+    ['復縁', '復縁できる人の特徴'], ['フラれ', 'フラれた後の正解'],
+    ['不安', '恋愛不安の解消法'], ['依存', '依存を断ち切る方法'],
+    ['執着', '執着を手放す方法'], ['嫉妬', 'やきもちの正体'],
+    ['男性心理', '男の本当の気持ち'], ['男の本音', '男の本当の気持ち'],
+    ['女性心理', '女の本当の気持ち'], ['冷める', '男が冷める瞬間'],
+    ['追いかける', '追われる恋の法則'], ['浮気', '浮気のサインとは'],
+    ['婚活', '婚活で選ばれる理由'], ['マッチング', 'マッチングの真実'],
+    ['自己肯定', '自己肯定感を上げる'], ['気持ち', 'あの人の本当の気持ち'],
+    ['分からない', '気持ちを読む方法'],
+  ];
+  const matched = keywordTitles.find(([kw]) => text.includes(kw));
+  if (matched) return matched[1];
+
+  const fallbackMap: Record<PostType, string[]> = {
+    '共感型':     ['これ私だけ？', 'わかりすぎる話'],
+    '衝撃型':     ['知らなかった', '衝撃の真実'],
+    '切ない型':   ['切ない恋愛', '泣ける恋の話'],
+    '恋愛依存型': ['手放せない理由', 'やめられない恋'],
+    '暴露型':     ['男の本音暴露', '言えない本音'],
+    '心理学型':   ['恋愛心理の真実', '科学的な恋愛'],
+    'ストーリー型':['実話の恋愛話', '忘れられない恋'],
+  };
+  const candidates = fallbackMap[postType] ?? fallbackMap['共感型'];
+  return candidates.find(t => t.length >= 5 && t.length <= 8) ?? candidates[0];
+}
+
+function generateSeoSpecialTitle(text: string, emotion: EmotionType, postType: PostType): string {
+  const hook = extractHook(text);
+  const kwCandidates = ['恋愛', '片思い', '復縁', '失恋', '男性心理', '女性心理'];
+  const foundKw = kwCandidates.find(kw => text.includes(kw)) ?? String(emotion);
+  const templates: Record<PostType, string[]> = {
+    '共感型': ['【' + foundKw + 'あるある】' + hook + 'と感じる人が急増中', hook + 'と思う人必見｜' + foundKw + 'で共感多数の理由'],
+    '衝撃型': ['【衝撃】' + hook + '｜99%が知らない' + foundKw + 'の真実', '知らないと損する｜' + hook + 'の本当の理由'],
+    '切ない型': [hook + 'で涙する人へ｜' + foundKw + 'の切ない現実と対処法'],
+    '恋愛依存型': ['【' + foundKw + '依存】' + hook + 'から抜け出す具体的な方法'],
+    '暴露型': ['【本音暴露】' + hook + '｜' + foundKw + 'の裏側を公開'],
+    '心理学型': ['【心理学】' + hook + 'のメカニズム｜' + foundKw + 'の科学的根拠'],
+    'ストーリー型': [hook + 'という経験談｜' + foundKw + 'で人生が変わった話'],
+  };
+  const list = templates[postType] ?? templates['共感型'];
+  return pickRandom(list);
+}
+
+function generateThumbnailTikTok(
+  text: string,
+  emotion: EmotionType,
+  postType: PostType,
+  thumbnailTitle: string, // ★ ユーザー入力タイトル、または generateThumbnailTitle の結果
+): string {
+  const colorMap: Record<PostType, string> = {
+    '共感型': 'ソフトピンク・ラベンダー系（明るく温かみのあるトーン）',
+    '衝撃型': 'ビビッドレッド・オレンジ系（明るく鮮やか、ホラー風は禁止）',
+    '切ない型': 'ライトブルー・パープル系（暗くなりすぎず柔らかい色調）',
+    '恋愛依存型': 'ウォームピンク・パープル系（明るく感情的なトーン）',
+    '暴露型': 'ゴールド・ホワイト系（高級感と視認性重視）',
+    '心理学型': 'ネイビー・ライトグレー系（知的で清潔感あり）',
+    'ストーリー型': 'ウォームベージュ・ピンク系（温かく共感を呼ぶトーン）',
+  };
+
+  // ★ 毎回生成結果が変わるよう、複数パターンからランダムに選ぶ
+  const layoutVariants = [
+    '画面中央に大きく配置',
+    '画面上部3分の1に大きく配置し、下部に余白を残す',
+    '画面下部3分の1に大きく配置し、上部に余白を残す',
+    '文字を少し斜めに傾けてダイナミックに配置',
+  ];
+  const layout = pickRandom(layoutVariants);
+
+  const bgStyleVariants = [
+    '・背景は単色グラデーションでシンプルに',
+    '・背景にぼかしたイメージ（風景・部屋など）を薄く敷く',
+    '・背景に淡いパターン（ドット・波線など）を敷く',
+    '・背景は上下でトーンが変わる2色グラデーションに',
+  ];
+  const bgStyle = pickRandom(bgStyleVariants);
+
+  const accentVariants = [
+    '・矢印や吹き出しなど、視線誘導の装飾を1つ添える',
+    '・キラキラ・ハートなどの装飾アイコンを控えめに添える',
+    '・下線や囲み枠で文字を強調する',
+    '・装飾は最小限にし、文字の視認性を最優先する',
+  ];
+  const accent = pickRandom(accentVariants);
+
+  return [
+    '【TikTok画像生成指示文】',
+    'サイズ：1080 × 1920px（縦型 9:16）',
+    '',
+    '■ メインテキスト（5〜8文字・' + layout + '）',
+    '「' + thumbnailTitle + '」',
+    '・画面全体の50〜60％を文字が占めるサイズ',
+    '・スマホ一覧画面でも瞬時に読める大きさ',
+    '・1〜2行以内に収める',
+    '・太字・縁取りあり・視認性最優先',
+    '',
+    '■ デザイン・明るさ',
+    '・配色：' + colorMap[postType],
+    bgStyle,
+    accent,
+    '・明るさ：通常より＋10〜20％明るく設定',
+    '・暗すぎる表現は禁止・ホラー風演出は禁止',
+    '・柔らかく自然光が入る明るい雰囲気を優先',
+    '・恋愛・共感・切なさが伝わる温かいトーン',
+    '',
+    '■ 最終優先順位',
+    '①文字の視認性　②記事内容との一致　③人物表情　④デザイン性',
+    'スクロール停止率を最優先とすること',
+    '',
+    '■ 感情：' + emotion + ' / ' + postType,
+  ].join('\n');
+}
+
+function generateThumbnailTikTokPerson(text: string, emotion: EmotionType, postType: PostType): string {
+  const firstLine = text.split('\n').filter(l => l.trim().length > 5)[0]?.trim().slice(0, 40) ?? '';
+
+  // キーワードに一致した場合の背景バリエーション（複数用意し、毎回ランダムに1つ選ぶ）
+  const bgCandidates: [string, string[]][] = [
+    ['夜', [
+      '夜の薄暗い部屋。スマホの画面の青白い光が顔を照らす',
+      '夜、窓際に座り街の灯りを背景に月明かりが差し込む部屋',
+      '夜のベランダ。街の夜景と星空を背景に涼しげな夜風の雰囲気',
+    ]],
+    ['朝', [
+      '朝日が差し込む明るい部屋。清々しく希望を感じる光',
+      '早朝のキッチン。窓から差し込む柔らかな朝の光とコーヒーの湯気',
+      '朝の通学・通勤路。斜めに差し込む朝日と長い影が伸びる街並み',
+    ]],
+    ['カフェ', [
+      '昼下がりの太陽の光が差し込むおしゃれなカフェのテラス席。背景に満開の花々が咲く明るい庭園',
+      '窓際の席から緑を眺めるカフェ。木漏れ日とラテアートが写り込む雰囲気',
+      '古民家風カフェの縁側。柔らかな自然光と観葉植物のグリーン',
+    ]],
+    ['公園', [
+      '緑豊かな公園。やわらかい自然光。木漏れ日',
+      '公園のベンチ。風で揺れる木々と舞う木の葉',
+      '芝生の広場。青空とふわふわの雲、遠くに噴水が見える開放的な景色',
+    ]],
+    ['海', [
+      '海辺。水平線が広がる開放的な背景。爽やかな青空',
+      '夕暮れの砂浜。波打ち際を歩く後ろ姿と橙色に染まる空',
+      '海を望む展望デッキ。潮風になびく髪と眩しい反射光',
+    ]],
+    ['雨', [
+      '雨の日。窓に水滴。室内から外を見るような雰囲気',
+      '傘をさして立つ夜の街角。ネオンが水たまりに反射する幻想的な光景',
+      '雨上がりの公園。木々から滴る雫と虹がかかる空',
+    ]],
+    ['夕暮れ', [
+      '夕暮れの空。オレンジと紫のグラデーション。感傷的な雰囲気',
+      '夕焼けに染まる橋の上。シルエット気味の逆光と長い影',
+      '夕暮れの住宅街の坂道。街灯が灯り始める切ない時間帯',
+    ]],
+    ['失恋', [
+      '明るい背景に一人でいる女性。順調だった頃を思い出すような柔らかい光',
+      '窓辺で外を眺める後ろ姿。淡い光と静かな余韻を感じる部屋',
+      '花畑を一人で歩く。前向きな未来を感じさせる明るい逆光',
+    ]],
+    ['復縁', [
+      '夕暮れの街。または思い出の場所を想起させる空間',
+      '二人で歩いた思い出の並木道。落ち葉が舞う穏やかな光',
+      '駅のホーム。夕方の光と行き交う人々のシルエット',
+    ]],
+    ['告白', [
+      '夕暮れの公園または校舎前。ドキドキ感のある空間',
+      '桜並木の下。花びらが舞う中で緊張感と高揚感が漂う瞬間',
+      '屋上または展望台。街を見下ろす開放的な背景と柔らかな風',
+    ]],
+    ['デート', [
+      '昼下がりのおしゃれなカフェテラス。満開の花々が咲く華やかな背景',
+      '遊園地の観覧車前。カラフルなライトとワクワクした空気感',
+      '水族館の中。青い光に包まれた幻想的な雰囲気',
+    ]],
+    ['初デート', [
+      '明るいカフェまたは街中。花が咲く明るく華やかな背景',
+      '待ち合わせの駅前広場。緊張と期待が入り混じる明るい昼の光',
+      'ショッピング街のウィンドウ前。楽しげでポップな街の雰囲気',
+    ]],
+    ['LINE', [
+      '夜の部屋。スマホの画面の光だけが顔を照らす',
+      'ベッドの上でうつ伏せになりスマホを見つめる、柔らかい間接照明の部屋',
+      '夜のソファ。クッションを抱えながらスマホの光に照らされる横顔',
+    ]],
+    ['返信', [
+      '昼下がりの太陽の光が差し込む明るいカフェテラス。花々が咲く華やかな庭園（楽しかった頃を描くコントラスト演出）',
+      '公園のベンチで一人スマホを見つめる、明るいが少し寂しさを含む光',
+      '窓辺のカウンター席。差し込む光とスマホの画面を交互に見る仕草',
+    ]],
+    ['沈黙', [
+      '昼下がりの太陽の光がたっぷりと差し込むカフェテラス。満開の桜や色鮮やかな花々が咲き誇る庭園（「順調だった頃」として明るく描きコントラストを演出）',
+      '静かな図書室や自習室。差し込む光と物音のない張り詰めた空気',
+      '誰もいない教室や部屋。窓からの光だけが差し込む静寂な空間',
+    ]],
+    ['突然', [
+      '昼下がりの明るいカフェテラス。花々が咲く華やかな背景（幸せだった頃を描くコントラスト演出）',
+      '晴れた日の交差点。人が行き交う中で立ち止まる瞬間',
+      '明るいリビング。何気ない日常の一コマを切り取った柔らかい光',
+    ]],
+    ['順調', [
+      '昼下がりの太陽の光が差し込む明るいカフェ。満開の花々と木漏れ日。ラブラブだった頃の幸せな雰囲気',
+      '遊園地や花畑でのデートシーン。眩しいくらい明るい順光',
+      '二人で笑い合う明るいリビングやテラス。温かみのある自然光',
+    ]],
+    ['冷たく', [
+      '昼下がりの明るい公園またはカフェテラス。温かみのある自然光と花々',
+      '曇り空の街並み。少し冷たい印象の淡いトーン',
+      '窓越しに外を眺める部屋。ガラス越しの柔らかく距離感のある光',
+    ]],
+    ['連絡が減', [
+      '昼下がりのおしゃれなカフェテラス。花々が咲く華やかな背景。楽しかった頃を描く',
+      'ソファで一人スマホを眺める、暖色系の間接照明の部屋',
+      '窓辺のデスク。置いたままのスマホと差し込む午後の光',
+    ]],
+  ];
+  const matchedBg = bgCandidates.find(([kw]) => text.includes(kw));
+
+  // キーワードに一致しない場合のデフォルト背景も、単一の固定文ではなく複数パターンからランダムに選ぶ
+  const DEFAULT_BACKGROUNDS = [
+    '昼下がりの太陽の光がたっぷりと差し込むおしゃれなカフェのテラス席。背景には満開の桜や色鮮やかな花々（バラ・チューリップ・ラベンダー）が咲き誇る明るい庭園。木漏れ日が柔らかく注ぎ楽しいひとときを過ごす雰囲気。光の粒子と花びらが舞う華やかな演出',
+    '夕焼けに染まる展望デッキ。オレンジとピンクのグラデーション空を背景に、風になびく髪と柔らかな逆光',
+    '緑あふれる植物園の温室。差し込む光とみずみずしい葉、色とりどりの花が並ぶ幻想的な空間',
+    '街を見下ろせるルーフトップカフェ。青空と白い雲、爽やかな風を感じるオープンな雰囲気',
+    '朝の光が差し込む自宅の窓辺。観葉植物とカーテン越しの柔らかな光、丁寧な暮らしを感じる空間',
+    '夜の街を彩るイルミネーション通り。暖色のライトが背景でボケて輝く華やかな夜景',
+  ];
+  const background = matchedBg ? pickRandom(matchedBg[1]) : pickRandom(DEFAULT_BACKGROUNDS);
+
+  const poseCandidates: [string, string[]][] = [
+    ['LINE', [
+      'スマホを両手で持ち、画面を見て笑顔になっているポーズ',
+      'ベッドにうつ伏せで寝転び、足を軽く上げてスマホを操作するリラックスしたポーズ',
+    ]],
+    ['返信', [
+      '彼氏（見切れている）と一緒にスマホの画面を見せ合い、大笑いしている瞬間。彼氏の手だけが端に写っている',
+      '窓辺のカウンター席で一人スマホを見つめ、少し考え込むような自然な仕草',
+    ]],
+    ['告白', [
+      '胸の前で両手を組み、緊張しながら明るく微笑むポーズ',
+      '片手で髪をそっと耳にかけながら、はにかむように微笑むポーズ',
+    ]],
+    ['失恋', [
+      '前を向いて歩き出す、希望を感じる自然なポーズ',
+      '風になびく髪を手で押さえながら、遠くを見つめる横顔のポーズ',
+    ]],
+    ['デート', [
+      '彼氏（見切れている）と手を繋ぎ、楽しそうにスマホを見せ合うポーズ',
+      '彼氏（見切れている）と腕を組み、笑い合いながら歩いているポーズ',
+    ]],
+    ['初デート', [
+      '鏡の前で服装を確認しながら、ワクワクした笑顔のポーズ',
+      '待ち合わせ場所できょろきょろと辺りを見渡す、そわそわした可愛らしいポーズ',
+    ]],
+  ];
+  const matchedPose = poseCandidates.find(([kw]) => text.includes(kw));
+
+  // デフォルトのポーズも複数パターンからランダムに選び、毎回「彼氏と手つなぎ」に偏らないようにする
+  const DEFAULT_POSES = [
+    '彼氏（見切れている）と手を繋ぎ、楽しそうにスマホの画面を見せ合っているポーズ。もう片方の手でスマホを持ち、一緒に画面を見て大笑いしている瞬間。彼氏の手だけが画面の端に写っている',
+    '片手で頬杖をつきながら、窓の外を眺めるような物思いにふけるポーズ',
+    '風に揺れる髪を手でそっと押さえながら、振り返って微笑むポーズ',
+    'マグカップを両手で包み込むように持ち、視線を落として静かに微笑むポーズ',
+    '軽くステップを踏むように歩きながら、カメラ目線で明るく笑うポーズ',
+    'スマホを片手に、もう片方の手を頬に添えて考え込むような可愛らしいポーズ',
+  ];
+  const pose = matchedPose ? pickRandom(matchedPose[1]) : pickRandom(DEFAULT_POSES);
+
+  const expressionMap: Record<EmotionType, string[]> = {
+    '共感': [
+      '心から楽しそうに笑っている満面の笑み。目がキラキラと輝き幸せそうな表情',
+      '共感するように小さくうなずきながら、優しく微笑む表情',
+    ],
+    '恋愛不安': [
+      '心から楽しそうに笑っている満面の笑み（不安な記事内容でも「幸せだった頃」として明るく描く）',
+      '少し伏し目がちに、不安と切なさが入り混じった繊細な表情',
+    ],
+    '切なさ': [
+      'やわらかく微笑む、切ないけれど美しい表情。目が少し潤んでいる',
+      '遠くを見つめる、もの寂しさと美しさを兼ね備えた横顔の表情',
+    ],
+    '後悔': [
+      '前を向いて微笑む、強さを感じる表情',
+      '軽く目を伏せ、静かに何かを振り返るような落ち着いた表情',
+    ],
+    '嫉妬': [
+      '少しいたずらっぽく微笑む、可愛らしい表情',
+      '唇を軽く尖らせるような、拗ねた可愛らしい表情',
+    ],
+    '孤独': [
+      '心から楽しそうに笑っている満面の笑み（コントラスト演出）',
+      '静かに窓の外を見つめる、落ち着いた物思いの表情',
+    ],
+    '依存': [
+      'やわらかく幸せそうに微笑む表情',
+      'スマホを見つめながら安心したように微笑む表情',
+    ],
+    '片思い': [
+      'ぼんやりと微笑みながら夢見るような表情。頬に手を当てている',
+      '照れたように口元を隠しながら、はにかむ笑顔',
+    ],
+    '復縁願望': [
+      'やわらかく微笑む、希望を感じる表情',
+      '懐かしむように目を細めて微笑む表情',
+    ],
+    '失恋': [
+      '前を向いて明るく微笑む、立ち直りを感じる表情',
+      '晴れやかな表情で空を見上げる、吹っ切れたような笑顔',
+    ],
+    '期待': [
+      '心から楽しそうに笑っている満面の笑み。目がキラキラと輝いている',
+      'ワクワクした様子で目を輝かせ、口元に手を添えて微笑む表情',
+    ],
+    '安心感': [
+      'ほっとしたような温かい笑顔。目が細くなっている',
+      '穏やかに目を閉じかけ、心から安らいでいるような表情',
+    ],
+    '自己肯定感': [
+      '自信に満ちた堂々とした笑顔。背筋がまっすぐ',
+      '軽く顎を上げ、自信と余裕を感じさせる凛とした表情',
+    ],
+    '驚き': [
+      '目を大きく開けた、驚きと嬉しさが混ざった明るい表情',
+      '口元に軽く手を当てて、思わず声が漏れたような驚きの表情',
+    ],
+  };
+
+  const OUTFIT_OPTIONS = [
+    '明るいパステルカラー（ベビーピンク・ライトブルー・ホワイト）の可愛らしいワンピース',
+    'ベージュのニットとフレアスカートを合わせた、きれいめカジュアルスタイル',
+    '白のブラウスにデニムを合わせた、清潔感のあるカジュアルスタイル',
+    'くすみカラーのカーディガンを羽織った、柔らかい印象のスタイル',
+    'リネン素材のワンピース。ナチュラルで抜け感のあるスタイル',
+  ];
+  const outfit = emotion === '自己肯定感'
+    ? 'きれいめカジュアル。清潔感と自信を感じる明るい服装'
+    : pickRandom(OUTFIT_OPTIONS);
+
+  const HAIR_OPTIONS = [
+    'ミディアム〜ロングのゆるふわヘア。明るいブラウンまたは柔らかなグレージュ',
+    'ハーフアップにまとめた、上品で女性らしいヘアスタイル',
+    'ストレートロングヘア。自然な艶感のあるブラウン',
+    '緩やかに巻いたセミロングヘア。前髪ありの柔らかい印象',
+  ];
+  const hairStyle = pickRandom(HAIR_OPTIONS);
+
+  const COMPOSITION_OPTIONS = [
+    'バストアップ、正面からの構図。人物は画面の中央または左側に配置',
+    'ウエストアップ、斜め45度からの構図。人物はやや左寄りに配置',
+    'ミディアムショット、少し見上げるアングル。人物は画面右側に配置',
+    '肩から上のクローズアップ、柔らかいボケを効かせた構図。人物は中央に配置',
+  ];
+  const composition = pickRandom(COMPOSITION_OPTIONS);
+
+  return [
+    '【TikTok人物画像生成指示文】',
+    'サイズ：1080 × 1920px（縦型 9:16）/ CapCutテンプレート用',
+    '',
+    '■ 記事テーマ（この内容に合わせた画像を生成）',
+    '「' + firstLine + '」',
+    '',
+    '■ 背景・シチュエーション',
+    background,
+    '',
+    '■ 人物設定',
+    '・日本人女性（20代〜30代）',
+    '・' + outfit,
+    '・' + hairStyle,
+    '',
+    '■ 表情',
+    '・' + pickRandom(expressionMap[emotion] ?? ['心から楽しそうに笑っている満面の笑み']),
+    '',
+    '■ ポーズ',
+    '・' + pose,
+    '',
+    '■ 構図（CapCut最適化）',
+    '・' + composition,
+    '・人物は画面の中央〜下寄りに配置し、画面上部は背景の花・窓・光などで自然に埋めること',
+    '',
+    '■ 絶対厳守：文字・ぼかし・グラデーションの禁止',
+    '・画像内に文字・ロゴ・透かし・タイトル・日本語や英語のテキストは一切描き込まないこと（完全な写真・イラストのみ）',
+    '・画面の上端から下端まで、隅々まで被写界深度ボケのない全面くっきりピントの合った1枚の写真として描くこと',
+    '・上部・下部・左右のどこであっても、白飛び・黒つぶれ・グラデーションでの覆い・フェードアウト・半透明処理・ソフトフォーカス・ビネット（周辺減光）は一切禁止。フレームの端まで背景（花・光・窓・部屋など）をはっきりと描き切ること',
+    '・「テキストを乗せるための空白」という概念自体を画像に反映しないこと。空白や余白ではなく、隅々まで書き込まれた密度の高い背景で画面を満たすこと',
+    '',
+    '■ 追加指示',
+    '・背景は太陽の光と鮮やかな花々で画面全体を明るく満たすこと。暗い部分は一切作らないこと',
+    '・光の粒子・花びら・小さなハートなどの演出を画面全体に自然に加えること',
+    '・明るさは通常より＋10〜20％向上させること',
+    '・ホラー風・暗すぎる表現は禁止',
+    '',
+    '■ 感情トーン：' + emotion,
+  ].join('\n');
+}
+
+// ============================================================
+// ★ 修正箇所①：generateThumbnailNote に thumbnailTitle 引数を追加
+// TikTokとnoteのサムネイルタイトルを完全一致させる
+// ============================================================
+function generateThumbnailNote(
+  text: string,
+  emotion: EmotionType,
+  postType: PostType,
+  thumbnailTitle: string, // TikTokのメインテキストをそのまま受け取る
+): string {
+  return [
+    '【note画像生成指示文】',
+    'サイズ：1280 × 670px（横型 16:9）',
+    '',
+    '■ メインテキスト（TikTokと完全一致・5〜8文字）',
+    '「' + thumbnailTitle + '」',
+    '・TikTokサムネイルと同一テキストを使用（完全一致）',
+    '・長文タイトル・記事内容の説明は画像内に入れない',
+    '・スマホ一覧画面で0.5秒以内に読めるサイズ',
+    '・補足はサブタイトル・記事タイトル・本文冒頭で表現する',
+    '',
+    '■ デザイン',
+    '・スタイル：シンプル・洗練・読みやすいフォント',
+    '・左側にテキスト・右側にイメージ、または全面シンプル構成',
+    '・余白を十分に取る',
+    '・記事内容の説明文は画像内に入れない',
+    '',
+    '■ 優先順位',
+    '①TikTokとのタイトル完全一致　②5〜8文字　③視認性　④感情を刺激する言葉　⑤デザイン性',
+    'クリック率最優先。',
+    '',
+    '■ 感情：' + emotion + ' / ' + postType,
+  ].join('\n');
+}
+
+// ============================================================
+// note記事生成
+// ============================================================
+function generateNoteArticle(articleText: string, emotion: EmotionType, postType: PostType): string {
+  const title = generateArticleTitle(articleText, emotion, postType);
+  return title + '\n\n' + articleText;
+}
+
+// ============================================================
+// SEOハッシュタグ生成（note検索・Google検索最適化・10〜15個）
+// ============================================================
+function generateBuzzSeoHashtags(text: string, emotion: EmotionType, postType: PostType): string[] {
+  const tags: string[] = [];
+
+  const kwMap: Record<string, string[]> = {
+    '返信': ['#LINE返信', '#既読スルー'],
+    'LINE': ['#LINEあるある', '#LINE恋愛'],
+    '片思い': ['#片思い', '#片思い中', '#片思いあるある'],
+    '復縁': ['#復縁', '#復縁したい', '#元彼'],
+    '失恋': ['#失恋', '#失恋した', '#失恋からの立ち直り'],
+    '婚活': ['#婚活', '#婚活女子', '#婚活あるある'],
+    '浮気': ['#浮気', '#浮気された'],
+    '依存': ['#恋愛依存', '#恋愛依存症'],
+    '不安': ['#恋愛不安', '#好きな人への不安'],
+    '自己肯定': ['#自己肯定感', '#自己肯定感を上げる'],
+  };
+
+  for (const [kw, kwTags] of Object.entries(kwMap)) {
+    if (text.includes(kw)) tags.push(...kwTags);
+  }
+
+  const emotionTagMap: Partial<Record<EmotionType, string[]>> = {
+    '共感':      ['#恋愛あるある', '#共感する恋愛'],
+    '恋愛不安':  ['#恋愛不安', '#好きな人が怖い', '#恋愛の悩み'],
+    '切なさ':    ['#切ない恋愛', '#切ない', '#恋愛コラム'],
+    '後悔':      ['#後悔しない恋愛', '#恋愛の後悔'],
+    '依存':      ['#恋愛依存', '#手放せない恋愛'],
+    '片思い':    ['#片思い', '#片思い中', '#告白できない'],
+    '失恋':      ['#失恋', '#失恋乗り越え', '#失恋からの復活'],
+    '自己肯定感': ['#自己肯定感', '#自分を好きになる'],
+  };
+  const eTags = emotionTagMap[emotion] ?? ['#恋愛コラム', '#恋愛の悩み'];
+  tags.push(...eTags);
+
+  const baseTags = [
+    '#恋愛', '#恋愛心理学', '#男性心理', '#女性心理',
+    '#恋愛相談', '#大人の恋愛', '#恋愛テクニック',
+    '#恋愛成就', '#婚活', '#自己肯定感',
+  ];
+  tags.push(...baseTags);
+
+  return [...new Set(tags)].slice(0, 15);
+}
+
+// ============================================================
+// メイン生成関数
+// ============================================================
+export function generateBuzzPost(params: {
+  articleText: string;
+  tiktokLength: number;
+  profileCta: string;
+  postUrl: string;
+  tiktokCta: string;
+  userTitle?: string;
+}): BuzzPostResult {
+  const { articleText, tiktokLength, profileCta, postUrl, tiktokCta, userTitle } = params;
+
+  const emotion = analyzeEmotion(articleText);
+  const postType = selectPostType(articleText, emotion);
+  const hook = extractHook(articleText);
+  const core = extractCore(articleText, tiktokLength);
+
+  const template = pickRandom(BUZZ_POST_TEMPLATES[postType]);
+  const postText = template.replace('{hook}', hook).replace('{core}', core);
+
+  const hashtags = generateDynamicHashtags(articleText, emotion, postType);
+  const hashtagText = hashtags.join(' ');
+
+  const score = calcBazzScore(postText, postType, emotion, profileCta, postUrl);
+  const improvement = generateImprovement(score);
+
+  const postTextFormatted = addTikTokLineBreaks(postText);
+  const tiktokArticle = generateTikTokArticle(articleText, tiktokLength, tiktokCta, emotion, postType);
+  const noteArticle = generateNoteArticle(articleText, emotion, postType);
+
+  const platformPosts = generatePlatformPosts(postTextFormatted, hashtags, hashtagText, profileCta, postUrl, postType);
+
+  const seoTitle = generateSeoTitle(articleText, emotion, postType);
+  const seoKeywords = generateSeoKeywords(articleText, emotion);
+  const metaDescription = generateMetaDescription(articleText, emotion);
+  const articleTitle = generateArticleTitle(articleText, emotion, postType);
+
+  // ★ 修正箇所②：thumbnailTitle を先に生成し、generateThumbnailNote に渡す
+  // ユーザーがタイトルを入力していれば、そちらを最優先で使用する
+  const autoThumbnailTitle = generateThumbnailTitle(articleText, postType);
+  const thumbnailTitle = userTitle && userTitle.trim() ? userTitle.trim() : autoThumbnailTitle;
+  const thumbnailTikTok = generateThumbnailTikTok(articleText, emotion, postType, thumbnailTitle);
+  const thumbnailTikTokPerson = generateThumbnailTikTokPerson(articleText, emotion, postType);
+  const thumbnailNote = generateThumbnailNote(articleText, emotion, postType, thumbnailTitle); // ← thumbnailTitle を渡す
+  const seoSpecialTitle = generateSeoSpecialTitle(articleText, emotion, postType);
+
+  const seoHashtags = generateBuzzSeoHashtags(articleText, emotion, postType);
+
+  return {
+    postText: postTextFormatted,
+    tiktokArticle,
+    seoHashtags,
+    hashtags,
+    hashtagText,
+    emotionType: emotion,
+    postType,
+    score,
+    improvement,
+    noteArticle,
+    seoTitle,
+    seoKeywords,
+    metaDescription,
+    articleTitle,
+    thumbnailTitle,
+    threadsPost: platformPosts.threads,
+    xPost: platformPosts.xPost,
+    instagramPost: platformPosts.instagram,
+    youtubePost: platformPosts.youtube,
+    profileCtaText: profileCta,
+    postUrlText: postUrl,
+    thumbnailTikTok,
+    thumbnailTikTokPerson,
+    thumbnailNote,
+    seoSpecialTitle,
+  };
+}
