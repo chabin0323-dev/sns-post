@@ -3,6 +3,69 @@ import React, { useState } from 'react';
 import type { BuzzPostResult } from '../types';
 import { WordPressPublishPanel } from './WordPressPublishPanel';
 
+// ============================================================
+// WordPress専用：H2/H3見出し変換（noteArticleには一切影響しない）
+// ============================================================
+// 記事全体のテーマ・区切りを表す語尾（H2候補）
+const WP_H2_SUFFIX_PATTERNS: RegExp[] = [/とは$/, /^まとめ$/, /^最後に$/, /総括/];
+// テーマ内の具体的な項目を表す語尾（H3候補）
+const WP_H3_SUFFIX_PATTERNS: RegExp[] = [
+  /理由$/, /原因$/, /方法$/, /ポイント$/, /特徴$/,
+  /すべきこと$/, /してはいけない/, /注意点$/, /対処法$/,
+];
+
+// 見出し候補の行そのものの条件：短い・句点等の文末記号で終わっていない・見出しらしい語尾に一致
+// 文末に句点等がある通常の文章（例：「〜理由を説明します。」）は対象外。
+function classifyWpHeadingLevel(trimmedLine: string): 'h2' | 'h3' | null {
+  if (trimmedLine.length < 2 || trimmedLine.length > 20) return null;
+  if (/[。、！？]$/.test(trimmedLine)) return null;
+  if (WP_H2_SUFFIX_PATTERNS.some(p => p.test(trimmedLine))) return 'h2';
+  if (WP_H3_SUFFIX_PATTERNS.some(p => p.test(trimmedLine))) return 'h3';
+  return null;
+}
+
+// 直前の行が「完結した文」または「空行／文章の先頭」であるかどうか。
+// 直前の文が句点等で終わっていない場合、対象行はその文の続き（改行による折り返し）である
+// 可能性が高いため、見出し候補として扱わない（本文の途中を誤って見出し化しないための条件）。
+function isPrecedingLineComplete(lines: string[], index: number): boolean {
+  if (index === 0) return true;
+  const prev = lines[index - 1].trim();
+  if (prev === '') return true;
+  return /[。！？]$/.test(prev);
+}
+
+// WordPress投稿専用：noteArticle本文は一切変更せず、WordPressに渡すpostContentだけを
+// H2/H3構造に変換したコンテンツとして生成する。noteArticle自体（note表示用）には影響しない。
+// 見出しの文言は既存の行をそのまま使用し、新しい文章は生成しない。
+//
+// noteArticleは必ず「タイトル + \n\n + 本文」の形式で生成される（generateNoteArticle実装より）。
+// タイトルは呼び出し元から別途渡さず、noteArticle自身の先頭（最初の空行より前）から直接取り出す。
+// ※ generateArticleTitleはランダム選択のため、result.articleTitleと文字列が一致しない場合があり、
+//   別引数として渡すと一致判定に失敗してH2変換が働かないことがあるため。
+function toWordPressContent(noteArticle: string): string {
+  const separatorIndex = noteArticle.indexOf('\n\n');
+  if (separatorIndex === -1) return noteArticle; // 想定外の形式は変更しない
+
+  const titleLine = noteArticle.slice(0, separatorIndex);
+  const articleText = noteArticle.slice(separatorIndex + 2);
+
+  const lines = articleText.split('\n');
+  const outLines = lines.map((line, i) => {
+    const trimmed = line.trim();
+    if (!trimmed) return line; // 空行はそのまま維持
+
+    const notContinuation = isPrecedingLineComplete(lines, i);
+    if (!notContinuation) return line;
+
+    const level = classifyWpHeadingLevel(trimmed);
+    if (level === 'h2') return `<h2>${trimmed}</h2>`;
+    if (level === 'h3') return `<h3>${trimmed}</h3>`;
+    return line; // 条件に合わない行は変更しない
+  });
+
+  return `<h2>${titleLine}</h2>\n\n${outLines.join('\n')}`;
+}
+
 interface BuzzPostPanelProps {
   onGenerate: (articleText: string, length: 300 | 400 | 500 | 600, profileCta: string, postUrl: string, tiktokCta: string) => void;
   result: BuzzPostResult | null;
@@ -357,7 +420,7 @@ export const BuzzPostPanel: React.FC<BuzzPostPanelProps> = ({ onGenerate, result
           {isEnabled('youtubePost') && <OutputCard label="▶️ YouTube Shorts投稿文" copyText={result.youtubePost}><pre style={pre}>{result.youtubePost}</pre></OutputCard>}
           {isEnabled('noteArticle') && <OutputCard label="📝 note記事" copyText={result.noteArticle}><pre style={pre}>{result.noteArticle}</pre></OutputCard>}
           {isEnabled('wordpressPublish') && result.noteArticle && (
-            <WordPressPublishPanel postContent={result.noteArticle} suggestedTitle={result.articleTitle} />
+            <WordPressPublishPanel postContent={toWordPressContent(result.noteArticle)} suggestedTitle={result.articleTitle} />
           )}
           {isEnabled('profileCtaText') && result.profileCtaText && <OutputCard label="👤 プロフィール誘導文" copyText={result.profileCtaText}><p style={{ fontSize: '14px', fontWeight: '700', color: '#374151', margin: 0 }}>{result.profileCtaText}</p></OutputCard>}
           {isEnabled('postUrlText') && result.postUrlText && <OutputCard label="🔗 投稿URL" copyText={result.postUrlText}><p style={{ fontSize: '13px', color: '#2563eb', margin: 0, wordBreak: 'break-all' }}>{result.postUrlText}</p></OutputCard>}
